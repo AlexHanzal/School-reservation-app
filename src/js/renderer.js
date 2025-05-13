@@ -133,6 +133,19 @@ function showTimetable(name) {
     } else {
         updateTimetableForWeek(new Date());
     }
+    
+    // Load saved data for the current week if it exists
+    if (savedData && savedData.data && savedData.currentWeek && savedData.data[savedData.currentWeek]) {
+        const weekData = savedData.data[savedData.currentWeek];
+        const rows = document.querySelectorAll('.week-table tbody tr');
+        
+        rows.forEach((row, dayIndex) => {
+            const cells = row.querySelectorAll('td:not(:first-child)');
+            weekData[dayIndex].forEach((content, cellIndex) => {
+                cells[cellIndex].textContent = content;
+            });
+        });
+    }
 }
 
 // Add submit button handler
@@ -211,6 +224,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         generateCalendar();
     });
+
+    // Add edit button handler
+    document.querySelector('.edit-button').addEventListener('click', toggleEditMode);
+    
+    // Add save button handler
+    document.querySelector('.save-button').addEventListener('click', saveTimeTable);
 });
 
 function updateTimetableForWeek(selectedDate) {
@@ -226,11 +245,27 @@ function updateTimetableForWeek(selectedDate) {
     dayRows.forEach((row, index) => {
         const dateForDay = new Date(monday);
         dateForDay.setDate(monday.getDate() + index);
+        const dateString = dateForDay.toISOString().split('T')[0];
         
         // Update first cell with day name and date
         const firstCell = row.querySelector('td:first-child');
         firstCell.textContent = `${days[index]} (${dateForDay.getDate()}.${dateForDay.getMonth() + 1}.)`;
+        firstCell.dataset.date = dateString;
         
+        // Update all hour cells with the date
+        const hourCells = row.querySelectorAll('td:not(:first-child)');
+        hourCells.forEach((cell, hourIndex) => {
+            cell.dataset.date = dateString;
+            cell.dataset.hour = hourIndex + 1;
+            
+            // Load saved data for this date and hour if it exists
+            if (timetables[currentTimetableName]?.data?.[dateString]?.[hourIndex]) {
+                cell.textContent = timetables[currentTimetableName].data[dateString][hourIndex];
+            } else {
+                cell.textContent = '';
+            }
+        });
+
         // Highlight current day
         if (dateForDay.toDateString() === new Date().toDateString()) {
             firstCell.classList.add('current-day');
@@ -244,4 +279,52 @@ function updateTimetableForWeek(selectedDate) {
         timetables[currentTimetableName].currentWeek = monday.toISOString();
         localStorage.setItem('timetables', JSON.stringify(timetables));
     }
+}
+
+let isEditMode = false;
+let currentTimetableName = '';
+
+function toggleEditMode() {
+    isEditMode = !isEditMode;
+    const editButton = document.querySelector('.edit-button');
+    editButton.textContent = isEditMode ? 'Cancel' : 'Edit';
+    
+    const cells = document.querySelectorAll('.week-table tbody td:not(:first-child)');
+    cells.forEach(cell => {
+        if (isEditMode) {
+            cell.setAttribute('contenteditable', 'true');
+            cell.classList.add('editable');
+            // Remove auto-save listener
+        } else {
+            cell.setAttribute('contenteditable', 'false');
+            cell.classList.remove('editable');
+        }
+    });
+}
+
+function saveTimeTable() {
+    if (!currentTimetableName) return;
+
+    const rows = document.querySelectorAll('.week-table tbody tr');
+    
+    rows.forEach(row => {
+        const dateString = row.querySelector('td:first-child').dataset.date;
+        const cells = row.querySelectorAll('td:not(:first-child)');
+        
+        if (!timetables[currentTimetableName].data) {
+            timetables[currentTimetableName].data = {};
+        }
+        if (!timetables[currentTimetableName].data[dateString]) {
+            timetables[currentTimetableName].data[dateString] = {};
+        }
+
+        cells.forEach((cell, hourIndex) => {
+            timetables[currentTimetableName].data[dateString][hourIndex] = cell.textContent;
+        });
+    });
+
+    localStorage.setItem('timetables', JSON.stringify(timetables));
+    
+    // Don't exit edit mode after saving
+    // if (isEditMode) toggleEditMode();
 }
