@@ -175,21 +175,65 @@ document.getElementById('submit-button').addEventListener('click', () => {
         nameInput.value = '';
         
         // Save timetable data
-        localStorage.setItem('timetables', JSON.stringify(timetables));
+        saveTimetables();
     }
 });
 
-// Load saved timetables on startup
-document.addEventListener('DOMContentLoaded', () => {
-    const saved = localStorage.getItem('timetables');
-    if (saved) {
-        timetables = JSON.parse(saved);
-        // Recreate buttons for saved timetables
+async function saveTimetables() {
+    try {
+        await fetch('/api/timetables', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ name: currentTimetableName, data: timetables[currentTimetableName] })
+        });
+    } catch (error) {
+        console.error('Failed to save timetables:', error);
+    }
+}
+
+// Replace localStorage.setItem calls with saveTimetables()
+async function saveTimeTable() {
+    if (!currentTimetableName) return;
+
+    const rows = document.querySelectorAll('.week-table tbody tr');
+    
+    rows.forEach(row => {
+        const dateString = row.querySelector('td:first-child').dataset.date;
+        const cells = row.querySelectorAll('td:not(:first-child)');
+        
+        if (!timetables[currentTimetableName].data) {
+            timetables[currentTimetableName].data = {};
+        }
+        if (!timetables[currentTimetableName].data[dateString]) {
+            timetables[currentTimetableName].data[dateString] = {};
+        }
+
+        cells.forEach((cell, hourIndex) => {
+            timetables[currentTimetableName].data[dateString][hourIndex] = cell.textContent;
+        });
+    });
+
+    await saveTimetables();
+}
+
+// Modify the DOMContentLoaded event handler to load data from server
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const response = await fetch('/api/timetables');
+        const data = await response.json();
+        timetables = data;
+        
         Object.keys(timetables).forEach(name => {
             const dynamicButton = createDynamicButton(name);
             document.getElementById('dynamic-links-container').appendChild(dynamicButton);
         });
+    } catch (error) {
+        console.error('Failed to load timetables:', error);
+        timetables = {};
     }
+
     generateCalendar();
 
     // Add pop-up functionality for create-new button
@@ -277,7 +321,7 @@ function updateTimetableForWeek(selectedDate) {
     // Store selected week start date
     if (timetables[currentTimetableName]) {
         timetables[currentTimetableName].currentWeek = monday.toISOString();
-        localStorage.setItem('timetables', JSON.stringify(timetables));
+        saveTimetables();
     }
 }
 
@@ -323,8 +367,5 @@ function saveTimeTable() {
         });
     });
 
-    localStorage.setItem('timetables', JSON.stringify(timetables));
-    
-    // Don't exit edit mode after saving
-    // if (isEditMode) toggleEditMode();
+    saveTimetables();
 }
