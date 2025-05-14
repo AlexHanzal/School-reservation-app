@@ -19,6 +19,7 @@
       <li id="dynamic-links-container"></li> <!-- Container for dynamic links -->
       <li><button class="create-new" id="create-new">+</button></li>
     </ul>
+    <button class="reset-all" id="reset-all">Reset All</button>
     <button class="admin-button" id="admin-button">Admin</button>
   </aside>
   <div class="select-screen" id="select-screen">
@@ -127,7 +128,12 @@
       </div>
     </div>
   </div>
-      <script src="/js/renderer.js"></script>
-    <script src="../js/client.js"></script>
+  <script src="/js/renderer.js"></script>
+  <div class="custom-alert-overlay" id="alertOverlay"></div>
+  <div class="custom-alert" id="customAlert">
+    <h2>Success!</h2>
+    <p>Admin mode activated</p>
+    <button>OK</button>
+  </div>
 </body>
 </html>
