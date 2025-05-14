@@ -219,3 +219,23 @@
     transform: translateX(-50%);
     bottom: 6%;
 }
+
+.reset-all {
+    width: 90%;
+    padding: 15px 25px;
+    font-size: 1.2em;
+    position: absolute;
+    bottom: 15%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #ff4444;
+    color: white;
+    border: 2px solid #ff4444;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.reset-all:hover {
+    background-color: #cc0000;
+    border-color: #cc0000;
+}

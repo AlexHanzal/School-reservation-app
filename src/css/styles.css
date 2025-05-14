@@ -252,6 +252,7 @@
     width: 95%; /* Adjust table width to fit nicely */
     margin: 0 auto; /* Center the table within the time-table container */
     background-color: var(--secondary-color);
+    position: relative; /* Add this */
   }
   
   .week-table th, .week-table td {
@@ -314,19 +315,36 @@
   }
   
   .permanent-hour {
-    background-color: #666;
+    background-color: #ffebcc !important; /* Light orange background */
     font-weight: bold;
-    border: 2px dashed var(--primary-color);
+    border: 2px solid #ff9800 !important; /* Orange border */
+    color: #ff0000 !important;
+    position: relative;
+  }
+  
+  .permanent-hour::after {
+    content: '✓';  /* Checkmark to indicate permanent status */
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    font-size: 0.8em;
+    color: #ff9800;
   }
   
   .timetable-content {
     display: flex;
     flex-direction: column;
     gap: 18px;
+    height: 100%;
+    position: relative; /* Add this */
   }
   
   .table-container {
     width: 100%;
+    height: calc(100vh - 300px); /* Fixed height */
+    overflow-y: auto; /* Add scrollbar if needed */
+    position: relative;
+    margin-bottom: 20px;
   }
   
   .bottom-content {
@@ -666,4 +684,117 @@
 .editable:focus {
     background-color: rgba(255, 255, 255, 0.3);
     outline: none;
+}
+
+.verification-window {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 3000;
+    justify-content: center;
+    align-items: center;
+}
+
+.verification-content {
+    background-color: var(--secondary-color);
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    max-width: 300px;
+    width: 90%;
+}
+
+.verification-content h2 {
+    color: var(--primary-color);
+    margin-bottom: 15px;
+}
+
+.verification-content input {
+    width: 100%;
+    padding: 8px;
+    margin: 10px 0;
+    border: 2px solid var(--primary-color);
+    border-radius: 5px;
+    background-color: var(--third-color);
+    color: var(--primary-color);
+    box-sizing: border-box;
+}
+
+.verification-buttons {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 20px;
+}
+
+.custom-alert {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: var(--secondary-color);
+    border: 2px solid var(--primary-color);
+    border-radius: 10px;
+    padding: 20px;
+    z-index: 4000;
+    min-width: 300px;
+    text-align: center;
+}
+
+.custom-alert h2 {
+    color: var(--primary-color);
+    margin-bottom: 15px;
+}
+
+.custom-alert p {
+    margin: 10px 0;
+    color: var(--primary-color);
+}
+
+.custom-alert-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 3999;
+}
+
+.custom-alert button {
+    margin-top: 15px;
+    padding: 8px 20px;
+    background-color: var(--bakalar-color-basic);
+    border: 2px solid var(--primary-color);
+    border-radius: 5px;
+    cursor: pointer;
+    color: var(--primary-color);
+}
+
+.custom-alert button:hover {
+    background-color: var(--primary-color);
+    color: var(--secondary-color);
+}
+
+.custom-alert.error {
+    border-color: #ff4444;
+}
+
+.custom-alert.error h2 {
+    color: #ff4444;
+}
+
+.custom-alert.error button {
+    border-color: #ff4444;
+    color: #ff4444;
+}
+
+.custom-alert.error button:hover {
+    background-color: #ff4444;
+    color: var(--secondary-color);
 }
