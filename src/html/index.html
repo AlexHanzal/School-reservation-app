@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Day App</title>
-    <link rel="stylesheet" href="../css/styles.css">
-    <link rel="stylesheet" href="../css/buttons.css">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/buttons.css">
 </head>
 <body>
   <header class="header" id="header">
@@ -19,6 +19,7 @@
       <li id="dynamic-links-container"></li> <!-- Container for dynamic links -->
       <li><button class="create-new" id="create-new">+</button></li>
     </ul>
+    <button class="reset-all" id="reset-all">Reset All</button>
     <button class="admin-button" id="admin-button">Admin</button>
   </aside>
   <div class="select-screen" id="select-screen">
@@ -119,14 +120,34 @@
   <div class="verification-window" id="verification-window">
     <div class="verification-content">
       <h2>Verification</h2>
+      <button class="close-verification-button" id="close-verification">X</button>
       <p>Please enter the code:</p>
       <input type="password" id="verification-code" placeholder="Enter code">
       <div class="verification-buttons">
-        <button class="close-verification" id="close-verification">Close</button>
         <button class="confirm-verification" id="confirm-verification">Confirm</button>
       </div>
     </div>
   </div>
-  <script src="renderer.js"></script>
+  <script src="/js/renderer.js"></script>
+  <div class="custom-alert-overlay" id="alertOverlay"></div>
+  <div class="custom-alert" id="customAlert">
+    <h2>Success!</h2>
+    <p>Admin mode activated</p>
+    <button>OK</button>
+  </div>
+  <div class="class-edit-menu" id="classEditMenu">
+    <div class="menu-content">
+      <h3>Edit Class</h3>
+      <button class="close-menu" id="closeClassEdit">✕</button>
+      <div class="input-group">
+        <label for="class-name-input">Class Name:</label>
+        <input type="text" id="class-name-input">
+      </div>
+      <div class="menu-buttons">
+        <button class="save-class-name">Save</button>
+        <button class="delete-class">Delete Class</button>
+      </div>
+    </div>
+  </div>
 </body>
 </html>

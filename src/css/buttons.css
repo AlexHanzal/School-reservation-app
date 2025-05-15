@@ -1,6 +1,6 @@
 /* Button Styles */
 #create-new {
-    display: flex;
+    display: none; /* Hide by default */
     justify-content: center;
     align-items: center;
     font-size: 2em;
@@ -13,6 +13,17 @@
     border: 2px solid var(--primary-color);
     cursor: pointer;
     font-weight: bold;
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.3s ease, visibility 0s linear 0.3s;
+    display: flex;
+}
+
+#create-new.admin-visible {
+    display: flex; /* Show when admin mode is active */
+    visibility: visible;
+    opacity: 1;
+    transition: opacity 0.3s ease, visibility 0s linear;
 }
 
 #create-new:hover {
@@ -37,7 +48,7 @@
 }
 
 .dynamic-button {
-    display: block;
+    width: 200px;
     padding: 12px 24px;
     font-size: 1.2em;
     background-color: var(--bakalar-color-basic);
@@ -47,15 +58,50 @@
     cursor: pointer;
     font-weight: bold;
     text-align: center;
-    max-width: 160px;
-    width: 100%;
     box-sizing: border-box;
     word-wrap: break-word;
     white-space: normal;
-    margin: 0;
+    transition: all 0.3s ease;
+    margin: 0 auto;
+    transition: width 0.3s ease, margin 0.3s ease;
 }
 
 .dynamic-button:hover {
+    background-color: var(--bakalar-color-hover);
+    color: var(--primary-color);
+}
+
+.button-group.admin-active .dynamic-button {
+    width: 160px;
+}
+
+.gear-icon {
+    padding: 12px;
+    font-size: 1.2em;
+    color: black;
+    cursor: pointer;
+    visibility: hidden;
+    opacity: 0;
+    background-color: var(--bakalar-color-basic);
+    border: 2px solid var(--primary-color);
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    transition: opacity 0.3s ease, visibility 0s linear 0.3s;
+    position: absolute;
+    right: -40px;
+    transition: all 0.3s ease;
+}
+
+.gear-icon.visible {
+    visibility: visible;
+    opacity: 1;
+    transition: opacity 0.3s ease, visibility 0s linear;
+}
+
+.gear-icon:hover {
     background-color: var(--bakalar-color-hover);
     color: var(--primary-color);
 }
@@ -179,7 +225,7 @@
     width: 100%;
     padding: 10px;
     background-color: var(--secondary-color);
-    color: var(--primary-color);
+    color: var (--primary-color);
     border: 2px solid var(--primary-color);
     border-radius: 5px;
     cursor: pointer;
@@ -206,7 +252,7 @@
 
 .appearance-buttons button:hover {
     background-color: var(--primary-color);
-    color: var(--secondary-color);
+    color: var (--secondary-color);
 }
 
 #admin-button {
@@ -236,6 +282,119 @@
 }
 
 .reset-all:hover {
+    background-color: #cc0000;
+    border-color: #cc0000;
+}
+
+.confirm-verification {
+    padding: 10px 20px;
+    font-size: 1.2em;
+    background-color: var(--bakalar-color-basic);
+    color: black;
+    border: 2px solid var(--primary-color);
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    text-align: center;
+}
+
+.confirm-verification:hover {
+    background-color: var(--bakalar-color-hover);
+    color: var(--primary-color);
+}
+
+.button-group {
+    display: flex;
+    align-items: center;
+    width: 200px;
+    margin: 10px auto;
+    position: relative;
+    transition: width 0.3s ease;
+}
+
+.button-group.admin-active {
+    justify-content: flex-start;
+    width: 220px;
+    gap: 5px;
+}
+
+.button-group:not(.admin-active) .dynamic-button {
+    max-width: 200px;
+    margin: 0 auto;
+}
+
+.button-group.admin-active .dynamic-button {
+    max-width: 160px;
+    margin: 0;
+}
+
+.button-group.admin-active .gear-icon {
+    position: relative;
+    right: 0;
+}
+
+.class-edit-menu {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 3000;
+    justify-content: center;
+    align-items: center;
+}
+
+.menu-content {
+    background-color: var(--secondary-color);
+    padding: 20px;
+    border-radius: 10px;
+    position: relative;
+    width: 300px;
+}
+
+.menu-content h3 {
+    color: var(--primary-color);
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.close-menu {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    color: var(--primary-color);
+    font-size: 1.2em;
+    cursor: pointer;
+}
+
+.menu-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+.save-class-name {
+    padding: 8px 16px;
+    background-color: var(--bakalar-color-basic);
+    border: 2px solid var(--primary-color);
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.delete-class {
+    padding: 8px 16px;
+    background-color: #ff4444;
+    color: white;
+    border: 2px solid #ff4444;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.delete-class:hover {
     background-color: #cc0000;
     border-color: #cc0000;
 }
