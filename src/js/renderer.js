@@ -414,6 +414,56 @@ document.addEventListener('DOMContentLoaded', () => {
             'success');
     });
 
+    // Add accounts button handler
+    const accountsBtn = document.getElementById('accounts-button');
+    const accountsMenu = document.getElementById('accounts-menu');
+    const accountsOverlay = document.getElementById('accounts-overlay');
+    const closeAccountsBtn = document.getElementById('close-accounts');
+
+    accountsBtn.addEventListener('click', () => {
+        accountsMenu.classList.add('active');
+        accountsOverlay.classList.add('active');
+        
+        // Add Escape key handler when menu opens
+        function handleEscape(e) {
+            if (e.key === 'Escape') {
+                closeAccountsMenu();
+                document.removeEventListener('keydown', handleEscape);
+            }
+        }
+        document.addEventListener('keydown', handleEscape);
+    });
+
+    // Function to close accounts menu
+    function closeAccountsMenu() {
+        accountsMenu.classList.remove('active');
+        accountsOverlay.classList.remove('active');
+    }
+
+    // Close accounts menu when clicking X button
+    closeAccountsBtn.addEventListener('click', closeAccountsMenu);
+
+    // Close accounts menu when clicking overlay
+    accountsOverlay.addEventListener('click', closeAccountsMenu);
+
+    // Add accounts menu button handlers
+    document.getElementById('modify-accounts').addEventListener('click', () => {
+        showCustomAlert('Modify Accounts', 'Modify accounts functionality', 'info');
+        accountsMenu.classList.remove('active');
+        accountsOverlay.classList.remove('active');
+    });
+
+    document.getElementById('remove-accounts').addEventListener('click', () => {
+        showCustomAlert('Remove Accounts', 'Remove accounts functionality', 'info');
+        accountsMenu.classList.remove('active');
+        accountsOverlay.classList.remove('active');
+    });
+
+    document.getElementById('create-accounts').addEventListener('click', () => {
+        showCustomAlert('Create Account', 'Create account functionality', 'info');
+        accountsMenu.classList.remove('active');
+        accountsOverlay.classList.remove('active');
+    });
 });
 
 function updateTimetableForWeek(selectedDate) {
@@ -526,16 +576,28 @@ async function saveTimeTable() {
     isEditMode = false;
     if (isAdminMode) {
         isAdminMode = false;
-        // Reset admin button
+        
+        // Reset admin button text and style
         const adminBtn = document.getElementById('admin-button');
-        adminBtn.textContent = 'Admin Mode';
+        adminBtn.innerHTML = 'Admin Mode'; // Reset to default text
         adminBtn.disabled = false;
         adminBtn.classList.remove('admin-active');
         
-        // Hide gear icons when exiting admin mode
+        // Reset button group sizes and admin styles
+        document.querySelectorAll('.button-group').forEach(group => {
+            group.classList.remove('admin-active');
+            const dynamicBtn = group.querySelector('.dynamic-button');
+            if (dynamicBtn) {
+                dynamicBtn.style.width = '200px';
+            }
+        });
+        
+        // Hide gear icons
         document.querySelectorAll('.gear-icon').forEach(icon => {
             icon.classList.remove('visible');
         });
+        
+        // Reset edit button
         const editButton = document.querySelector('.edit-button');
         editButton.textContent = 'Edit';
         editButton.style.backgroundColor = '';
@@ -544,11 +606,20 @@ async function saveTimeTable() {
         const createNewBtn = document.getElementById('create-new');
         createNewBtn.classList.remove('admin-visible');
         
-        // Reset verification window properly
+        // Hide accounts button
+        const accountsBtn = document.getElementById('accounts-button');
+        accountsBtn.classList.remove('admin-visible');
+        
+        // Reset accounts menu
+        const accountsMenu = document.getElementById('accounts-menu');
+        const accountsOverlay = document.getElementById('accounts-overlay');
+        accountsMenu.classList.remove('active');
+        accountsOverlay.classList.remove('active');
+        
+        // Reset verification window
         const verificationWindow = document.getElementById('verification-window');
         verificationWindow.classList.remove('active');
         document.getElementById('verification-code').value = '';
-        // Don't set display to none, just remove active class
     }
 
     const rows = document.querySelectorAll('.week-table tbody tr');
@@ -766,6 +837,16 @@ function toggleAdminEditMode() {
     document.querySelectorAll('.gear-icon').forEach(icon => {
         icon.classList.toggle('visible', isAdminMode);
     });
+
+    // Show/hide accounts button
+    const accountsBtn = document.getElementById('accounts-button');
+    accountsBtn.classList.toggle('admin-visible', isAdminMode);
+
+    // Close accounts menu when exiting admin mode
+    if (!isAdminMode) {
+        accountsMenu.classList.remove('active');
+        accountsOverlay.classList.remove('active');
+    }
 }
 
 function showClassEditMenu(className) {

@@ -260,10 +260,9 @@
     padding: 15px 25px;
     font-size: 1.2em;
     position: absolute;
-    bottom: 20px;
+    bottom: 6%;
     left: 50%;
     transform: translateX(-50%);
-    bottom: 6%;
 }
 
 #admin-button.admin-active {
@@ -283,14 +282,14 @@
     padding: 15px 25px;
     font-size: 1.2em;
     position: absolute;
-    bottom: 15%;
+    bottom: 35%;
     left: 50%;
     transform: translateX(-50%);
     background-color: #ff4444;
     color: white;
     border-radius: 5px;
     cursor: pointer;
-    display: none; /* Hide by default */
+    display: none; /* Changed back to none by default */
     border: 4px solid;
     border-image: repeating-linear-gradient(
         45deg,
@@ -339,7 +338,7 @@ body.debug-mode .reset-all {
     width: 200px;
     margin: 10px auto;
     position: relative;
-    transition: width 0.3s ease;
+    transition: all 0.3s ease; /* Added transition for smooth size changes */
 }
 
 .button-group.admin-active {
@@ -351,6 +350,8 @@ body.debug-mode .reset-all {
 .button-group:not(.admin-active) .dynamic-button {
     max-width: 200px;
     margin: 0 auto;
+    width: 200px; /* Fixed width when not in admin mode */
+    transition: all 0.3s ease;
 }
 
 .button-group.admin-active .dynamic-button {
@@ -434,4 +435,30 @@ body.debug-mode .reset-all {
     font-weight: bold;
     vertical-align: middle;
     margin-left: 5px;
+}
+
+#accounts-button {
+    display: none; /* Hide by default */
+    width: 90%;
+    padding: 15px 25px;
+    font-size: 1.2em;
+    position: absolute;
+    bottom: 15%; /* Position between Reset All (35%) and Admin (6%) */
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--bakalar-color-basic);
+    color: black;
+    border: 2px solid var(--primary-color);
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+#accounts-button.admin-visible {
+    display: block;
+}
+
+#accounts-button:hover {
+    background-color: var(--bakalar-color-hover);
+    color: var(--primary-color);
 }

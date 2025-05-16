@@ -1015,3 +1015,83 @@ body.debug-mode {
     min-height: 100vh;
     box-sizing: border-box;
 }
+
+.accounts-menu {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: var(--secondary-color);
+    border: 2px solid var(--primary-color);
+    border-radius: 10px;
+    padding: 40px 20px 20px 20px; /* Increased top padding for close button */
+    z-index: 3000;
+    min-width: 250px;
+}
+
+.close-accounts-button {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    margin: 0;
+    background: none;
+    border: none;
+    color: var(--primary-color);
+    font-size: 1.5em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.close-accounts-button:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
+}
+
+.accounts-menu button:not(.close-accounts-button) {
+    width: 100%;
+    padding: 15px;
+    margin: 5px 0;
+    background-color: var(--bakalar-color-basic);
+    color: black;
+    border: 2px solid var(--primary-color);
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 1.1em;
+    display: block;
+    transition: all 0.2s ease;
+}
+
+.accounts-menu button:not(.close-accounts-button):hover {
+    background-color: var(--bakalar-color-hover);
+    color: var(--primary-color);
+}
+
+.accounts-menu.active {
+    display: block;
+}
+
+.accounts-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 2999;
+    opacity: 0;
+    animation: fadeOut 0.3s ease-out;
+}
+
+.accounts-overlay.active {
+    display: block;
+    opacity: 1;
+    animation: fadeIn 0.3s ease-out;
+}

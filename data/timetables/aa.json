@@ -1,0 +1,57 @@
+{
+  "data": {
+    "2025-05-05": {
+      "1": {
+        "content": "dd",
+        "isPermanent": true
+      }
+    },
+    "2025-05-08": {
+      "1": {
+        "content": "d",
+        "isPermanent": true
+      }
+    },
+    "2025-05-12": {
+      "1": {
+        "content": "dd",
+        "isPermanent": true
+      }
+    },
+    "2025-05-14": {
+      "3": {
+        "content": "j",
+        "isPermanent": true
+      }
+    },
+    "2025-05-15": {
+      "1": {
+        "content": "d",
+        "isPermanent": true
+      }
+    },
+    "2025-05-13": {
+      "4": {
+        "content": "j",
+        "isPermanent": true
+      }
+    }
+  },
+  "permanentHours": {
+    "0": {},
+    "1": {
+      "2": "dd"
+    },
+    "2": {
+      "5": "j"
+    },
+    "3": {
+      "4": "j"
+    },
+    "4": {
+      "2": "d"
+    }
+  },
+  "calendar": "<table class=\"calendar-table\"><tbody><tr><th>Po</th><th>Út</th><th>St</th><th>Čt</th><th>Pá</th><th>So</th><th>Ne</th></tr><tr><td class=\"prev-month month-dates\">28</td><td class=\"prev-month month-dates\">29</td><td class=\"prev-month month-dates\">30</td><td class=\"hoverable\">1</td><td class=\"hoverable\">2</td><td class=\"hoverable\">3</td><td class=\"hoverable\">4</td></tr><tr><td class=\"hoverable\">5</td><td class=\"hoverable\">6</td><td class=\"hoverable\">7</td><td class=\"hoverable\">8</td><td class=\"hoverable\">9</td><td class=\"hoverable\">10</td><td class=\"hoverable\">11</td></tr><tr><td class=\"hoverable\">12</td><td class=\"hoverable\">13</td><td class=\"hoverable\">14</td><td class=\"hoverable\">15</td><td class=\"hoverable current-day\">16</td><td class=\"hoverable\">17</td><td class=\"hoverable\">18</td></tr><tr><td class=\"hoverable\">19</td><td class=\"hoverable\">20</td><td class=\"hoverable\">21</td><td class=\"hoverable\">22</td><td class=\"hoverable\">23</td><td class=\"hoverable\">24</td><td class=\"hoverable\">25</td></tr><tr><td class=\"hoverable\">26</td><td class=\"hoverable\">27</td><td class=\"hoverable\">28</td><td class=\"hoverable\">29</td><td class=\"hoverable\">30</td><td class=\"hoverable\">31</td><td class=\"next-month month-dates\">1</td></tr></tbody></table>",
+  "currentWeek": "2025-05-11T22:00:00.000Z"
+}
