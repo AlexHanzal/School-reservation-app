@@ -1,0 +1,14 @@
+// CHANGES \\
+- fixed broken html code
+- fixed calendar and timetable buttons positioning
+- fixed permanent hour repeating
+   - 4 weeks in both directions (future and past)
+- added debug mode
+   - accessed by pressing button in the 
+   bottom BOTTOM right corner OR by pressing Shift+a+b
+- moved Atomové Tlačítko™ into debug mode
+- fixed permanent hours' tancování
+- persisting timetable view and selected class across refreshes
+
+// NEEDS FIXING \\
+- class editing buttons (rename ; delete)

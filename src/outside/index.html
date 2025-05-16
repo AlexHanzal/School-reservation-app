@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day App</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/buttons.css">
+</head>
+<body>
+  <header class="header" id="header">
+    <h1 class="title">Zaber si</h1>
+    <div class="window-controls">
+      
+    </div>
+  </header>
+  <aside class="sidebar">
+    <ul>
+      <li id="dynamic-links-container"></li> <!-- Container for dynamic links -->
+      <li><button class="create-new" id="create-new">+</button></li>
+    </ul>
+    <button class="reset-all" id="reset-all">Reset All</button>
+    <button class="admin-button" id="admin-button">Admin</button>
+  </aside>
+  <div class="select-screen" id="select-screen">
+    <div class="select-window">
+      <button class="close-select" id="close-select">X</button>
+      <div class="input-group">
+        <label for="name-input">Name:</label>
+        <input type="text" id="name-input" placeholder="Enter name">
+      </div>
+      <div class="input-group">
+        <label for="type-select">Type:</label>
+        <select id="type-select">
+          <option value="thing">Thing</option>
+          <option value="class">Class</option>
+        </select>
+      </div>
+      <button class="submit-button" id="submit-button">Submit</button>
+    </div>
+  </div>
+  
+  <div class="time-table">
+    <h2>Time Table</h2>
+    <div class="timetable-content">
+      <div class="table-container">
+        <table class="week-table">
+          <thead>
+            <tr>
+              <th>Day</th>
+              <th>1</th>
+              <th>2</th>
+              <th>3</th>
+              <th>4</th>
+              <th>5</th>
+              <th>6</th>
+              <th>7</th>
+              <th>8</th>
+              <th>9</th>
+              <th>10</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Pondělí</td>
+              <td></td><td></td><td></td><td></td><td></td>
+              <td></td><td></td><td></td><td></td><td></td>
+            </tr>
+            <tr>
+              <td>Úterý</td>
+              <td></td><td></td><td></td><td></td><td></td>
+              <td></td><td></td><td></td><td></td><td></td>
+            </tr>
+            <tr>
+              <td>Středa</td>
+              <td></td><td></td><td></td><td></td><td></td>
+              <td></td><td></td><td></td><td></td><td></td>
+            </tr>
+            <tr>
+              <td>Čtvrtek</td>
+              <td></td><td></td><td></td><td></td><td></td>
+              <td></td><td></td><td></td><td></td><td></td>
+            </tr>
+            <tr>
+              <td>Pátek</td>
+              <td></td><td></td><td></td><td></td><td></td>
+              <td></td><td></td><td></td><td></td><td></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="bottom-content">
+        <div class="time-table-buttons">
+          <button class="edit-button">Edit</button>
+          <button class="save-button">Save</button>
+          
+        </div>
+        <div class="timetable-calendar">
+          <div class="calendar-header">
+            <button class="prev-button">&lt;</button>
+            <h3 class="calendar-title" id="timetable-calendar-title"></h3>
+            <button class="next-button">&gt;</button>
+          </div>
+          <div class="calendar" id="timetable-calendar"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="pop-up" id="pop-up">
+    <div class="calendar-header">
+      <h2 class="calendar-title" id="calendar-title"></h2>
+    </div>
+    <button class="close-button" id="close-button">X</button>
+    <div class="calendar" id="calendar"></div>
+    <div class="calendar-buttons">
+      <button class="prev-button">&lt;</button>
+      <button class="next-button">&gt;</button>
+    </div>
+  </div>
+  <div class="verification-window" id="verification-window">
+    <div class="verification-content">
+      <h2>Verification</h2>
+      <button class="close-verification-button" id="close-verification">X</button>
+      <p>Please enter the code:</p>
+      <input type="password" id="verification-code" placeholder="Enter code">
+      <div class="verification-buttons">
+        <button class="confirm-verification" id="confirm-verification">Confirm</button>
+      </div>
+    </div>
+  </div>
+  <script src="/js/renderer.js"></script>
+  <div class="custom-alert-overlay" id="alertOverlay"></div>
+  <div class="custom-alert" id="customAlert">
+    <h2>Success!</h2>
+    <p>Admin mode activated</p>
+    <button>OK</button>
+  </div>
+  <div class="class-edit-menu" id="classEditMenu">
+    <div class="menu-content">
+      <h3>Edit Class</h3>
+      <button class="close-menu" id="closeClassEdit">✕</button>
+      <div class="input-group">
+        <label for="class-name-input">Class Name:</label>
+        <input type="text" id="class-name-input">
+      </div>
+      <div class="menu-buttons">
+        <button class="save-class-name">Save</button>
+        <button class="delete-class">Delete Class</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
