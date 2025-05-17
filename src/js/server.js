@@ -23,7 +23,28 @@ function getLocalIpAddress() {
 const host = getLocalIpAddress();
 const DATA_DIR = path.join(__dirname, '../../data/timetables');
 
-// Update initialization function
+// Function to generate random file ID
+function generateFileId(length = 12) {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    for (let i = 0; i < length; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+}
+
+// Update these lines for correct static file serving
+app.use(cors());
+app.use(express.json());
+// Serve static files from the src directory
+app.use(express.static(path.join(__dirname, '../../src')));
+
+// Add root route before API routes
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, '../../src/outside/index.html'));
+});
+
+// Update initialization function to use fileId for lookups
 async function initializeDataStorage() {
     try {
         await fs.mkdir(DATA_DIR, { recursive: true });
@@ -32,9 +53,9 @@ async function initializeDataStorage() {
         
         for (const file of files) {
             if (file.endsWith('.json')) {
-                const name = file.replace('.json', '');
                 const data = await fs.readFile(path.join(DATA_DIR, file), 'utf8');
-                timetables[name] = JSON.parse(data);
+                const parsedData = JSON.parse(data);
+                timetables[parsedData.fileId] = parsedData;
             }
         }
         return timetables;
@@ -44,35 +65,6 @@ async function initializeDataStorage() {
     }
 }
 
-// Update save function
-async function saveTimetables() {
-    try {
-        await fs.mkdir(DATA_DIR, { recursive: true });
-        for (const [name, data] of Object.entries(timetables)) {
-            const filename = `${name}.json`;
-            await fs.writeFile(
-                path.join(DATA_DIR, filename),
-                JSON.stringify(data, null, 2)
-            );
-        }
-    } catch (error) {
-        console.error('Failed to save timetables:', error);
-    }
-}
-
-app.use(cors());
-app.use(express.json());
-app.use(express.static(path.join(__dirname, '../')));
-
-// Serve static files from src directory
-app.use('/css', express.static(path.join(__dirname, '../css')));
-app.use('/js', express.static(path.join(__dirname, '../js')));
-
-// Root route
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '../outside/index.html'));
-});
-
 // In-memory storage (now backed by file)
 let timetables = {};
 
@@ -80,10 +72,21 @@ let timetables = {};
 app.get('/api/timetables', async (req, res) => {
     try {
         const files = await fs.readdir(DATA_DIR);
-        const timetableNames = files
-            .filter(file => file.endsWith('.json'))
-            .map(file => file.replace('.json', ''));
-        res.json(timetableNames);
+        const timetables = [];
+        
+        for (const file of files) {
+            if (file.endsWith('.json')) {
+                const data = await fs.readFile(path.join(DATA_DIR, file), 'utf8');
+                const timetable = JSON.parse(data);
+                if (timetable.className) {
+                    timetables.push({
+                        className: timetable.className,
+                        fileId: timetable.fileId
+                    });
+                }
+            }
+        }
+        res.json(timetables.map(t => t.className));
     } catch (error) {
         console.error('Failed to list timetables:', error);
         res.status(500).json({ success: false, error: 'Failed to list timetables' });
@@ -92,7 +95,17 @@ app.get('/api/timetables', async (req, res) => {
 
 app.post('/api/timetables', async (req, res) => {
     const { name } = req.body;
+    if (!name) {
+        res.status(400).json({ success: false, error: 'Name is required' });
+        return;
+    }
+
+    const fileId = generateFileId();
+    const filename = `${fileId}.json`;
+    
     const timetableData = {
+        className: name,
+        fileId: fileId,
         data: {},
         calendar: null,
         currentWeek: new Date().toISOString(),
@@ -101,41 +114,98 @@ app.post('/api/timetables', async (req, res) => {
     
     try {
         await fs.writeFile(
-            path.join(DATA_DIR, `${name}.json`),
+            path.join(DATA_DIR, filename),
             JSON.stringify(timetableData, null, 2)
         );
-        res.json({ success: true });
+        res.json({ success: true, fileId: fileId, className: name });
     } catch (error) {
         console.error('Failed to create timetable:', error);
         res.status(500).json({ success: false, error: 'Failed to create timetable' });
     }
 });
 
-app.put('/api/timetables/:name', async (req, res) => {
-    const { name } = req.params;
-    const data = req.body;
+// Add this utility function after the generateFileId function
+async function deleteOldTimetableFiles(className) {
+    const files = await fs.readdir(DATA_DIR);
+    for (const file of files) {
+        if (file.endsWith('.json')) {
+            const filePath = path.join(DATA_DIR, file);
+            const data = await fs.readFile(filePath, 'utf8');
+            const timetable = JSON.parse(data);
+            if (timetable.className === className) {
+                await fs.unlink(filePath);
+            }
+        }
+    }
+}
 
+// Update the PUT route to preserve all existing data
+app.put('/api/timetables/:name', async (req, res) => {
     try {
-        await fs.writeFile(
-            path.join(DATA_DIR, `${name}.json`),
-            JSON.stringify(data, null, 2)
-        );
-        res.json({ success: true });
+        const { name } = req.params;
+        const { fileId, data } = req.body;
+
+        if (!fileId) {
+            return res.status(400).json({ success: false, error: 'FileId is required' });
+        }
+
+        const filePath = path.join(DATA_DIR, `${fileId}.json`);
+        const tempPath = path.join(DATA_DIR, `${fileId}_temp.json`);
+
+        try {
+            // Create new data structure with only necessary data
+            const currentData = {
+                className: name,
+                fileId: fileId,
+                data: data || {},  // Only preserve the data object
+                calendar: "",
+                currentWeek: new Date().toISOString(),
+                permanentHours: {
+                    "0": {},
+                    "1": {},
+                    "2": {},
+                    "3": {},
+                    "4": {}
+                }
+            };
+
+            await fs.writeFile(
+                tempPath,
+                JSON.stringify(currentData, null, 2)
+            );
+
+            await fs.rename(tempPath, filePath);
+
+            res.json({ success: true, fileId });
+        } catch (error) {
+            await fs.unlink(tempPath).catch(() => {});
+            throw error;
+        }
     } catch (error) {
-        console.error('Failed to update timetable:', error);
-        res.status(500).json({ success: false, error: 'Failed to update timetable' });
+        console.error('Failed to update className:', error);
+        return res.status(500).json({ success: false, error: 'Failed to update className' });
     }
 });
 
 app.get('/api/timetables/:name', async (req, res) => {
-    const { name } = req.params;
     try {
-        const data = await fs.readFile(path.join(DATA_DIR, `${name}.json`), 'utf8');
-        const timetable = JSON.parse(data);
-        res.json(timetable);
+        const { name } = req.params;
+        const files = await fs.readdir(DATA_DIR);
+        
+        for (const file of files) {
+            if (file.endsWith('.json')) {
+                const data = await fs.readFile(path.join(DATA_DIR, file), 'utf8');
+                const timetable = JSON.parse(data);
+                if (timetable.className === name) {
+                    res.json(timetable);
+                    return;
+                }
+            }
+        }
+        res.status(404).json({ success: false, error: 'Timetable not found' });
     } catch (error) {
         console.error('Failed to read timetable:', error);
-        res.status(404).json({ success: false, error: 'Timetable not found' });
+        res.status(500).json({ success: false, error: 'Failed to read timetable' });
     }
 });
 

@@ -1,6 +1,9 @@
 | CHANGES |
-- added accounts system base button
+- Updated debug mode
+- Changed debug mode activation keyboard sequence to "Shift+A+S"
+- Updated class saving logic
+- Fixed class renaming
 
 
 | NEEDS FIXING |
-- class editing buttons (rename ; delete)
+- class editing buttons (rename ; delete) 

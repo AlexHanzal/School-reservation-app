@@ -1,24 +1,9 @@
 {
-  "name": "school-reservation-app",
-  "version": "0.10.1",
-  "description": "School reservation application",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js",
-    "server": "nodemon server.js",
-    "dev": "browser-sync start --server 'src' --files 'src' --port 8000",
-    "dev:all": "concurrently \"npm run server\" \"npm run dev\""
-  },
   "dependencies": {
     "corey": "^1.0.0",
     "cors": "^2.8.5",
     "electron": "^36.2.1",
-    "express": "^4.21.2",
+    "express": "^5.1.0",
     "path": "^0.12.7"
-  },
-  "devDependencies": {
-    "browser-sync": "^3.0.4",
-    "concurrently": "^8.2.0",
-    "nodemon": "^3.0.1"
   }
 }

@@ -111,7 +111,7 @@ function selectDate(day) {
     updateTimetableForWeek(selectedDate);
 }
 
-// Initialize storage for timetables
+// Update timetables initialization
 let timetables = {};
 
 function createDynamicButton(name) {
@@ -142,9 +142,9 @@ function createDynamicButton(name) {
 function showTimetable(name) {
     const timeTable = document.querySelector('.time-table');
     const timeTableTitle = timeTable.querySelector('h2');
-    timeTableTitle.textContent = name;
+    timeTableTitle.textContent = timetables[name].className; // Use className from timetables
     timeTable.style.display = 'block';
-    generateCalendar(); // Update calendar when showing timetable
+    generateCalendar();
     currentTimetableName = name;
     
     // Clear any permanent hour styling from previous timetables
@@ -153,69 +153,67 @@ function showTimetable(name) {
         delete cell.dataset.permanent;
     });
 
-    // Show saved week or current week
     const savedData = timetables[name];
-    if (savedData && savedData.currentWeek) {
-        updateTimetableForWeek(new Date(savedData.currentWeek));
-    } else {
-        updateTimetableForWeek(new Date());
-    }
-    
-    // Fix data loading in showTimetable
-    if (savedData && savedData.data) {
-        const weekData = savedData.data[new Date(savedData.currentWeek).toISOString().split('T')[0]];
-        const rows = document.querySelectorAll('.week-table tbody tr');
+    if (savedData) {
+        if (savedData.currentWeek) {
+            updateTimetableForWeek(new Date(savedData.currentWeek));
+        } else {
+            updateTimetableForWeek(new Date());
+        }
         
-        rows.forEach((row, dayIndex) => {
-            const cells = row.querySelectorAll('td:not(:first-child)');
-            if (weekData && Array.isArray(weekData[dayIndex])) {
-                weekData[dayIndex].forEach((content, cellIndex) => {
-                    cells[cellIndex].textContent = content || '';
-                });
-            }
-        });
+        if (savedData.data) {
+            const weekData = savedData.data[new Date(savedData.currentWeek).toISOString().split('T')[0]];
+            const rows = document.querySelectorAll('.week-table tbody tr');
+            
+            rows.forEach((row, dayIndex) => {
+                const cells = row.querySelectorAll('td:not(:first-child)');
+                if (weekData && Array.isArray(weekData[dayIndex])) {
+                    weekData[dayIndex].forEach((content, cellIndex) => {
+                        cells[cellIndex].textContent = content || '';
+                    });
+                }
+            });
+        }
     }
     
-    // Save current view state
     localStorage.setItem('currentTimetable', name);
 }
 
-// Add submit button handler
+// Update submit button handler
 document.getElementById('submit-button').addEventListener('click', async () => {
     const nameInput = document.getElementById('name-input');
     const name = nameInput.value.trim();
     
     if (name) {
         try {
-            await fetch(`${API_URL}/timetables`, {
+            const response = await fetch(`${API_URL}/timetables`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({ name })
             });
-
-            // Create and add dynamic button
-            const dynamicButton = createDynamicButton(name);
-            const container = document.getElementById('dynamic-links-container');
-            container.appendChild(dynamicButton);
             
-            // Initialize timetable data
-            timetables[name] = {
-                data: {},
-                calendar: document.getElementById('timetable-calendar').innerHTML
-            };
-            
-            // Show timetable
-            showTimetable(name);
-            
-            // Hide select screen
-            document.getElementById('select-screen').style.display = 'none';
-            
-            // Clear input
-            nameInput.value = '';
+            const result = await response.json();
+            if (result.success) {
+                const dynamicButton = createDynamicButton(name);
+                const container = document.getElementById('dynamic-links-container');
+                container.appendChild(dynamicButton);
+                
+                timetables[name] = {
+                    className: name,
+                    fileId: result.fileId,
+                    data: {},
+                    calendar: document.getElementById('timetable-calendar').innerHTML
+                };
+                
+                showTimetable(name);
+                document.getElementById('select-screen').style.display = 'none';
+                nameInput.value = '';
+            }
         } catch (error) {
             console.error('Failed to create timetable:', error);
+            showCustomAlert('Error', 'Failed to create timetable', 'error');
         }
     }
 });
@@ -229,132 +227,63 @@ document.addEventListener('DOMContentLoaded', () => {
             showTimetable(savedTimetable);
         }
     });
-    // Add pop-up functionality for create-new button
-    const createNewBtn = document.getElementById('create-new');
-    const popUp = document.getElementById('select-screen');
-    const closeBtn = document.getElementById('close-button');
 
-    createNewBtn.addEventListener('click', () => {
-        popUp.classList.add('active');
-        setTimeout(() => popUp.classList.add('active'), 10);
-        generateCalendar(); // Refresh calendar when showing
-    });
+    // Remove nested DOMContentLoaded and move debug menu functionality here
+    const debugButton = document.getElementById('debug-button');
+    const debugMenu = document.getElementById('debug-menu');
+    const debugOverlay = document.getElementById('debug-overlay');
+    const closeDebug = document.getElementById('close-debug');
 
-    closeBtn.addEventListener('click', () => {
-        popUp.classList.remove('active');
-        setTimeout(() => popUp.style.display = 'none', 300);
-    });
-
-    // Add navigation button handlers
-    document.querySelector('.timetable-calendar .prev-button').addEventListener('click', () => {
-        currentMonth--;
-        if (currentMonth < 0) {
-            currentMonth = 11;
-            currentYear--;
-        }
-        generateCalendar();
-    });
-
-    document.querySelector('.timetable-calendar .next-button').addEventListener('click', () => {
-        currentMonth++;
-        if (currentMonth > 11) {
-            currentMonth = 0;
-            currentYear++;
-        }
-        generateCalendar();
-    });
-
-    // Add edit button handler
-    document.querySelector('.edit-button').addEventListener('click', toggleEditMode);
-    
-    // Add save button handler
-    document.querySelector('.save-button').addEventListener('click', saveTimeTable);
-
-    // Add admin button functionality
-    const adminBtn = document.getElementById('admin-button');
-    const verificationWindow = document.getElementById('verification-window');
-    const closeVerification = document.getElementById('close-verification');
-    const confirmVerification = document.getElementById('confirm-verification');
-    const verificationCode = document.getElementById('verification-code');
-
-    adminBtn.addEventListener('click', () => {
-        const verificationWindow = document.getElementById('verification-window');
-        verificationWindow.style.display = 'flex'; // Set display to flex first
-        setTimeout(() => {
-            verificationWindow.classList.add('active');
-            verificationCode.focus();
-        }, 10);
-    });
-
-    // Add Enter key functionality
-    verificationCode.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            confirmVerification.click();
-        }
-    });
-
-    closeVerification.addEventListener('click', () => {
-        verificationWindow.classList.remove('active');
-        setTimeout(() => {
-            verificationWindow.style.display = 'none';
-            document.getElementById('verification-code').value = '';
-        }, 300);
-    });
-
-    confirmVerification.addEventListener('click', () => {
-        const code = document.getElementById('verification-code').value;
-        if (code === '1918') {
-            isAdminMode = true;
-            toggleAdminEditMode();
-            // Show gear icons
-            document.querySelectorAll('.gear-icon').forEach(icon => {
-                icon.classList.add('visible');
-            });
-            verificationWindow.style.display = 'none';
-            document.getElementById('verification-code').value = '';
-            
-            // Update admin button with larger check symbol
-            const adminBtn = document.getElementById('admin-button');
-            adminBtn.innerHTML = 'Admin Mode <span class="admin-check">✓</span>';
-            adminBtn.disabled = true;
-            adminBtn.classList.add('admin-active');
-            
-            showCustomAlert('Success', 'Admin mode activated', 'success');
-        } else {
-            showCustomAlert('Error', 'Invalid verification code', 'error');
-        }
-    });
-
-    // Update reset all button handler
-    document.getElementById('reset-all').addEventListener('click', async () => {
+    // Debug menu button handlers
+    document.getElementById('debug-reset-all').addEventListener('click', async () => {
         const confirmReset = confirm('Are you sure you want to delete all timetables? This cannot be undone.');
         if (confirmReset) {
             try {
-                const response = await fetch(`${API_URL}/timetables`, {
-                    method: 'DELETE'
-                });
-                
-                if (response.ok) {
-                    // Clear local data
-                    timetables = {};
-                    
-                    // Clear UI
-                    const container = document.getElementById('dynamic-links-container');
-                    container.innerHTML = '';
-                    
-                    // Hide timetable view
-                    document.querySelector('.time-table').style.display = 'none';
-                    
-                    showCustomAlert('Success', 'All timetables have been deleted', 'success');
-                } else {
-                    throw new Error('Failed to reset timetables');
-                }
+                await fetch(`${API_URL}/timetables`, { method: 'DELETE' });
+                timetables = {};
+                document.getElementById('dynamic-links-container').innerHTML = '';
+                document.querySelector('.time-table').style.display = 'none';
+                showCustomAlert('Success', 'All timetables have been deleted', 'success');
             } catch (error) {
                 console.error('Failed to reset timetables:', error);
                 showCustomAlert('Error', 'Failed to reset timetables', 'error');
             }
         }
+        debugMenu.classList.remove('active');
+        debugOverlay.classList.remove('active');
+    });
+
+    document.getElementById('debug-create-new').addEventListener('click', () => {
+        const selectScreen = document.getElementById('select-screen');
+        selectScreen.classList.add('active');
+        setTimeout(() => selectScreen.classList.add('active'), 10);
+        generateCalendar();
+        debugMenu.classList.remove('active');
+        debugOverlay.classList.remove('active');
+    });
+
+    document.getElementById('debug-accounts').addEventListener('click', () => {
+        const accountsMenu = document.getElementById('accounts-menu');
+        const accountsOverlay = document.getElementById('accounts-overlay');
+        accountsMenu.classList.add('active');
+        accountsOverlay.classList.add('active');
+        debugMenu.classList.remove('active');
+        debugOverlay.classList.remove('active');
+    });
+
+    debugButton.addEventListener('click', () => {
+        debugMenu.classList.add('active');
+        debugOverlay.classList.add('active');
+    });
+
+    closeDebug.addEventListener('click', () => {
+        debugMenu.classList.remove('active');
+        debugOverlay.classList.remove('active');
+    });
+
+    debugOverlay.addEventListener('click', () => {
+        debugMenu.classList.remove('active');
+        debugOverlay.classList.remove('active');
     });
 
     // Create debug button
@@ -362,109 +291,54 @@ document.addEventListener('DOMContentLoaded', () => {
     debugBtn.id = 'debug-input';
     debugBtn.type = 'button'; // Prevent form submission behavior
     document.body.appendChild(debugBtn);
-
-    // Track key states for debug mode
-    const keyStates = {
-        Shift: false,
-        KeyA: false,
-        KeyB: false
-    };
-
-    function resetKeyStates() {
-        keyStates.Shift = false;
-        keyStates.KeyA = false;
-        keyStates.KeyB = false;
-    }
-
-    // Handle debug mode key combination
-    document.addEventListener('keydown', (e) => {
-        // Don't trigger when alert is active or when target is debug button
-        if (e.target === debugBtn || document.querySelector('.custom-alert.active')) return;
-        
-        if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') keyStates.Shift = true;
-        if (e.code === 'KeyA') keyStates.KeyA = true;
-        if (e.code === 'KeyB') keyStates.KeyB = true;
-
-        if (keyStates.Shift && keyStates.KeyA && keyStates.KeyB) {
-            document.body.classList.toggle('debug-mode');
-            showCustomAlert('Debug Mode', 
-                document.body.classList.contains('debug-mode') ? 
-                'Debug mode activated' : 'Debug mode deactivated', 
-                'success');
-            resetKeyStates(); // Reset states after triggering
-        }
-    });
-
-    document.addEventListener('keyup', (e) => {
-        if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') keyStates.Shift = false;
-        if (e.code === 'KeyA') keyStates.KeyA = false;
-        if (e.code === 'KeyB') keyStates.KeyB = false;
-    });
-
-    // Also reset states when window loses focus
-    window.addEventListener('blur', resetKeyStates);
-
-    // Handle debug button click
-    debugBtn.addEventListener('click', (e) => {
-        e.preventDefault(); // Prevent any default button behavior
-        document.body.classList.toggle('debug-mode');
-        showCustomAlert('Debug Mode', 
-            document.body.classList.contains('debug-mode') ? 
-            'Debug mode activated' : 'Debug mode deactivated', 
-            'success');
-    });
-
-    // Add accounts button handler
-    const accountsBtn = document.getElementById('accounts-button');
-    const accountsMenu = document.getElementById('accounts-menu');
-    const accountsOverlay = document.getElementById('accounts-overlay');
-    const closeAccountsBtn = document.getElementById('close-accounts');
-
-    accountsBtn.addEventListener('click', () => {
-        accountsMenu.classList.add('active');
-        accountsOverlay.classList.add('active');
-        
-        // Add Escape key handler when menu opens
-        function handleEscape(e) {
-            if (e.key === 'Escape') {
-                closeAccountsMenu();
-                document.removeEventListener('keydown', handleEscape);
-            }
-        }
-        document.addEventListener('keydown', handleEscape);
-    });
-
-    // Function to close accounts menu
-    function closeAccountsMenu() {
-        accountsMenu.classList.remove('active');
-        accountsOverlay.classList.remove('active');
-    }
-
-    // Close accounts menu when clicking X button
-    closeAccountsBtn.addEventListener('click', closeAccountsMenu);
-
-    // Close accounts menu when clicking overlay
-    accountsOverlay.addEventListener('click', closeAccountsMenu);
-
-    // Add accounts menu button handlers
-    document.getElementById('modify-accounts').addEventListener('click', () => {
-        showCustomAlert('Modify Accounts', 'Modify accounts functionality', 'info');
-        accountsMenu.classList.remove('active');
-        accountsOverlay.classList.remove('active');
-    });
-
-    document.getElementById('remove-accounts').addEventListener('click', () => {
-        showCustomAlert('Remove Accounts', 'Remove accounts functionality', 'info');
-        accountsMenu.classList.remove('active');
-        accountsOverlay.classList.remove('active');
-    });
-
-    document.getElementById('create-accounts').addEventListener('click', () => {
-        showCustomAlert('Create Account', 'Create account functionality', 'info');
-        accountsMenu.classList.remove('active');
-        accountsOverlay.classList.remove('active');
-    });
 });
+
+const keyStates = {
+    Shift: false,
+    KeyA: false,
+    KeyS: false  // Changed from KeyB to KeyS
+};
+
+function resetKeyStates() {
+    keyStates.Shift = false;
+    keyStates.KeyA = false;
+    keyStates.KeyS = false;  // Changed from KeyB to KeyS
+}
+
+// Add global keydown handler
+document.addEventListener('keydown', (e) => {
+    if (document.querySelector('.custom-alert.active')) return;
+    
+    if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') keyStates.Shift = true;
+    if (e.code === 'KeyA') keyStates.KeyA = true;
+    if (e.code === 'KeyS') keyStates.KeyS = true;  // Changed from KeyB to KeyS
+
+    if (keyStates.Shift && keyStates.KeyA && keyStates.KeyS) {  // Changed from KeyB to KeyS
+        const wasInDebugMode = document.body.classList.contains('debug-mode');
+        document.body.classList.toggle('debug-mode');
+        const isDebugMode = document.body.classList.contains('debug-mode');
+        
+        if (isDebugMode) {
+            enableDebugMode();
+        } else {
+            disableDebugMode();
+        }
+        
+        resetKeyStates();
+    }
+});
+
+// Add global keyup handler
+document.addEventListener('keyup', (e) => {
+    if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') keyStates.Shift = false;
+    if (e.code === 'KeyA') keyStates.KeyA = false;
+    if (e.code === 'KeyS') keyStates.KeyS = false;  // Changed from KeyB to KeyS
+});
+
+// Add global window blur handler
+window.addEventListener('blur', resetKeyStates);
+
+// ...rest of the existing code...
 
 function updateTimetableForWeek(selectedDate) {
     // Get Monday of selected week
@@ -550,7 +424,7 @@ function findPermanentHoursForDay(dayIndex) {
 }
 
 function toggleEditMode() {
-    if (isAdminMode) return; // Don't toggle if in admin mode
+    if (isAdminMode) return;
     
     isEditMode = !isEditMode;
     const editButton = document.querySelector('.edit-button');
@@ -558,15 +432,15 @@ function toggleEditMode() {
     
     const cells = document.querySelectorAll('.week-table tbody td:not(:first-child)');
     cells.forEach(cell => {
-        // Only allow editing of non-permanent cells in edit mode
         if (!cell.classList.contains('permanent-hour')) {
             cell.setAttribute('contenteditable', isEditMode);
             cell.classList.toggle('editable', isEditMode);
-        } else {
-            cell.setAttribute('contenteditable', 'false');
-            cell.classList.remove('editable');
         }
     });
+    
+    // Show/hide save button based on edit mode
+    const saveButton = document.querySelector('.save-button');
+    saveButton.style.display = isEditMode ? 'block' : 'none';
 }
 
 async function saveTimeTable() {
@@ -709,38 +583,34 @@ async function loadTimetables() {
         
         const timetableNames = await response.json();
         console.log('Timetable names:', timetableNames);
+        
+        // Clear existing buttons first
+        document.getElementById('dynamic-links-container').innerHTML = '';
 
         for (const name of timetableNames) {
             try {
                 console.log(`Fetching timetable: ${name}`);
+                // Use the className to fetch the timetable
                 const timetableResponse = await fetch(`${API_URL}/timetables/${name}`);
-                console.log(`Timetable ${name} response:`, timetableResponse);
                 
                 if (!timetableResponse.ok) {
                     throw new Error(`HTTP error! status: ${timetableResponse.status}`);
                 }
 
-                const text = await timetableResponse.text();
-                console.log(`Raw timetable data for ${name}:`, text);
-                
-                let data;
-                try {
-                    data = JSON.parse(text);
-                } catch (e) {
-                    console.error(`JSON parse error for ${name}:`, e);
-                    continue;
-                }
-
+                const data = await timetableResponse.json();
                 console.log(`Parsed timetable data for ${name}:`, data);
                 
-                timetables[name] = {
+                // Store with fileId to prevent duplicates
+                timetables[data.className] = { // Use className as key
+                    ...data,
                     data: data.data || {},
                     permanentHours: data.permanentHours || {},
                     calendar: data.calendar || '',
-                    currentWeek: data.currentWeek || new Date().toISOString()
+                    currentWeek: data.currentWeek || new Date().toISOString(),
+                    fileId: data.fileId // Ensure we keep the fileId
                 };
                 
-                const dynamicButton = createDynamicButton(name);
+                const dynamicButton = createDynamicButton(data.className); // Use className
                 document.getElementById('dynamic-links-container').appendChild(dynamicButton);
             } catch (error) {
                 console.error(`Failed to load timetable ${name}:`, error);
@@ -751,14 +621,21 @@ async function loadTimetables() {
     }
 }
 
+// Update saveTimetable function to always include fileId
 async function saveTimetable(name, data) {
     try {
-        await fetch(`${API_URL}/timetables/${name}`, {
+        // Ensure we're sending the fileId
+        const dataToSend = {
+            ...data,
+            fileId: data.fileId || timetables[name]?.fileId
+        };
+
+        await fetch(`${API_URL}/timetables/${encodeURIComponent(name)}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(data)
+            body: JSON.stringify(dataToSend)
         });
     } catch (error) {
         console.error('Failed to save timetable:', error);
@@ -893,47 +770,56 @@ function showClassEditMenu(className) {
 
 async function renameClass(oldName, newName) {
     try {
-        const url = `${API_URL}/timetables/${encodeURIComponent(oldName)}/rename`;
-        console.log('Sending rename request to:', url);
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        loadingOverlay.classList.add('active');
+
+        const currentData = timetables[oldName];
+        const url = `${API_URL}/timetables/${encodeURIComponent(newName)}`;
         
         const response = await fetch(url, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ newName })
+            body: JSON.stringify({
+                fileId: currentData.fileId,
+                data: currentData.data  // Only send the data object
+            })
         });
 
-        const data = await response.json();
-        
-        if (!response.ok || !data.success) {
-            throw new Error(data.error || 'Failed to rename class');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        // Update local data
-        timetables[newName] = {...timetables[oldName]};
-        delete timetables[oldName];
+        const result = await response.json();
+        if (result.success) {
+            // Update local data
+            timetables[newName] = {...currentData, className: newName};
+            delete timetables[oldName];
 
-        // Update UI
-        const container = document.getElementById('dynamic-links-container');
-        container.innerHTML = '';
-        Object.keys(timetables).forEach(name => {
-            container.appendChild(createDynamicButton(name));
-        });
+            // Update UI
+            const container = document.getElementById('dynamic-links-container');
+            container.innerHTML = '';
+            Object.keys(timetables).forEach(name => {
+                container.appendChild(createDynamicButton(name));
+            });
 
-        // Update current timetable name if it was the renamed one
-        if (currentTimetableName === oldName) {
-            currentTimetableName = newName;
-            const timeTableTitle = document.querySelector('.time-table h2');
-            if (timeTableTitle) {
-                timeTableTitle.textContent = newName;
+            if (currentTimetableName === oldName) {
+                currentTimetableName = newName;
+                const timeTableTitle = document.querySelector('.time-table h2');
+                if (timeTableTitle) {
+                    timeTableTitle.textContent = newName;
+                }
             }
-        }
 
-        showCustomAlert('Success', 'Class renamed successfully', 'success');
+            localStorage.setItem('currentTimetable', newName);
+            showCustomAlert('Success', 'Class renamed successfully', 'success');
+        }
     } catch (error) {
         console.error('Rename failed:', error);
-        showCustomAlert('Error', error.message || 'Failed to rename class', 'error');
+        showCustomAlert('Error', 'Failed to rename class', 'error');
+    } finally {
+        document.getElementById('loadingOverlay').classList.remove('active');
     }
 }
 
@@ -969,3 +855,180 @@ async function deleteClass(name) {
         showCustomAlert('Error', 'Failed to delete class', 'error');
     }
 }
+
+function enableDebugMode() {
+    // Enable admin mode first
+    isAdminMode = true;
+    toggleAdminEditMode();
+    
+    // Update admin button
+    const adminBtn = document.getElementById('admin-button');
+    adminBtn.innerHTML = 'Admin Mode <span class="admin-check">✓</span>';
+    adminBtn.disabled = true;
+    adminBtn.classList.add('admin-active');
+    
+    // Show admin features
+    document.querySelectorAll('.gear-icon').forEach(icon => {
+        icon.classList.add('visible');
+    });
+    document.getElementById('create-new').classList.add('admin-visible');
+    document.getElementById('accounts-button').classList.add('admin-visible');
+}
+
+function disableDebugMode() {
+    // Disable admin mode first
+    isAdminMode = false;
+    
+    // Reset admin button
+    const adminBtn = document.getElementById('admin-button');
+    adminBtn.innerHTML = 'Admin Mode';
+    adminBtn.disabled = false;
+    adminBtn.classList.remove('admin-active');
+    
+    // Reset edit button
+    const editButton = document.querySelector('.edit-button');
+    editButton.textContent = 'Edit';
+    editButton.style.backgroundColor = '';
+    
+    // Hide admin features
+    document.querySelectorAll('.gear-icon').forEach(icon => {
+        icon.classList.remove('visible');
+    });
+    document.getElementById('create-new').classList.remove('admin-visible');
+    document.getElementById('accounts-button').classList.remove('admin-visible');
+    
+    // Reset button groups
+    document.querySelectorAll('.button-group').forEach(group => {
+        group.classList.remove('admin-active');
+        const dynamicBtn = group.querySelector('.dynamic-button');
+        if (dynamicBtn) {
+            dynamicBtn.style.width = '200px';
+        }
+    });
+    
+    // Close all menus
+    document.getElementById('debug-menu').classList.remove('active');
+    document.getElementById('debug-overlay').classList.remove('active');
+    document.getElementById('accounts-menu').classList.remove('active');
+    document.getElementById('accounts-overlay').classList.remove('active');
+    document.getElementById('select-screen').classList.remove('active');
+    
+    // Reset verification window
+    const verificationWindow = document.getElementById('verification-window');
+    verificationWindow.classList.remove('active');
+    verificationWindow.style.display = 'none';
+    document.getElementById('verification-code').value = '';
+    
+    // Reset table cells
+    const cells = document.querySelectorAll('.week-table tbody td:not(:first-child)');
+    cells.forEach(cell => {
+        cell.setAttribute('contenteditable', 'false');
+        cell.classList.remove('editable');
+    });
+}
+
+// ...existing code...
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Existing DOMContentLoaded content...
+    
+    // Add button event listeners
+    const createNewBtn = document.getElementById('create-new');
+    const adminBtn = document.getElementById('admin-button');
+    const editBtn = document.querySelector('.edit-button');
+    const saveBtn = document.querySelector('.save-button');
+    const closeSelectBtn = document.getElementById('close-select');
+    const selectScreen = document.getElementById('select-screen');
+
+    // Create new button
+    createNewBtn.addEventListener('click', () => {
+        selectScreen.classList.add('active');
+        generateCalendar();
+    });
+
+    // Close select screen
+    closeSelectBtn.addEventListener('click', () => {
+        selectScreen.classList.remove('active');
+        document.getElementById('name-input').value = '';
+    });
+
+    // Admin button
+    adminBtn.addEventListener('click', () => {
+        if (!isAdminMode) {
+            const verificationWindow = document.getElementById('verification-window');
+            verificationWindow.classList.add('active');
+            document.getElementById('verification-code').focus();
+        }
+    });
+
+    // Edit button
+    editBtn.addEventListener('click', () => {
+        if (currentTimetableName) {
+            toggleEditMode();
+        }
+    });
+
+    // Save button
+    saveBtn.addEventListener('click', () => {
+        if (currentTimetableName) {
+            saveTimeTable();
+        }
+    });
+
+    // Admin verification
+    const verificationCode = document.getElementById('verification-code');
+    const confirmVerification = document.getElementById('confirm-verification');
+    const closeVerification = document.getElementById('close-verification');
+    const verificationWindow = document.getElementById('verification-window');
+
+    // Add Enter key support for verification
+    verificationCode.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            confirmVerification.click();
+        }
+    });
+
+    confirmVerification.addEventListener('click', () => {
+        if (verificationCode.value === '1918') { // Changed verification code
+            isAdminMode = true;
+            toggleAdminEditMode();
+            verificationWindow.classList.remove('active');
+            adminBtn.innerHTML = 'Admin Mode <span class="admin-check">✓</span>';
+            adminBtn.classList.add('admin-active');
+            showCustomAlert('Success', 'Admin mode activated', 'success');
+        } else {
+            showCustomAlert('Error', 'Invalid verification code', 'error');
+        }
+        verificationCode.value = '';
+    });
+
+    closeVerification.addEventListener('click', () => {
+        verificationWindow.classList.remove('active');
+        verificationCode.value = '';
+    });
+
+    // Calendar navigation
+    const prevButton = document.querySelector('.prev-button');
+    const nextButton = document.querySelector('.next-button');
+
+    prevButton.addEventListener('click', () => {
+        if (currentMonth === 0) {
+            currentMonth = 11;
+            currentYear--;
+        } else {
+            currentMonth--;
+        }
+        generateCalendar();
+    });
+
+    nextButton.addEventListener('click', () => {
+        if (currentMonth === 11) {
+            currentMonth = 0;
+            currentYear++;
+        } else {
+            currentMonth++;
+        }
+        generateCalendar();
+    });
+});

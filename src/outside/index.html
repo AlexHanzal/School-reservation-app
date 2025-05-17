@@ -19,7 +19,6 @@
       <li id="dynamic-links-container"></li> <!-- Container for dynamic links -->
       <li><button class="create-new" id="create-new">+</button></li>
     </ul>
-    <button class="reset-all" id="reset-all">Reset All</button>
     <button id="accounts-button">Accounts</button>
     <button class="admin-button" id="admin-button">Admin</button>
   </aside>
@@ -159,6 +158,19 @@
     <button id="modify-accounts">Modify</button>
     <button id="remove-accounts">Remove</button>
     <button id="create-accounts">Create</button>
+  </div>
+  <div id="debug-overlay"></div>
+  <div id="debug-menu">
+      <h2>Debug Menu</h2>
+      <button id="debug-reset-all">Reset All</button>
+      <button id="debug-create-new">Create New Class</button>
+      <button id="debug-accounts">Accounts</button>
+      <button id="close-debug">Close</button>
+  </div>
+  <button id="debug-button">Debug Menu</button>
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Saving changes...</div>
   </div>
 </body>
 </html>
