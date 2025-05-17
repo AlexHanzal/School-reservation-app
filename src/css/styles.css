@@ -7,7 +7,7 @@
     --header-bg: rgb(224, 224, 224);
     --sidebar-bg: #e6e6e6;
     --font-family: Arial, Helvetica, sans-serif;
-    --sidebar-width: 12%; /* Reduced from 15% */
+    --sidebar-width: 15%; /* Increased from 12% */
     --header-height: 10%;
     --highlight-color: #afafaf;
     --highlight-cell-color: #a7a7a7;
@@ -233,22 +233,22 @@
   }
   
   .time-table {
-    display: none; /* Initially hidden */
+    display: none;
     background-color: #FEFEFE;
     color: var(--primary-color);
-    padding: 18px; /* Reduced from 20px */
+    padding: 18px;
     border-radius: 10px;
     box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3);
     position: fixed;
     top: var(--header-height); /* Start below the header */
     left: var(--sidebar-width); /* Start next to the left sidebar */
-    width: calc(99% - var(--sidebar-width)); /* Fill the remaining width */
+    width: calc(99% - var(--sidebar-width)); /* Adjust for wider sidebar */
     height: calc(100% - var(--header-height)); /* Fill the remaining height below the header */
     overflow: hidden; /* Change from auto to hidden */
     text-align: center;
     font-size: 0.9em; /* Make all text 10% smaller */
     box-sizing: border-box;
-    margin-left: 1.5%;
+    margin-left: 0; /* Remove left margin */
   }
   
   .week-table {
@@ -355,28 +355,27 @@
     width: 95%;
     height: auto;
     min-height: 0;
-    margin-bottom: 10px;
+    margin-bottom: 5px;  /* Reduced from 10px */
   }
   
   .bottom-content {
     display: grid;
-    grid-template-columns: minmax(200px, 250px) 1fr;
-    align-items: flex-start;
+    grid-template-columns: auto 1fr;
+    align-items: start;
     width: 95%;
-    gap: 20px;
-    margin-top: 10px;
+    gap: 15px; /* Set consistent gap */
+    margin-top: 2px;
   }
   
   .time-table-buttons {
     display: flex;
-    gap: 13px;
-    justify-content: flex-start;
-    padding: 10px 0;
+    gap: 15px; /* Match the grid gap */
+    justify-content: flex-end;
+    padding: 5px 15px;
     height: auto;
     width: auto;
-    margin: 10px 0;
+    margin: 0;
     align-self: flex-start;
-    margin-left: 2.5%; /* Match the table's margin */
   }
   
   .date-cell {
@@ -536,11 +535,12 @@
     flex-direction: column;
     align-items: center;
     position: absolute;
-    bottom: 50px;
+    bottom: 65%; /* Moved up slightly more */
     left: 0;
     width: 100%;
     text-align: center;
     padding: 0 15px;
+    margin: 15px 0; /* Added margin for extra spacing */
     box-sizing: border-box;
   }
   
@@ -617,9 +617,11 @@
 
 .calendar-table th,
 .calendar-table td {
-    padding: 10px;
+    padding: 5px;
     text-align: center;
     border: 1px solid var(--primary-color);
+    width: 30px;       /* Fixed width for cells */
+    height: 25px;      /* Fixed height for cells */
 }
 
 .calendar-table th {
@@ -649,16 +651,15 @@
 }
 
 .timetable-calendar {
-    max-width: 500px; /* Make calendar wider */
-    font-size: 0.9em;
-    margin: 0 auto;
-    padding-top: 10px;
+    max-width: 250px;
+    max-height: 250px;
+    font-size: 0.85em;
+    margin: 0;
+    padding: 5px 15px; /* Match padding with buttons */
     height: auto;
     overflow: visible;
-    order: 2; /* Place calendar second */
-    flex-grow: 1; /* Allow calendar to take remaining space */
-    justify-self: center;
-    margin: 0;
+    order: 2;
+    justify-self: start;
 }
 
 .timetable-calendar .calendar-header {
@@ -691,14 +692,20 @@
 
 .timetable-calendar .calendar-table td,
 .timetable-calendar .calendar-table th {
-    padding: 8px; /* Increased from 4px */
-    height: 35px; /* Increased from 25px */
+    padding: 4px; /* Reduced from 8px */
+    height: 28px; /* Reduced from 35px */
 }
 
 .timetable-calendar .prev-button,
 .timetable-calendar .next-button {
     padding: 2px 8px;
     font-size: 0.9em;
+}
+
+.edit-button,
+.save-button {
+    margin-left: auto;  /* Push to the right */
+    margin-right: 15px;
 }
 
 .editable {

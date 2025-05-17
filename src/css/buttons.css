@@ -1,12 +1,12 @@
 /* Button Styles */
 #create-new {
-    display: none; /* Hide by default */
+    display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: center; 
     font-size: 2em;
     width: 40px;
     height: 40px;
-    margin: 20px auto 0;
+    margin: 20px auto 0;  /* Changed margin to auto for horizontal centering */
     border-radius: 50%;
     background-color: transparent;
     color: var(--primary-color);
@@ -32,7 +32,7 @@
 }
 
 .submit-button {
-    margin-top: 15px;
+    margin: 15px 0 0 auto; /* Changed margin to push to right */
     padding: 10px 20px;
     background-color: var(--bakalar-color-basic);
     color: black;
@@ -62,7 +62,7 @@
     word-wrap: break-word;
     white-space: normal;
     transition: all 0.3s ease;
-    margin: 0 auto;
+    margin: 0 0 0 auto; /* Changed margin to push to right */
     transition: width 0.3s ease, margin 0.3s ease;
 }
 
@@ -443,7 +443,7 @@ body.debug-mode .reset-all {
     padding: 15px 25px;
     font-size: 1.2em;
     position: absolute;
-    bottom: 15%; /* Position between Reset All (35%) and Admin (6%) */
+    bottom: 18%; /* Changed from 15% to move it higher */
     left: 50%;
     transform: translateX(-50%);
     background-color: var(--bakalar-color-basic);
