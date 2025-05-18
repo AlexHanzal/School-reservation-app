@@ -462,3 +462,19 @@ body.debug-mode .reset-all {
     background-color: var(--bakalar-color-hover);
     color: var(--primary-color);
 }
+
+.close-create-new {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    color: var(--primary-color);
+    font-size: 1.2em;
+    cursor: pointer;
+}
+
+.close-create-new:hover {
+    background-color: var(--bakalar-color-hover);
+    color: var(--secondary-color);
+}

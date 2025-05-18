@@ -738,13 +738,13 @@
     justify-content: center;
     align-items: center;
     opacity: 0;
-    animation: fadeOut 0.3s ease-out;
+    transition: opacity 0.3s ease-out;
 }
 
 .verification-window.active {
-    display: flex;
+    display: flex !important; /* Force display when active */
     opacity: 1;
-    animation: fadeIn 0.3s ease-out;
+    transition: opacity 0.3s ease-in;
 }
 
 .verification-content {
@@ -1037,7 +1037,7 @@ body.debug-mode {
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    display: none;
+    display: none; /* Hidden by default */
     z-index: 9999;
     font-size: 1.6em;
 }
@@ -1394,5 +1394,49 @@ body.debug-mode {
   color: red;
   margin-top: 10px;
   display: none;
-  text-align: center;
+}
+
+/* Account Create Overlay */
+#account-create-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 3999;
+}
+
+/* Improve the account creation popup styles */
+.account-create-popup {
+  z-index: 4000;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  background-color: var(--secondary-color);
+  color: var(--primary-color);
+  border: 2px solid var(--primary-color);
+}
+
+.account-create-popup input {
+  background-color: var(--third-color);
+  color: var(--primary-color);
+  border: 2px solid var(--primary-color);
+  border-radius: 5px;
+}
+
+.account-create-popup button {
+  background-color: var(--bakalar-color-basic);
+  color: black;
+  border: 2px solid var(--primary-color);
+  border-radius: 5px;
+  transition: all 0.2s ease;
+}
+
+.account-create-popup button:hover {
+  background-color: var(--bakalar-color-hover);
+  color: var(--primary-color);
+}
+
+.account-create-popup button:first-child {
+  margin-right: 10px;
 }

@@ -408,6 +408,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (createAccountsBtn) {
         createAccountsBtn.addEventListener('click', () => {
             console.log('Create Accounts button clicked');
+            showAccountCreatePopup();
             closeAccountsMenu(); // Close the menu after clicking
         });
     }
@@ -798,8 +799,15 @@ async function saveTimeTable() {
     await saveTimetable(currentTimetableName, timetables[currentTimetableName]);
 }
 
-// Update the API_URL to work with the new server location
-const API_URL = 'http://localhost:3000/api';
+const API_URL = (() => {
+    const hostname = window.location.hostname;
+    // If accessing locally, allow both localhost and local IP
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        return 'http://localhost:3000/api';
+    }
+    // For network access, use the actual IP or hostname
+    return `http://${hostname}:3000/api`;
+})();
 
 async function loadTimetables() {
     try {
@@ -931,10 +939,6 @@ function toggleAdminEditMode() {
     editButton.textContent = 'Admin Mode';
     editButton.style.backgroundColor = '#ff9800';
 
-    // Show save button in admin mode
-    const saveButton = document.querySelector('.save-button');
-    saveButton.style.display = 'block';
-
     // Add admin-active class to all button groups
     document.querySelectorAll('.button-group').forEach(group => {
         group.classList.toggle('admin-active', isAdminMode);
@@ -948,10 +952,6 @@ function toggleAdminEditMode() {
     document.querySelectorAll('.gear-icon').forEach(icon => {
         icon.classList.toggle('visible', isAdminMode);
     });
-
-    // Show/hide accounts button
-    const accountsBtn = document.getElementById('accounts-button');
-    accountsBtn.classList.toggle('admin-visible', isAdminMode);
 
     // Close accounts menu when exiting admin mode
     if (!isAdminMode) {
@@ -995,9 +995,7 @@ function showClassEditMenu(className) {
 
     deleteBtn.onclick = async () => {
         if (confirm(`Are you sure you want to delete ${className}?`)) {
-            // Use fileId for deletion
-            const fileId = timetables[className]?.fileId || className;
-            await deleteClass(fileId);
+            await deleteClass(className);
             menu.style.display = 'none';
             document.removeEventListener('keydown', handleEscKey);
         }
@@ -1059,33 +1057,172 @@ async function renameClass(oldName, newName) {
     }
 }
 
-async function deleteClass(fileId) {
-    const confirmDelete = confirm(`Are you sure you want to delete this class? This cannot be undone.`);
-    if (!confirmDelete) return;
+async function deleteClass(name) {
     try {
-        const response = await fetch(`${API_URL}/timetables/${encodeURIComponent(fileId)}`, { method: 'DELETE' });
-        if (!response.ok) throw new Error('Failed to delete');
-        // Remove from timetables by fileId or className
-        for (const key in timetables) {
-            if (timetables[key].fileId === fileId) {
-                delete timetables[key];
-                break;
-            }
+        await fetch(`${API_URL}/timetables/${name}`, {
+            method: 'DELETE'
+        });
+
+        // Delete from local data
+        delete timetables[name];
+
+        // Clear localStorage if deleted class was the current one
+        if (localStorage.getItem('currentTimetable') === name) {
+            localStorage.removeItem('currentTimetable');
         }
+
+        // Update UI
         const container = document.getElementById('dynamic-links-container');
         container.innerHTML = '';
-        Object.keys(timetables).forEach(classId => {
-            container.appendChild(createDynamicButton(classId));
+        Object.keys(timetables).forEach(name => {
+            container.appendChild(createDynamicButton(name));
         });
-        if (currentTimetableName === fileId) {
+
+        // Hide timetable if it was showing
+        if (currentTimetableName === name) {
             document.querySelector('.time-table').style.display = 'none';
         }
+
         showCustomAlert('Success', 'Class deleted successfully', 'success');
     } catch (error) {
+        console.error('Failed to delete class:', error);
         showCustomAlert('Error', 'Failed to delete class', 'error');
     }
 }
 
+// Update the keyStates object and event handlers - MOVED OUTSIDE OF ANY FUNCTION
+const keyStates = {
+    Shift: false,
+    KeyA: false,
+    KeyS: false
+};
+
+// Add these event listeners outside of any function to ensure they're always registered
+document.addEventListener('keydown', (e) => {
+    if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
+        keyStates.Shift = true;
+    } else if (e.code === 'KeyA') {
+        keyStates.KeyA = true;
+    } else if (e.code === 'KeyS') {
+        keyStates.KeyS = true;
+    }
+
+    // Check if all required keys are pressed
+    if (keyStates.Shift && keyStates.KeyA && keyStates.KeyS) {
+        document.body.classList.toggle('debug-mode');
+        const isDebugMode = document.body.classList.contains('debug-mode');
+        
+        if (isDebugMode) {
+            enableDebugMode();
+        } else {
+            disableDebugMode();
+        }
+
+        // Reset key states to prevent repeat triggers
+        resetKeyStates();
+    }
+});
+
+document.addEventListener('keyup', (e) => {
+    if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
+        keyStates.Shift = false;
+    } else if (e.code === 'KeyA') {
+        keyStates.KeyA = false;
+    } else if (e.code === 'KeyS') {
+        keyStates.KeyS = false;
+    }
+});
+
+// Update reset function to ensure all keys are properly reset
+function resetKeyStates() {
+    Object.keys(keyStates).forEach(key => {
+        keyStates[key] = false;
+    });
+}
+
+// Add window blur handler to reset keys when window loses focus
+window.addEventListener('blur', resetKeyStates);
+
+// Fix the DOMContentLoaded event handler to properly initialize the Admin button
+document.addEventListener('DOMContentLoaded', () => {
+    // ...existing code...
+
+    // Make sure the admin button is initialized properly
+    const adminBtn = document.getElementById('admin-button');
+    if (adminBtn) {
+        // Remove any existing event listeners to prevent duplicates
+        const newAdminBtn = adminBtn.cloneNode(true);
+        adminBtn.parentNode.replaceChild(newAdminBtn, adminBtn);
+        
+        newAdminBtn.addEventListener('click', () => {
+            if (!isAdminMode) {
+                const verificationWindow = document.getElementById('verification-window');
+                if (verificationWindow) {
+                    verificationWindow.classList.add('active');
+                    verificationWindow.style.display = 'flex';
+                    document.getElementById('verification-code').focus();
+                } else {
+                    console.error('Verification window not found in the document');
+                }
+            }
+        });
+    } else {
+        console.error('Admin button not found in the document');
+    }
+
+    // Fix verification window button handlers
+    const confirmVerification = document.getElementById('confirm-verification');
+    const closeVerification = document.getElementById('close-verification');
+    const verificationWindow = document.getElementById('verification-window');
+    const verificationCode = document.getElementById('verification-code');
+
+    if (confirmVerification && verificationCode) {
+        // Remove any existing event listeners to prevent duplicates
+        const newConfirmVerification = confirmVerification.cloneNode(true);
+        confirmVerification.parentNode.replaceChild(newConfirmVerification, confirmVerification);
+        
+        newConfirmVerification.addEventListener('click', () => {
+            if (verificationCode.value === '1918') { // Verification code
+                isAdminMode = true;
+                toggleAdminEditMode();
+                verificationWindow.classList.remove('active');
+                verificationWindow.style.display = 'none';
+                document.getElementById('admin-button').innerHTML = 'Admin Mode <span class="admin-check">✓</span>';
+                document.getElementById('admin-button').classList.add('admin-active');
+                showCustomAlert('Success', 'Admin mode activated', 'success');
+            } else {
+                showCustomAlert('Error', 'Invalid verification code', 'error');
+            }
+            verificationCode.value = '';
+        });
+    }
+
+    if (closeVerification && verificationWindow) {
+        // Remove any existing event listeners to prevent duplicates
+        const newCloseVerification = closeVerification.cloneNode(true);
+        closeVerification.parentNode.replaceChild(newCloseVerification, closeVerification);
+        
+        newCloseVerification.addEventListener('click', () => {
+            verificationWindow.classList.remove('active');
+            verificationWindow.style.display = 'none';
+            verificationCode.value = '';
+        });
+    }
+
+    // Add Enter key support for verification
+    if (verificationCode) {
+        verificationCode.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && confirmVerification) {
+                e.preventDefault();
+                confirmVerification.click();
+            }
+        });
+    }
+
+    // ...existing code...
+});
+
+// Fix the enableDebugMode function
 function enableDebugMode() {
     // Create debug button if it doesn't exist
     let debugButton = document.getElementById('debug-button');
@@ -1093,55 +1230,48 @@ function enableDebugMode() {
         debugButton = document.createElement('button');
         debugButton.id = 'debug-button';
         debugButton.textContent = 'Debug Menu';
-        debugButton.style.padding = '10px 20px';
-        debugButton.style.fontSize = '1.2em';
-        debugButton.style.position = 'fixed';
-        debugButton.style.bottom = '20px';
-        debugButton.style.right = '20px';
-        debugButton.style.zIndex = '1000';
-        debugButton.style.display = 'block';
+        debugButton.style.padding = '30px 55px';
+        debugButton.style.fontSize = '1.6em';
+        debugButton.style.display = 'block'; // Make sure it's visible
+        document.body.appendChild(debugButton);
         
-        // Add click handler to open debug menu
         debugButton.addEventListener('click', () => {
             const debugMenu = document.getElementById('debug-menu');
             const debugOverlay = document.getElementById('debug-overlay');
-            debugMenu.style.display = 'block';
-            debugOverlay.style.display = 'block';
             debugMenu.classList.add('active');
+            debugMenu.style.display = 'block';
             debugOverlay.classList.add('active');
+            debugOverlay.style.display = 'block';
         });
-        
-        document.body.appendChild(debugButton);
+    } else {
+        debugButton.style.display = 'block';
     }
-    debugButton.style.display = 'block';
-
-    // ...existing code...
+    
+    // Set admin mode and update UI
     isAdminMode = true;
     toggleAdminEditMode();
     
     // Update admin button
     const adminBtn = document.getElementById('admin-button');
-    adminBtn.innerHTML = 'Admin Mode <span class="admin-check">✓</span>';
-    adminBtn.disabled = true;
-    adminBtn.classList.add('admin-active');
+    if (adminBtn) {
+        adminBtn.innerHTML = 'Admin Mode <span class="admin-check">✓</span>';
+        adminBtn.disabled = true;
+        adminBtn.classList.add('admin-active');
+    }
     
     // Show admin features
     document.querySelectorAll('.gear-icon').forEach(icon => {
         icon.classList.add('visible');
     });
-    document.getElementById('create-new').classList.add('admin-visible');
-    document.getElementById('accounts-button').classList.add('admin-visible');
+    
+    const createNewBtn = document.getElementById('create-new');
+    if (createNewBtn) createNewBtn.classList.add('admin-visible');
+    
+    const accountsBtn = document.getElementById('accounts-button');
+    if (accountsBtn) accountsBtn.classList.add('admin-visible');
 }
 
 function disableDebugMode() {
-    // ...existing code...
-    
-    // Hide debug button
-    const debugButton = document.getElementById('debug-button');
-    if (debugButton) {
-        debugButton.style.display = 'none';
-    }
-
     // Disable admin mode first
     isAdminMode = false;
     
@@ -1193,175 +1323,7 @@ function disableDebugMode() {
     });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    // Existing DOMContentLoaded content...
-    
-    // Add button event listeners
-    const createNewBtn = document.getElementById('create-new');
-    const adminBtn = document.getElementById('admin-button');
-    const editBtn = document.querySelector('.edit-button');
-    const saveBtn = document.querySelector('.save-button');
-    const closeSelectBtn = document.getElementById('close-select');
-    const selectScreen = document.getElementById('select-screen');
-
-    // Create new button
-    createNewBtn.addEventListener('click', () => {
-        selectScreen.classList.add('active');
-        generateCalendar();
-    });
-
-    // Close select screen
-    closeSelectBtn.addEventListener('click', () => {
-        selectScreen.classList.remove('active');
-        document.getElementById('name-input').value = '';
-    });
-
-    // Admin button
-    adminBtn.addEventListener('click', () => {
-        if (!isAdminMode) {
-            const verificationWindow = document.getElementById('verification-window');
-            verificationWindow.classList.add('active');
-            document.getElementById('verification-code').focus();
-        }
-    });
-
-    // Edit button
-    editBtn.addEventListener('click', () => {
-        if (currentTimetableName) {
-            toggleEditMode();
-        }
-    });
-
-    // Save button
-    saveBtn.addEventListener('click', () => {
-        if (currentTimetableName) {
-            saveTimeTable();
-        }
-    });
-
-    // Admin verification
-    const verificationCode = document.getElementById('verification-code');
-    const confirmVerification = document.getElementById('confirm-verification');
-    const closeVerification = document.getElementById('close-verification');
-    const verificationWindow = document.getElementById('verification-window');
-
-    // Add Enter key support for verification
-    verificationCode.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            confirmVerification.click();
-        }
-    });
-
-    confirmVerification.addEventListener('click', () => {
-        if (verificationCode.value === '1918') { // Changed verification code
-            isAdminMode = true;
-            toggleAdminEditMode();
-            verificationWindow.classList.remove('active');
-            adminBtn.innerHTML = 'Admin Mode <span class="admin-check">✓</span>';
-            adminBtn.classList.add('admin-active');
-            showCustomAlert('Success', 'Admin mode activated', 'success');
-        } else {
-            showCustomAlert('Error', 'Invalid verification code', 'error');
-        }
-        verificationCode.value = '';
-    });
-
-    closeVerification.addEventListener('click', () => {
-        verificationWindow.classList.remove('active');
-        verificationCode.value = '';
-    });
-
-    // Calendar navigation
-    const prevButton = document.querySelector('.prev-button');
-    const nextButton = document.querySelector('.next-button');
-
-    prevButton.addEventListener('click', () => {
-        if (currentMonth === 0) {
-            currentMonth = 11;
-            currentYear--;
-        } else {
-            currentMonth--;
-        }
-        generateCalendar();
-    });
-
-    nextButton.addEventListener('click', () => {
-        if (currentMonth === 11) {
-            currentMonth = 0;
-            currentYear++;
-        } else {
-            currentMonth++;
-        }
-        generateCalendar();
-    });
-});
-
-// Update the keyStates object and event handlers
-const keyStates = {
-    Shift: false,
-    KeyA: false,
-    KeyS: false
-};
-
-// Remove the old keydown/keyup handlers and add these new ones
-document.addEventListener('keydown', (e) => {
-    if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
-        keyStates.Shift = true;
-    } else if (e.code === 'KeyA') {
-        keyStates.KeyA = true;
-    } else if (e.code === 'KeyS') {
-        keyStates.KeyS = true;
-    }
-
-    // Check if all required keys are pressed
-    if (keyStates.Shift && keyStates.KeyA && keyStates.KeyS) {
-        document.body.classList.toggle('debug-mode');
-        const isDebugMode = document.body.classList.contains('debug-mode');
-        
-        if (isDebugMode) {
-            enableDebugMode();
-        } else {
-            disableDebugMode();
-        }
-
-        // Reset key states to prevent repeat triggers
-        resetKeyStates();
-    }
-});
-
-document.addEventListener('keyup', (e) => {
-    if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
-        keyStates.Shift = false;
-    } else if (e.code === 'KeyA') {
-        keyStates.KeyA = false;
-    } else if (e.code === 'KeyS') {
-        keyStates.KeyS = false;
-    }
-});
-
-// Update reset function to ensure all keys are properly reset
-function resetKeyStates() {
-    Object.keys(keyStates).forEach(key => {
-        keyStates[key] = false;
-    });
-}
-
-// Add window blur handler to reset keys when window loses focus
-window.addEventListener('blur', resetKeyStates);
-
-// Add this helper function near other menu-related functions
-function closeAccountsMenu() {
-    const accountsMenu = document.getElementById('accounts-menu');
-    const accountsOverlay = document.getElementById('accounts-overlay');
-    if (accountsMenu && accountsOverlay) {
-        accountsMenu.style.display = 'none';
-        accountsMenu.style.visibility = 'hidden';
-        accountsOverlay.style.display = 'none';
-        accountsOverlay.style.visibility = 'hidden';
-    }
-}
-
+// Account creation popup handling
 document.addEventListener('DOMContentLoaded', () => {
     // ...existing code...
 
@@ -1402,7 +1364,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     createAccountsBtn.addEventListener('click', () => {
         console.log('Create Accounts button clicked');
-        //toggleAccountsMenu();
+        showAccountCreatePopup();
+        closeAccountsMenu(); // Close the menu after clicking
     });
 
 	closeAccountsBtn.addEventListener('click', () => {
@@ -1416,169 +1379,191 @@ document.addEventListener('DOMContentLoaded', () => {
     // ...existing code...
 });
 
-document.addEventListener('DOMContentLoaded', () => {
-    // ...existing code...
-    const closeDebugBtn = document.getElementById('close-debug');
-    if (closeDebugBtn) {
-        closeDebugBtn.addEventListener('click', () => {
-            document.getElementById('debug-menu').classList.remove('active');
-            document.getElementById('debug-overlay').classList.remove('active');
-            document.getElementById('debug-menu').style.display = 'none';
-            document.getElementById('debug-overlay').style.display = 'none';
-        });
-    }
-    // ...existing code...
-});
-
-// ...existing code...
-document.addEventListener('DOMContentLoaded', () => {
-    // ...existing code...
-    const debugButton = document.getElementById('debug-button');
-    if (debugButton) {
-        debugButton.addEventListener('click', () => {
-            const debugMenu = document.getElementById('debug-menu');
-            const debugOverlay = document.getElementById('debug-overlay');
-            if (debugMenu && debugOverlay) {
-                debugMenu.classList.add('active');
-                debugOverlay.classList.add('active');
-                debugMenu.style.display = 'block';
-                debugOverlay.style.display = 'block';
+// Add this new function to handle the account creation popup
+function showAccountCreatePopup() {
+    // Create the popup if it doesn't exist
+    let popup = document.getElementById('account-create-popup');
+    if (!popup) {
+        popup = document.createElement('div');
+        popup.id = 'account-create-popup';
+        popup.className = 'account-create-popup';
+        
+        popup.innerHTML = `
+            <h2>Create New Account</h2>
+            <div class="input-group">
+                <label for="account-name">Full Name</label>
+                <input type="text" id="account-name" placeholder="Enter full name">
+            </div>
+            <div class="input-group">
+                <label for="account-abbreviation">Abbreviation</label>
+                <input type="text" id="account-abbreviation" placeholder="Enter abbreviation">
+            </div>
+            <div class="input-group">
+                <label for="account-password">Password</label>
+                <input type="password" id="account-password" placeholder="Enter password">
+            </div>
+            <div class="account-create-error" id="account-create-error">Error message will appear here</div>
+            <div class="account-create-actions">
+                <button id="create-account-btn">Create Account</button>
+                <button id="cancel-account-btn">Cancel</button>
+            </div>
+        `;
+        
+        document.body.appendChild(popup);
+        
+        // Add event listeners for buttons
+        document.getElementById('create-account-btn').addEventListener('click', createNewAccount);
+        document.getElementById('cancel-account-btn').addEventListener('click', hideAccountCreatePopup);
+        
+        // Add keyboard event handlers
+        popup.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                hideAccountCreatePopup();
+            } else if (e.key === 'Enter') {
+                createNewAccount();
             }
         });
     }
-    const closeDebug = document.getElementById('close-debug');
-    if (closeDebug) {
-        closeDebug.addEventListener('click', () => {
-            const debugMenu = document.getElementById('debug-menu');
-            const debugOverlay = document.getElementById('debug-overlay');
-            if (debugMenu && debugOverlay) {
-                debugMenu.classList.remove('active');
-                debugOverlay.classList.remove('active');
-                debugMenu.style.display = 'none';
-                debugOverlay.style.display = 'none';
-            }
-        });
-    }
-    // ...existing code...
-});
-// ...existing code...
-// Account creation modal logic
-const accountCreatePopup = document.getElementById('accountCreatePopup');
-const accountCreateSubmit = document.getElementById('account-create-submit');
-const accountCreateCancel = document.getElementById('account-create-cancel');
-const accountCreateError = document.getElementById('account-create-error');
-const accountUsername = document.getElementById('account-username');
-const accountPassword = document.getElementById('account-password');
-const createAccountsBtn = document.getElementById('create-accounts');
-
-if (createAccountsBtn) {
-    createAccountsBtn.addEventListener('click', () => {
-        closeAccountsMenu();
-        accountUsername.value = '';
-        accountPassword.value = '';
-        accountCreateError.style.display = 'none';
-        accountCreatePopup.style.display = 'block';
-        accountUsername.focus();
-    });
-}
-if (accountCreateCancel) {
-    accountCreateCancel.addEventListener('click', () => {
-        accountCreatePopup.style.display = 'none';
-    });
-}
-if (accountCreateSubmit) {
-    accountCreateSubmit.addEventListener('click', async () => {
-        const username = accountUsername.value.trim();
-        const password = accountPassword.value;
-        if (!username || !password) {
-            accountCreateError.textContent = 'Username and password are required.';
-            accountCreateError.style.display = 'block';
-            return;
-        }
-        try {
-            const res = await fetch(`${API_URL}/accounts`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password })
-            });
-            const result = await res.json();
-            if (result.success) {
-                accountCreatePopup.style.display = 'none';
-                showCustomAlert('Success', 'Account created!', 'success');
-            } else {
-                accountCreateError.textContent = result.error || 'Failed to create account.';
-                accountCreateError.style.display = 'block';
-            }
-        } catch (err) {
-            accountCreateError.textContent = 'Server error.';
-            accountCreateError.style.display = 'block';
-        }
-    });
-}
-// Remove duplicate account creation code
-document.addEventListener('DOMContentLoaded', function() {
-    // ...existing code...
     
-    // Single clean implementation for account creation
-    const createAccountsBtn = document.getElementById('create-accounts');
-    const accountCreatePopup = document.getElementById('accountCreatePopup');
-    const accountUsername = document.getElementById('account-username');
-    const accountPassword = document.getElementById('account-password');
-    const accountCreateError = document.getElementById('account-create-error');
-    const accountCreateSubmit = document.getElementById('account-create-submit');
-    const accountCreateCancel = document.getElementById('account-create-cancel');
+    // Clear any previous values and errors
+    document.getElementById('account-name').value = '';
+    document.getElementById('account-abbreviation').value = '';
+    document.getElementById('account-password').value = '';
+    document.getElementById('account-create-error').style.display = 'none';
     
-    if (createAccountsBtn) {
-        createAccountsBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            closeAccountsMenu();
-            console.log('Create account button clicked - showing popup');
+    // Show the popup
+    popup.style.display = 'block';
+    
+    // Add overlay if it doesn't exist
+    let overlay = document.getElementById('account-create-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'account-create-overlay';
+        overlay.className = 'accounts-overlay';
+        overlay.addEventListener('click', hideAccountCreatePopup);
+        document.body.appendChild(overlay);
+    }
+    
+    // Show the overlay
+    overlay.style.display = 'block';
+    
+    // Focus on the first input field
+    document.getElementById('account-name').focus();
+}
+
+function hideAccountCreatePopup() {
+    const popup = document.getElementById('account-create-popup');
+    const overlay = document.getElementById('account-create-overlay');
+    
+    if (popup) popup.style.display = 'none';
+    if (overlay) overlay.style.display = 'none';
+}
+
+function createNewAccount() {
+    const nameInput = document.getElementById('account-name');
+    const abbreviationInput = document.getElementById('account-abbreviation');
+    const passwordInput = document.getElementById('account-password');
+    const errorElement = document.getElementById('account-create-error');
+    
+    const name = nameInput.value.trim();
+    const abbreviation = abbreviationInput.value.trim();
+    const password = passwordInput.value.trim();
+    
+    // Clear previous error
+    errorElement.style.display = 'none';
+    errorElement.textContent = '';
+    
+    // Validate inputs
+    if (!name || !abbreviation || !password) {
+        errorElement.textContent = 'All fields are required';
+        errorElement.style.display = 'block';
+        return;
+    }
+    
+    // Show loading indicator
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    if (loadingOverlay) {
+        loadingOverlay.classList.add('active');
+        const loadingText = loadingOverlay.querySelector('.loading-text');
+        if (loadingText) loadingText.textContent = 'Creating account...';
+    }
+    
+    // Create fetch request with retry logic
+    const maxRetries = 3;
+    let currentRetry = 0;
+
+    function attemptRequest() {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+        return fetch(`${API_URL}/users`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ name, abbreviation, password }),
+            signal: controller.signal
+        })
+        .then(async response => {
+            clearTimeout(timeoutId);
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Server error');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (loadingOverlay) loadingOverlay.classList.remove('active');
+            showCustomAlert('Success', 'Account created successfully', 'success');
+            hideAccountCreatePopup();
+        })
+        .catch(error => {
+            clearTimeout(timeoutId);
             
-            // Show the popup directly - don't rely on other handlers
-            accountCreatePopup.style.display = 'block';
-            accountUsername.value = '';
-            accountPassword.value = '';
-            accountCreateError.style.display = 'none';
-            setTimeout(() => accountUsername.focus(), 100);
-        });
-    }
-    
-    if (accountCreateCancel) {
-        accountCreateCancel.addEventListener('click', function() {
-            accountCreatePopup.style.display = 'none';
-        });
-    }
-    
-    if (accountCreateSubmit) {
-        accountCreateSubmit.addEventListener('click', async function() {
-            const username = accountUsername.value.trim();
-            const password = accountPassword.value;
-            if (!username || !password) {
-                accountCreateError.textContent = 'Username and password are required.';
-                accountCreateError.style.display = 'block';
-                return;
+            if (error.name === 'AbortError') {
+                throw new Error('Request timed out');
             }
-            try {
-                const res = await fetch(`${API_URL}/accounts`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password })
-                });
-                const result = await res.json();
-                if (result.success) {
-                    accountCreatePopup.style.display = 'none';
-                    showCustomAlert('Success', 'Account created!', 'success');
-                } else {
-                    accountCreateError.textContent = result.error || 'Failed to create account.';
-                    accountCreateError.style.display = 'block';
-                }
-            } catch (err) {
-                accountCreateError.textContent = 'Server error.';
-                accountCreateError.style.display = 'block';
+            
+            if (currentRetry < maxRetries && 
+                (error.message === 'Failed to fetch' || error.message === 'Network error')) {
+                currentRetry++;
+                return new Promise(resolve => setTimeout(resolve, 1000))
+                    .then(attemptRequest);
             }
+            
+            throw error;
         });
     }
-    
-    // ...existing code...
-});
+
+    attemptRequest().catch(error => {
+        console.error('Error creating account:', error);
+        if (loadingOverlay) loadingOverlay.classList.remove('active');
+        
+        let errorMessage = 'Connection error. Please try again.';
+        if (error.message.includes('already exists')) {
+            errorMessage = 'This abbreviation is already in use';
+        } else if (error.message === 'Request timed out') {
+            errorMessage = 'Connection timed out. Please try again.';
+        }
+        
+        errorElement.textContent = errorMessage;
+        errorElement.style.display = 'block';
+    });
+}
+
+// Add a function to load users (can be used in admin views later)
+async function loadUsers() {
+    try {
+        const response = await fetch(`${API_URL}/users`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const users = await response.json();
+        console.log('Users loaded:', users);
+        return users;
+    } catch (error) {
+        console.error('Failed to load users:', error);
+        return [];
+    }
+}

@@ -1,0 +1,1 @@
+The "close" button in the debug menu does not close the menu - when i press it, nothing happens

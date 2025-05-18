@@ -96,7 +96,7 @@
       <div class="bottom-content">
         <div class="time-table-buttons">
           <button class="edit-button">Edit</button>
-          <button class="save-button">Save</button>
+          <button class="save-button" style="display: none;">Save</button>
           
         </div>
         <div class="timetable-calendar">
@@ -133,6 +133,31 @@
     </div>
   </div>
   <script src="/js/renderer.js"></script>
+  <script>
+    // Add event listener to show save button when admin mode is activated
+    document.getElementById('admin-button').addEventListener('click', function() {
+      // This will be triggered when admin mode is activated
+      // The actual admin verification may happen in renderer.js
+      // After verification is successful, make sure save button is visible
+      const saveButton = document.querySelector('.time-table-buttons .save-button');
+      if (saveButton) {
+        saveButton.style.display = 'inline-block';
+      }
+    });
+    
+    // Add event listener for debug menu close button
+    document.addEventListener('DOMContentLoaded', function() {
+      var closeDebugBtn = document.getElementById('close-debug');
+      if (closeDebugBtn) {
+        closeDebugBtn.addEventListener('click', function() {
+          const debugMenu = document.getElementById('debug-menu');
+          const debugOverlay = document.getElementById('debug-overlay');
+          if (debugMenu) debugMenu.style.display = 'none';
+          if (debugOverlay) debugOverlay.style.display = 'none';
+        });
+      }
+    });
+  </script>
   <div class="custom-alert-overlay" id="alertOverlay"></div>
   <div class="custom-alert" id="customAlert">
     <h2>Success!</h2>
@@ -188,23 +213,5 @@
     <div class="loading-spinner"></div>
     <div class="loading-text">Saving changes...</div>
   </div>
-  <!-- Account Creation Pop-up Window -->
-  <div class="account-create-popup" id="accountCreatePopup">
-    <h2>Create Account</h2>
-    <div class="input-group">
-      <label for="account-username">Username:</label>
-      <input type="text" id="account-username" autocomplete="off">
-    </div>
-    <div class="input-group">
-      <label for="account-password">Password:</label>
-      <input type="password" id="account-password">
-    </div>
-    <div class="account-create-actions">
-      <button id="account-create-submit">Create</button>
-      <button id="account-create-cancel">Cancel</button>
-    </div>
-    <div id="account-create-error" class="account-create-error"></div>
-  </div>
-  <!-- End Account Creation Pop-up Window -->
 </body>
 </html>
