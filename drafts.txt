@@ -1,0 +1,4 @@
+Make it so that when a user successfully logs in their name is displayed in the header as "Welcome, <user's name>!"
+
+As soon as the Login button inside the login menu is pressed and valid credentials are inputted, close the window
+

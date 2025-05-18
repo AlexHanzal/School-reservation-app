@@ -1,3 +1,5 @@
+const API_URL = `http://${window.location.hostname}:3000/api`;
+
 const translations = {
     cs: {
         weekdays: ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'],
@@ -141,9 +143,16 @@ function createDynamicButton(name) {
 }
 
 function showTimetable(name) {
+    console.log('Showing timetable:', name);
+    if (!timetables[name]) {
+        console.error('Timetable not found:', name);
+        showCustomAlert('Error', 'Timetable not found', 'error');
+        return;
+    }
+
     const timeTable = document.querySelector('.time-table');
     const timeTableTitle = timeTable.querySelector('h2');
-    timeTableTitle.textContent = timetables[name].className; // Use className from timetables
+    timeTableTitle.textContent = timetables[name].className;
     timeTable.style.display = 'block';
     generateCalendar();
     currentTimetableName = name;
@@ -227,6 +236,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (savedTimetable && timetables[savedTimetable]) {
             showTimetable(savedTimetable);
         }
+    }).catch(error => {
+        console.error('Error during initialization:', error);
+        showCustomAlert('Error', 'Failed to initialize application', 'error');
     });
 
     // Remove nested DOMContentLoaded and move debug menu functionality here
@@ -408,9 +420,152 @@ document.addEventListener('DOMContentLoaded', () => {
     if (createAccountsBtn) {
         createAccountsBtn.addEventListener('click', () => {
             console.log('Create Accounts button clicked');
+            showAccountCreatePopup();
             closeAccountsMenu(); // Close the menu after clicking
         });
     }
+});
+
+    // Login functionality
+async function handleLogin() {
+    const userSelect = document.getElementById('user-select');
+    const passwordInput = document.getElementById('password-input');
+    const loginError = document.getElementById('login-error');
+    
+    loginError.style.display = 'none';
+    
+    if (!userSelect.value || !passwordInput.value) {
+        loginError.textContent = 'Please fill in all fields';
+        loginError.style.display = 'block';
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/users/login`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                abbreviation: userSelect.value,
+                password: passwordInput.value
+            })
+        });
+
+        const data = await response.json();
+        
+        if (response.ok) {
+            const loginButton = document.getElementById('login-button');
+            loginButton.textContent = data.name;
+            loginButton.classList.add('logged-in');
+            
+            // Close login menu immediately after successful login
+            const loginMenu = document.getElementById('login-menu');
+            const loginOverlay = document.getElementById('login-overlay');
+            const passwordInput = document.getElementById('password-input');
+            
+            // Remove active classes and reset input
+            loginMenu.classList.remove('active');
+            loginOverlay.classList.remove('active');
+            loginMenu.style.display = 'none';
+            loginOverlay.style.display = 'none';
+            passwordInput.value = '';
+            
+            showCustomAlert('Success', 'Logged in successfully', 'success');
+        } else {
+            loginError.textContent = data.error || 'Invalid password';
+            loginError.style.display = 'block';
+        }
+    } catch (error) {
+        console.error('Login failed:', error);
+        loginError.textContent = 'Connection error. Please try again.';
+        loginError.style.display = 'block';
+    }
+}
+
+function closeLoginMenu() {
+    const loginMenu = document.getElementById('login-menu');
+    const loginOverlay = document.getElementById('login-overlay');
+    
+    if (loginMenu) loginMenu.classList.remove('active');
+    if (loginOverlay) loginOverlay.classList.remove('active');
+    
+    // Clear password field
+    const passwordInput = document.getElementById('password-input');
+    if (passwordInput) passwordInput.value = '';
+}
+
+function setupLoginHandlers() {
+    const loginButton = document.getElementById('login-button');
+    const loginMenu = document.getElementById('login-menu');
+    const loginOverlay = document.getElementById('login-overlay');
+    const closeLoginButton = document.getElementById('close-login');
+    
+    if (loginButton && loginMenu && loginOverlay) {
+        loginButton.addEventListener('click', () => {
+            if (!loginButton.classList.contains('logged-in')) {
+                loginMenu.style.display = 'block';
+                loginOverlay.style.display = 'block';
+                loginMenu.classList.add('active');
+                loginOverlay.classList.add('active');
+                // Load users immediately when opening menu
+                loadUserOptions();
+            }
+        });
+        
+        // Fix close button
+        if (closeLoginButton) {
+            closeLoginButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                loginMenu.style.display = 'none';
+                loginOverlay.style.display = 'none';
+                loginMenu.classList.remove('active');
+                loginOverlay.classList.remove('active');
+                document.getElementById('password-input').value = '';
+                document.getElementById('login-error').style.display = 'none';
+            });
+        }
+        
+        // Submit button handler
+        const submitButton = document.getElementById('submit-login');
+        if (submitButton) {
+            submitButton.addEventListener('click', handleLogin);
+        }
+        
+        // Enter key handler for password input
+        const passwordInput = document.getElementById('password-input');
+        if (passwordInput) {
+            passwordInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    handleLogin();
+                }
+            });
+        }
+    }
+}
+
+// Add to DOMContentLoaded event listener
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('Document loaded, initializing...');
+    
+    // Load timetables first
+    loadTimetables().then(() => {
+        console.log('Timetables loaded, restoring previous state...');
+        const savedTimetable = localStorage.getItem('currentTimetable');
+        if (savedTimetable && timetables[savedTimetable]) {
+            showTimetable(savedTimetable);
+        }
+    }).catch(error => {
+        console.error('Error during initialization:', error);
+        showCustomAlert('Error', 'Failed to initialize application', 'error');
+    });
+
+    // Then load users and set up other handlers
+    loadUserOptions();
+    setupLoginHandlers();
+    setupVerificationWindow();
+    
+    // ...existing code...
 });
 
 // New function for date picker calendar
@@ -660,263 +815,6 @@ function findPermanentHoursForDay(dayIndex) {
     return permanentHours;
 }
 
-function toggleEditMode() {
-    if (isAdminMode) return;
-    
-    isEditMode = !isEditMode;
-    const editButton = document.querySelector('.edit-button');
-    editButton.textContent = isEditMode ? 'Cancel' : 'Edit';
-    
-    const cells = document.querySelectorAll('.week-table tbody td:not(:first-child)');
-    cells.forEach(cell => {
-        if (!cell.classList.contains('permanent-hour')) {
-            cell.setAttribute('contenteditable', isEditMode);
-            cell.classList.toggle('editable', isEditMode);
-        }
-    });
-    
-    // Show/hide save button based on edit mode
-    const saveButton = document.querySelector('.save-button');
-    saveButton.style.display = isEditMode ? 'block' : 'none';
-}
-
-async function saveTimeTable() {
-    if (!currentTimetableName) return;
-
-    // Reset edit and admin modes
-    isEditMode = false;
-    if (isAdminMode) {
-        isAdminMode = false;
-        
-        // Reset admin button text and style
-        const adminBtn = document.getElementById('admin-button');
-        adminBtn.innerHTML = 'Admin Mode'; // Reset to default text
-        adminBtn.disabled = false;
-        adminBtn.classList.remove('admin-active');
-        
-        // Reset button group sizes and admin styles
-        document.querySelectorAll('.button-group').forEach(group => {
-            group.classList.remove('admin-active');
-            const dynamicBtn = group.querySelector('.dynamic-button');
-            if (dynamicBtn) {
-                dynamicBtn.style.width = '200px';
-            }
-        });
-        
-        // Hide gear icons
-        document.querySelectorAll('.gear-icon').forEach(icon => {
-            icon.classList.remove('visible');
-        });
-        
-        // Reset edit button
-        const editButton = document.querySelector('.edit-button');
-        editButton.textContent = 'Edit';
-        editButton.style.backgroundColor = '';
-        
-        // Hide create-new button
-        const createNewBtn = document.getElementById('create-new');
-        createNewBtn.classList.remove('admin-visible');
-        
-        // Hide accounts button
-        const accountsBtn = document.getElementById('accounts-button');
-        accountsBtn.classList.remove('admin-visible');
-        
-        // Reset accounts menu
-        const accountsMenu = document.getElementById('accounts-menu');
-        const accountsOverlay = document.getElementById('accounts-overlay');
-        accountsMenu.classList.remove('active');
-        accountsOverlay.classList.remove('active');
-        
-        // Reset verification window
-        const verificationWindow = document.getElementById('verification-window');
-        verificationWindow.classList.remove('active');
-        document.getElementById('verification-code').value = '';
-    }
-
-    const rows = document.querySelectorAll('.week-table tbody tr');
-    const editButton = document.querySelector('.edit-button');
-    editButton.textContent = 'Edit';
-    
-    // Make cells non-editable
-    document.querySelectorAll('.week-table tbody td:not(:first-child)').forEach(cell => {
-        cell.setAttribute('contenteditable', 'false');
-        cell.classList.remove('editable');
-        if (isAdminMode) {
-            cell.removeEventListener('input', adminCellInputHandler);
-        }
-    });
-    
-    // Initialize permanent hours structure if it doesn't exist
-    if (!timetables[currentTimetableName].permanentHours) {
-        timetables[currentTimetableName].permanentHours = {};
-    }
-    
-    // Save table data
-    rows.forEach((row, dayIndex) => {
-        const dateString = row.querySelector('td:first-child').dataset.date;
-        const cells = row.querySelectorAll('td:not(:first-child)');
-        
-        let hasData = false;
-        const dailyData = {};
-
-        cells.forEach((cell, hourIndex) => {
-            const cellData = cell.textContent.trim();
-            const isPermanent = cell.classList.contains('permanent-hour');
-            if (cellData !== '' || isPermanent) {
-                hasData = true;
-                if (isPermanent) {
-                    // Save permanent hours using correct hour index (1-based)
-                    if (!timetables[currentTimetableName].permanentHours[dayIndex]) {
-                        timetables[currentTimetableName].permanentHours[dayIndex] = {};
-                    }
-                    timetables[currentTimetableName].permanentHours[dayIndex][hourIndex + 1] = cellData;
-                }
-                dailyData[hourIndex] = {
-                    content: cellData,
-                    isPermanent: isPermanent
-                };
-            }
-        });
-
-        if (hasData) {
-            if (!timetables[currentTimetableName].data) {
-                timetables[currentTimetableName].data = {};
-            }
-            timetables[currentTimetableName].data[dateString] = dailyData;
-        } else {
-            // Remove date from data if it exists and has no data
-            if (timetables[currentTimetableName].data && timetables[currentTimetableName].data[dateString]) {
-                delete timetables[currentTimetableName].data[dateString];
-            }
-        }
-        
-        if (!timetables[currentTimetableName].permanentHours[dayIndex]) {
-            timetables[currentTimetableName].permanentHours[dayIndex] = {};
-        }
-    });
-
-    await saveTimetable(currentTimetableName, timetables[currentTimetableName]);
-}
-
-const API_URL = (() => {
-    const hostname = window.location.hostname;
-    // If accessing locally, allow both localhost and local IP
-    if (hostname === 'localhost' || hostname === '127.0.0.1') {
-        return 'http://localhost:3000/api';
-    }
-    // For network access, use the actual IP or hostname
-    return `http://${hostname}:3000/api`;
-})();
-
-async function loadTimetables() {
-    try {
-        console.log('Fetching timetables from:', `${API_URL}/timetables`);
-        const response = await fetch(`${API_URL}/timetables`);
-        console.log('Response:', response);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const timetableNames = await response.json();
-        console.log('Timetable names:', timetableNames);
-        
-        // Clear existing buttons first
-        document.getElementById('dynamic-links-container').innerHTML = '';
-
-        for (const name of timetableNames) {
-            try {
-                console.log(`Fetching timetable: ${name}`);
-                // Use the className to fetch the timetable
-                const timetableResponse = await fetch(`${API_URL}/timetables/${name}`);
-                
-                if (!timetableResponse.ok) {
-                    throw new Error(`HTTP error! status: ${timetableResponse.status}`);
-                }
-
-                const data = await timetableResponse.json();
-                console.log(`Parsed timetable data for ${name}:`, data);
-                
-                // Store with fileId to prevent duplicates
-                timetables[data.className] = { // Use className as key
-                    ...data,
-                    data: data.data || {},
-                    permanentHours: data.permanentHours || {},
-                    calendar: data.calendar || '',
-                    currentWeek: data.currentWeek || new Date().toISOString(),
-                    fileId: data.fileId // Ensure we keep the fileId
-                };
-                
-                const dynamicButton = createDynamicButton(data.className); // Use className
-                document.getElementById('dynamic-links-container').appendChild(dynamicButton);
-            } catch (error) {
-                console.error(`Failed to load timetable ${name}:`, error);
-            }
-        }
-    } catch (error) {
-        console.error('Failed to load timetables:', error);
-    }
-}
-
-// Update saveTimetable function to always include fileId
-async function saveTimetable(name, data) {
-    try {
-        // Ensure we're sending the fileId
-        const dataToSend = {
-            ...data,
-            fileId: data.fileId || timetables[name]?.fileId
-        };
-
-        await fetch(`${API_URL}/timetables/${encodeURIComponent(name)}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(dataToSend)
-        });
-    } catch (error) {
-        console.error('Failed to save timetable:', error);
-    }
-}
-
-function showCustomAlert(title, message, type) {
-    const alertBox = document.getElementById('customAlert');
-    const alertTitle = alertBox.querySelector('h2');
-    const alertMessage = alertBox.querySelector('p');
-    const alertOverlay = document.getElementById('alertOverlay');
-    
-    alertTitle.textContent = title;
-    alertMessage.textContent = message;
-    alertBox.className = `custom-alert ${type}`;
-    
-    // Add active class directly
-    alertOverlay.classList.add('active');
-    alertBox.classList.add('active');
-
-    // Add keyboard event listener for Enter and Escape
-    const handleAlertKeyPress = (e) => {
-        if (e.key === 'Enter' || e.key === 'Escape') {
-            closeCustomAlert();
-            document.removeEventListener('keydown', handleAlertKeyPress);
-        }
-    };
-    document.addEventListener('keydown', handleAlertKeyPress);
-
-    const okButton = alertBox.querySelector('button');
-    okButton.onclick = () => {
-        closeCustomAlert();
-        document.removeEventListener('keydown', handleAlertKeyPress);
-    };
-}
-
-function closeCustomAlert() {
-    const alertBox = document.getElementById('customAlert');
-    const alertOverlay = document.getElementById('alertOverlay');
-    
-    alertBox.classList.remove('active');
-    alertOverlay.classList.remove('active');
-}
-
 function toggleAdminEditMode() {
     const cells = document.querySelectorAll('.week-table tbody td:not(:first-child)');
     cells.forEach(cell => {
@@ -937,24 +835,32 @@ function toggleAdminEditMode() {
     const editButton = document.querySelector('.edit-button');
     editButton.textContent = 'Admin Mode';
     editButton.style.backgroundColor = '#ff9800';
+    
+    // Show the save button when in admin mode
+    const saveButton = document.querySelector('.save-button');
+    if (saveButton) {
+        saveButton.style.display = 'block';
+    }
 
     // Add admin-active class to all button groups
     document.querySelectorAll('.button-group').forEach(group => {
         group.classList.toggle('admin-active', isAdminMode);
     });
 
-    // Show/hide create-new button
+    // Show/hide create-new button and accounts button
     const createNewBtn = document.getElementById('create-new');
-    createNewBtn.classList.toggle('admin-visible', isAdminMode);
+    const accountsBtn = document.getElementById('accounts-button');
+    
+    if (createNewBtn) createNewBtn.classList.toggle('admin-visible', isAdminMode);
+    if (accountsBtn) {
+        accountsBtn.classList.toggle('admin-visible', isAdminMode);
+        accountsBtn.style.display = isAdminMode ? 'block' : 'none';
+    }
 
     // Show/hide gear icons
     document.querySelectorAll('.gear-icon').forEach(icon => {
         icon.classList.toggle('visible', isAdminMode);
     });
-
-    // Show/hide accounts button
-    const accountsBtn = document.getElementById('accounts-button');
-    accountsBtn.classList.toggle('admin-visible', isAdminMode);
 
     // Close accounts menu when exiting admin mode
     if (!isAdminMode) {
@@ -963,136 +869,60 @@ function toggleAdminEditMode() {
     }
 }
 
-function showClassEditMenu(className) {
-    const menu = document.getElementById('classEditMenu');
-    const nameInput = document.getElementById('class-name-input');
-    const closeBtn = document.getElementById('closeClassEdit');
-    const saveBtn = menu.querySelector('.save-class-name');
-    const deleteBtn = menu.querySelector('.delete-class');
+// Add this new event listener for the Edit button
+document.addEventListener('DOMContentLoaded', () => {
+    // ...existing code...
 
-    // Add escape key handler
-    const handleEscKey = (e) => {
-        if (e.key === 'Escape') {
-            menu.classList.remove('active');
-            document.removeEventListener('keydown', handleEscKey);
-        }
-    };
-    document.addEventListener('keydown', handleEscKey);
-
-    nameInput.value = className;
-    menu.classList.add('active');
-
-    closeBtn.onclick = () => {
-        menu.classList.remove('active');
-        document.removeEventListener('keydown', handleEscKey);
-    };
-
-    saveBtn.onclick = async () => {
-        const newName = nameInput.value.trim();
-        if (newName && newName !== className) {
-            await renameClass(className, newName);
-            menu.style.display = 'none';
-            document.removeEventListener('keydown', handleEscKey);
-        }
-    };
-
-    deleteBtn.onclick = async () => {
-        if (confirm(`Are you sure you want to delete ${className}?`)) {
-            await deleteClass(className);
-            menu.style.display = 'none';
-            document.removeEventListener('keydown', handleEscKey);
-        }
-    };
-}
-
-async function renameClass(oldName, newName) {
-    try {
-        const loadingOverlay = document.getElementById('loadingOverlay');
-        loadingOverlay.classList.add('active');
-
-        const currentData = timetables[oldName];
-        const url = `${API_URL}/timetables/${encodeURIComponent(newName)}`;
-        
-        const response = await fetch(url, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                fileId: currentData.fileId,
-                data: currentData.data  // Only send the data object
-            })
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const result = await response.json();
-        if (result.success) {
-            // Update local data
-            timetables[newName] = {...currentData, className: newName};
-            delete timetables[oldName];
-
-            // Update UI
-            const container = document.getElementById('dynamic-links-container');
-            container.innerHTML = '';
-            Object.keys(timetables).forEach(name => {
-                container.appendChild(createDynamicButton(name));
-            });
-
-            if (currentTimetableName === oldName) {
-                currentTimetableName = newName;
-                const timeTableTitle = document.querySelector('.time-table h2');
-                if (timeTableTitle) {
-                    timeTableTitle.textContent = newName;
+    // Add Edit button functionality
+    const editButton = document.querySelector('.edit-button');
+    if (editButton) {
+        editButton.addEventListener('click', () => {
+            if (!isAdminMode) {
+                isEditMode = !isEditMode;
+                editButton.textContent = isEditMode ? 'Cancel' : 'Edit';
+                
+                const cells = document.querySelectorAll('.week-table tbody td:not(:first-child)');
+                cells.forEach(cell => {
+                    if (!cell.classList.contains('permanent-hour')) {
+                        cell.setAttribute('contenteditable', isEditMode);
+                        cell.classList.toggle('editable', isEditMode);
+                    }
+                });
+                
+                // Show/hide save button based on edit mode
+                const saveButton = document.querySelector('.save-button');
+                if (saveButton) {
+                    saveButton.style.display = isEditMode ? 'block' : 'none';
                 }
             }
-
-            localStorage.setItem('currentTimetable', newName);
-            showCustomAlert('Success', 'Class renamed successfully', 'success');
-        }
-    } catch (error) {
-        console.error('Rename failed:', error);
-        showCustomAlert('Error', 'Failed to rename class', 'error');
-    } finally {
-        document.getElementById('loadingOverlay').classList.remove('active');
-    }
-}
-
-async function deleteClass(name) {
-    try {
-        await fetch(`${API_URL}/timetables/${name}`, {
-            method: 'DELETE'
         });
-
-        // Delete from local data
-        delete timetables[name];
-
-        // Clear localStorage if deleted class was the current one
-        if (localStorage.getItem('currentTimetable') === name) {
-            localStorage.removeItem('currentTimetable');
-        }
-
-        // Update UI
-        const container = document.getElementById('dynamic-links-container');
-        container.innerHTML = '';
-        Object.keys(timetables).forEach(name => {
-            container.appendChild(createDynamicButton(name));
-        });
-
-        // Hide timetable if it was showing
-        if (currentTimetableName === name) {
-            document.querySelector('.time-table').style.display = 'none';
-        }
-
-        showCustomAlert('Success', 'Class deleted successfully', 'success');
-    } catch (error) {
-        console.error('Failed to delete class:', error);
-        showCustomAlert('Error', 'Failed to delete class', 'error');
     }
-}
 
+    // Add Save button handler
+    const saveButton = document.querySelector('.save-button');
+    if (saveButton) {
+        saveButton.addEventListener('click', () => {
+            saveTimeTable();
+            isEditMode = false;
+            const editButton = document.querySelector('.edit-button');
+            if (editButton) {
+                editButton.textContent = 'Edit';
+            }
+            saveButton.style.display = 'none';
+            
+            // Make cells non-editable
+            const cells = document.querySelectorAll('.week-table tbody td:not(:first-child)');
+            cells.forEach(cell => {
+                cell.setAttribute('contenteditable', 'false');
+                cell.classList.remove('editable');
+            });
+        });
+    }
+
+    // ...existing code...
+});
+
+// Fix the enableDebugMode function
 function enableDebugMode() {
     // Create debug button if it doesn't exist
     let debugButton = document.getElementById('debug-button');
@@ -1102,32 +932,43 @@ function enableDebugMode() {
         debugButton.textContent = 'Debug Menu';
         debugButton.style.padding = '30px 55px';
         debugButton.style.fontSize = '1.6em';
+        debugButton.style.display = 'block'; // Make sure it's visible
         document.body.appendChild(debugButton);
         
         debugButton.addEventListener('click', () => {
             const debugMenu = document.getElementById('debug-menu');
             const debugOverlay = document.getElementById('debug-overlay');
             debugMenu.classList.add('active');
+            debugMenu.style.display = 'block';
             debugOverlay.classList.add('active');
+            debugOverlay.style.display = 'block';
         });
+    } else {
+        debugButton.style.display = 'block';
     }
     
-    // Rest of enableDebugMode function
+    // Set admin mode and update UI
     isAdminMode = true;
     toggleAdminEditMode();
     
     // Update admin button
     const adminBtn = document.getElementById('admin-button');
-    adminBtn.innerHTML = 'Admin Mode <span class="admin-check">✓</span>';
-    adminBtn.disabled = true;
-    adminBtn.classList.add('admin-active');
+    if (adminBtn) {
+        adminBtn.innerHTML = 'Admin Mode <span class="admin-check">✓</span>';
+        adminBtn.disabled = true;
+        adminBtn.classList.add('admin-active');
+    }
     
     // Show admin features
     document.querySelectorAll('.gear-icon').forEach(icon => {
         icon.classList.add('visible');
     });
-    document.getElementById('create-new').classList.add('admin-visible');
-    document.getElementById('accounts-button').classList.add('admin-visible');
+    
+    const createNewBtn = document.getElementById('create-new');
+    if (createNewBtn) createNewBtn.classList.add('admin-visible');
+    
+    const accountsBtn = document.getElementById('accounts-button');
+    if (accountsBtn) accountsBtn.classList.add('admin-visible');
 }
 
 function disableDebugMode() {
@@ -1182,175 +1023,7 @@ function disableDebugMode() {
     });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    // Existing DOMContentLoaded content...
-    
-    // Add button event listeners
-    const createNewBtn = document.getElementById('create-new');
-    const adminBtn = document.getElementById('admin-button');
-    const editBtn = document.querySelector('.edit-button');
-    const saveBtn = document.querySelector('.save-button');
-    const closeSelectBtn = document.getElementById('close-select');
-    const selectScreen = document.getElementById('select-screen');
-
-    // Create new button
-    createNewBtn.addEventListener('click', () => {
-        selectScreen.classList.add('active');
-        generateCalendar();
-    });
-
-    // Close select screen
-    closeSelectBtn.addEventListener('click', () => {
-        selectScreen.classList.remove('active');
-        document.getElementById('name-input').value = '';
-    });
-
-    // Admin button
-    adminBtn.addEventListener('click', () => {
-        if (!isAdminMode) {
-            const verificationWindow = document.getElementById('verification-window');
-            verificationWindow.classList.add('active');
-            document.getElementById('verification-code').focus();
-        }
-    });
-
-    // Edit button
-    editBtn.addEventListener('click', () => {
-        if (currentTimetableName) {
-            toggleEditMode();
-        }
-    });
-
-    // Save button
-    saveBtn.addEventListener('click', () => {
-        if (currentTimetableName) {
-            saveTimeTable();
-        }
-    });
-
-    // Admin verification
-    const verificationCode = document.getElementById('verification-code');
-    const confirmVerification = document.getElementById('confirm-verification');
-    const closeVerification = document.getElementById('close-verification');
-    const verificationWindow = document.getElementById('verification-window');
-
-    // Add Enter key support for verification
-    verificationCode.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            confirmVerification.click();
-        }
-    });
-
-    confirmVerification.addEventListener('click', () => {
-        if (verificationCode.value === '1918') { // Changed verification code
-            isAdminMode = true;
-            toggleAdminEditMode();
-            verificationWindow.classList.remove('active');
-            adminBtn.innerHTML = 'Admin Mode <span class="admin-check">✓</span>';
-            adminBtn.classList.add('admin-active');
-            showCustomAlert('Success', 'Admin mode activated', 'success');
-        } else {
-            showCustomAlert('Error', 'Invalid verification code', 'error');
-        }
-        verificationCode.value = '';
-    });
-
-    closeVerification.addEventListener('click', () => {
-        verificationWindow.classList.remove('active');
-        verificationCode.value = '';
-    });
-
-    // Calendar navigation
-    const prevButton = document.querySelector('.prev-button');
-    const nextButton = document.querySelector('.next-button');
-
-    prevButton.addEventListener('click', () => {
-        if (currentMonth === 0) {
-            currentMonth = 11;
-            currentYear--;
-        } else {
-            currentMonth--;
-        }
-        generateCalendar();
-    });
-
-    nextButton.addEventListener('click', () => {
-        if (currentMonth === 11) {
-            currentMonth = 0;
-            currentYear++;
-        } else {
-            currentMonth++;
-        }
-        generateCalendar();
-    });
-});
-
-// Update the keyStates object and event handlers
-const keyStates = {
-    Shift: false,
-    KeyA: false,
-    KeyS: false
-};
-
-// Remove the old keydown/keyup handlers and add these new ones
-document.addEventListener('keydown', (e) => {
-    if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
-        keyStates.Shift = true;
-    } else if (e.code === 'KeyA') {
-        keyStates.KeyA = true;
-    } else if (e.code === 'KeyS') {
-        keyStates.KeyS = true;
-    }
-
-    // Check if all required keys are pressed
-    if (keyStates.Shift && keyStates.KeyA && keyStates.KeyS) {
-        document.body.classList.toggle('debug-mode');
-        const isDebugMode = document.body.classList.contains('debug-mode');
-        
-        if (isDebugMode) {
-            enableDebugMode();
-        } else {
-            disableDebugMode();
-        }
-
-        // Reset key states to prevent repeat triggers
-        resetKeyStates();
-    }
-});
-
-document.addEventListener('keyup', (e) => {
-    if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
-        keyStates.Shift = false;
-    } else if (e.code === 'KeyA') {
-        keyStates.KeyA = false;
-    } else if (e.code === 'KeyS') {
-        keyStates.KeyS = false;
-    }
-});
-
-// Update reset function to ensure all keys are properly reset
-function resetKeyStates() {
-    Object.keys(keyStates).forEach(key => {
-        keyStates[key] = false;
-    });
-}
-
-// Add window blur handler to reset keys when window loses focus
-window.addEventListener('blur', resetKeyStates);
-
-// Add this helper function near other menu-related functions
-function closeAccountsMenu() {
-    const accountsMenu = document.getElementById('accounts-menu');
-    const accountsOverlay = document.getElementById('accounts-overlay');
-    if (accountsMenu && accountsOverlay) {
-        accountsMenu.style.display = 'none';
-        accountsMenu.style.visibility = 'hidden';
-        accountsOverlay.style.display = 'none';
-        accountsOverlay.style.visibility = 'hidden';
-    }
-}
-
+// Account creation popup handling
 document.addEventListener('DOMContentLoaded', () => {
     // ...existing code...
 
@@ -1391,7 +1064,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     createAccountsBtn.addEventListener('click', () => {
         console.log('Create Accounts button clicked');
-        //toggleAccountsMenu();
+        showAccountCreatePopup();
+        closeAccountsMenu(); // Close the menu after clicking
     });
 
 	closeAccountsBtn.addEventListener('click', () => {
@@ -1404,3 +1078,455 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ...existing code...
 });
+
+// Add this new function to handle the account creation popup
+function showAccountCreatePopup() {
+    // Create the popup if it doesn't exist
+    let popup = document.getElementById('account-create-popup');
+    if (!popup) {
+        popup = document.createElement('div');
+        popup.id = 'account-create-popup';
+        popup.className = 'account-create-popup';
+        
+        popup.innerHTML = `
+            <h2>Create New Account</h2>
+            <div class="input-group">
+                <label for="account-name">Full Name</label>
+                <input type="text" id="account-name" placeholder="Enter full name">
+            </div>
+            <div class="input-group">
+                <label for="account-abbreviation">Abbreviation</label>
+                <input type="text" id="account-abbreviation" placeholder="Enter abbreviation">
+            </div>
+            <div class="input-group">
+                <label for="account-password">Password</label>
+                <input type="password" id="account-password" placeholder="Enter password">
+            </div>
+            <div class="account-create-error" id="account-create-error">Error message will appear here</div>
+            <div class="account-create-actions">
+                <button id="create-account-btn">Create Account</button>
+                <button id="cancel-account-btn">Cancel</button>
+            </div>
+        `;
+        
+        document.body.appendChild(popup);
+        
+        // Add event listeners for buttons
+        document.getElementById('create-account-btn').addEventListener('click', createNewAccount);
+        document.getElementById('cancel-account-btn').addEventListener('click', hideAccountCreatePopup);
+        
+        // Add keyboard event handlers
+        popup.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                hideAccountCreatePopup();
+            } else if (e.key === 'Enter') {
+                createNewAccount();
+            }
+        });
+    }
+    
+    // Clear any previous values and errors
+    document.getElementById('account-name').value = '';
+    document.getElementById('account-abbreviation').value = '';
+    document.getElementById('account-password').value = '';
+    document.getElementById('account-create-error').style.display = 'none';
+    
+    // Show the popup
+    popup.style.display = 'block';
+    
+    // Add overlay if it doesn't exist
+    let overlay = document.getElementById('account-create-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'account-create-overlay';
+        overlay.className = 'accounts-overlay';
+        overlay.addEventListener('click', hideAccountCreatePopup);
+        document.body.appendChild(overlay);
+    }
+    
+    // Show the overlay
+    overlay.style.display = 'block';
+    
+    // Focus on the first input field
+    document.getElementById('account-name').focus();
+}
+
+function hideAccountCreatePopup() {
+    const popup = document.getElementById('account-create-popup');
+    const overlay = document.getElementById('account-create-overlay');
+    
+    if (popup) popup.style.display = 'none';
+    if (overlay) overlay.style.display = 'none';
+}
+
+function createNewAccount() {
+    const nameInput = document.getElementById('account-name');
+    const abbreviationInput = document.getElementById('account-abbreviation');
+    const passwordInput = document.getElementById('account-password');
+    const errorElement = document.getElementById('account-create-error');
+    
+    const name = nameInput.value.trim();
+    const abbreviation = abbreviationInput.value.trim();
+    const password = passwordInput.value.trim();
+    
+    // Clear previous error
+    errorElement.style.display = 'none';
+    errorElement.textContent = '';
+    
+    // Validate inputs
+    if (!name || !abbreviation || !password) {
+        errorElement.textContent = 'All fields are required';
+        errorElement.style.display = 'block';
+        return;
+    }
+    
+    // Show loading indicator
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    if (loadingOverlay) {
+        loadingOverlay.classList.add('active');
+        const loadingText = loadingOverlay.querySelector('.loading-text');
+        if (loadingText) loadingText.textContent = 'Creating account...';
+    }
+    
+    // Create fetch request with retry logic
+    const maxRetries = 3;
+    let currentRetry = 0;
+
+    function attemptRequest() {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+        return fetch(`${API_URL}/users`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ name, abbreviation, password }),
+            signal: controller.signal
+        })
+        .then(async response => {
+            clearTimeout(timeoutId);
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Server error');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (loadingOverlay) loadingOverlay.classList.remove('active');
+            showCustomAlert('Success', 'Account created successfully', 'success');
+            hideAccountCreatePopup();
+        })
+        .catch(error => {
+            clearTimeout(timeoutId);
+            
+            if (error.name === 'AbortError') {
+                throw new Error('Request timed out');
+            }
+            
+            if (currentRetry < maxRetries && 
+                (error.message === 'Failed to fetch' || error.message === 'Network error')) {
+                currentRetry++;
+                return new Promise(resolve => setTimeout(resolve, 1000))
+                    .then(attemptRequest);
+            }
+            
+            throw error;
+        });
+    }
+
+    attemptRequest().catch(error => {
+        console.error('Error creating account:', error);
+        if (loadingOverlay) loadingOverlay.classList.remove('active');
+        
+        let errorMessage = 'Connection error. Please try again.';
+        if (error.message.includes('already exists')) {
+            errorMessage = 'This abbreviation is already in use';
+        } else if (error.message === 'Request timed out') {
+            errorMessage = 'Connection timed out. Please try again.';
+        }
+        
+            errorElement.textContent = errorMessage;
+            errorElement.style.display = 'block';
+        });
+    };
+
+async function loadUserOptions() {
+    try {
+        console.log('Fetching users...');
+        const response = await fetch(`${API_URL}/users`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const users = await response.json();
+        console.log('Received users:', users);
+        
+        const userSelect = document.getElementById('user-select');
+        if (!userSelect) {
+            console.error('User select element not found');
+            return;
+        }
+        
+        // Clear existing options
+        userSelect.innerHTML = '<option value="">Select a user</option>';
+        
+        // Add user options
+        users.forEach(user => {
+            const option = document.createElement('option');
+            option.value = user.abbreviation;
+            option.textContent = user.name;
+            userSelect.appendChild(option);
+            console.log('Added user:', user.name);
+        });
+    } catch (error) {
+        console.error('Failed to load users:', error);
+    }
+}
+
+// Fix debug mode key combination
+document.addEventListener('keydown', (e) => {
+    if (e.shiftKey && e.code === 'KeyA') {
+        const handler = (e2) => {
+            if (e2.code === 'KeyS') {
+                document.body.classList.toggle('debug-mode');
+                const isDebugMode = document.body.classList.contains('debug-mode');
+                if (isDebugMode) {
+                    enableDebugMode();
+                } else {
+                    disableDebugMode();
+                }
+            }
+            document.removeEventListener('keydown', handler);
+        };
+        document.addEventListener('keydown', handler);
+    }
+});
+
+// Fix verification window functionality
+function setupVerificationWindow() {
+    const verificationWindow = document.getElementById('verification-window');
+    const verificationCode = document.getElementById('verification-code');
+    const confirmVerification = document.getElementById('confirm-verification');
+    const closeVerification = document.getElementById('close-verification');
+    
+    if (!verificationWindow || !verificationCode || !confirmVerification || !closeVerification) {
+        console.error('Verification window elements not found');
+        return;
+    }
+
+    // Handle verification code submission
+    function verifyAdminCode() {
+        const code = verificationCode.value;
+        if (code === '1918') {
+            isAdminMode = true;
+            toggleAdminEditMode();
+            closeVerificationWindow();
+            const adminButton = document.getElementById('admin-button');
+            if (adminButton) {
+                adminButton.innerHTML = 'Admin Mode <span class="admin-check">✓</span>';
+                adminButton.classList.add('admin-active');
+            }
+            showCustomAlert('Success', 'Admin mode activated', 'success');
+        } else {
+            showCustomAlert('Error', 'Invalid verification code', 'error');
+        }
+        verificationCode.value = '';
+    }
+
+    // Close verification window
+    function closeVerificationWindow() {
+        verificationWindow.classList.remove('active');
+        verificationWindow.style.display = 'none';
+        verificationCode.value = '';
+    }
+
+    // Add event listeners
+    confirmVerification.addEventListener('click', verifyAdminCode);
+    closeVerification.addEventListener('click', closeVerificationWindow);
+    verificationCode.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            verifyAdminCode();
+        }
+    });
+
+    // Add event listener to admin button
+    const adminButton = document.getElementById('admin-button');
+    if (adminButton) {
+        adminButton.addEventListener('click', () => {
+            if (!isAdminMode) {
+                verificationWindow.classList.add('active');
+                verificationWindow.style.display = 'flex';
+                verificationCode.value = '';
+                verificationCode.focus();
+            }
+        });
+    }
+}
+
+// Update DOMContentLoaded to include new setup functions
+document.addEventListener('DOMContentLoaded', () => {
+    setupLoginHandlers();
+    setupVerificationWindow();
+    loadTimetables().then(() => {
+        const savedTimetable = localStorage.getItem('currentTimetable');
+        if (savedTimetable && timetables[savedTimetable]) {
+            showTimetable(savedTimetable);
+        }
+    });
+    
+    // ...existing code...
+});
+
+// Fix accounts menu close functionality
+function closeAccountsMenu() {
+    const accountsMenu = document.getElementById('accounts-menu');
+    const accountsOverlay = document.getElementById('accounts-overlay');
+    
+    if (accountsMenu && accountsOverlay) {
+        accountsMenu.style.display = 'none';
+        accountsOverlay.style.display = 'none';
+        accountsMenu.classList.remove('active');
+        accountsOverlay.classList.remove('active');
+    }
+}
+
+// ...existing code...
+
+async function loadTimetables() {
+    try {
+        // Clear existing timetables from memory and UI
+        timetables = {};
+        const container = document.getElementById('dynamic-links-container');
+        if (container) {
+            container.innerHTML = '';
+        }
+        
+        // First get list of timetable names
+        const response = await fetch(`${API_URL}/timetables`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const timetableNames = await response.json();
+        console.log('Found timetables:', timetableNames);
+        
+        // Create a Set to track unique class names
+        const loadedClasses = new Set();
+
+        // Load each timetable's full data
+        for (const name of timetableNames) {
+            // Skip if we've already loaded this class
+            if (loadedClasses.has(name)) {
+                console.log(`Skipping duplicate class: ${name}`);
+                continue;
+            }
+            
+            try {
+                const timetableResponse = await fetch(`${API_URL}/timetables/${encodeURIComponent(name)}`);
+                if (!timetableResponse.ok) {
+                    console.error(`Failed to load timetable ${name}`);
+                    continue;
+                }
+
+                const timetableData = await timetableResponse.json();
+                
+                // Store in memory
+                timetables[name] = {
+                    className: name,
+                    fileId: timetableData.fileId,
+                    data: timetableData.data || {},
+                    permanentHours: timetableData.permanentHours || {},
+                    currentWeek: timetableData.currentWeek || new Date().toISOString()
+                };
+
+                // Create and add button only once per class
+                const dynamicButton = createDynamicButton(name);
+                if (container) {
+                    container.appendChild(dynamicButton);
+                }
+                
+                // Mark this class as loaded
+                loadedClasses.add(name);
+                
+                console.log(`Loaded timetable: ${name}`);
+            } catch (error) {
+                console.error(`Error loading timetable ${name}:`, error);
+            }
+        }
+        
+        console.log('Finished loading all timetables');
+    } catch (error) {
+        console.error('Failed to load timetables:', error);
+        showCustomAlert('Error', 'Failed to load timetables', 'error');
+    }
+}
+
+async function saveTimetable(name, data) {
+    try {
+        const response = await fetch(`${API_URL}/timetables/${encodeURIComponent(name)}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                fileId: data.fileId,
+                data: data.data
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        await response.json();
+        showCustomAlert('Success', 'Changes saved successfully', 'success');
+    } catch (error) {
+        console.error('Failed to save timetable:', error);
+        showCustomAlert('Error', 'Failed to save changes', 'error');
+    }
+}
+
+async function saveTimeTable() {
+    if (!currentTimetableName || !timetables[currentTimetableName]) {
+        showCustomAlert('Error', 'No timetable selected', 'error');
+        return;
+    }
+
+    const rows = document.querySelectorAll('.week-table tbody tr');
+    const currentDate = new Date(timetables[currentTimetableName].currentWeek);
+    const dateString = currentDate.toISOString().split('T')[0];
+
+    // Initialize the data structure if it doesn't exist
+    if (!timetables[currentTimetableName].data) {
+        timetables[currentTimetableName].data = {};
+    }
+    if (!timetables[currentTimetableName].data[dateString]) {
+        timetables[currentTimetableName].data[dateString] = [];
+    }
+
+    // Collect data from the table
+    rows.forEach((row, dayIndex) => {
+        const cells = row.querySelectorAll('td:not(:first-child)');
+        const dayData = Array.from(cells).map(cell => ({
+            content: cell.textContent,
+            isPermanent: cell.classList.contains('permanent-hour')
+        }));
+        timetables[currentTimetableName].data[dateString][dayIndex] = dayData;
+    });
+
+    // Save permanent hours
+    timetables[currentTimetableName].permanentHours = {};
+    rows.forEach((row, dayIndex) => {
+        const cells = row.querySelectorAll('td:not(:first-child)');
+        timetables[currentTimetableName].permanentHours[dayIndex] = {};
+        cells.forEach((cell, hourIndex) => {
+            if (cell.classList.contains('permanent-hour')) {
+                timetables[currentTimetableName].permanentHours[dayIndex][hourIndex + 1] = cell.textContent;
+            }
+        });
+    });
+
+    await saveTimetable(currentTimetableName, timetables[currentTimetableName]);
+}

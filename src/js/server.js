@@ -225,6 +225,42 @@ app.delete('/api/timetables', async (req, res) => {
     }
 });
 
+const accountsDir = path.join(__dirname, '../../data/accounts');
+
+// Ensure accounts directory exists
+async function ensureAccountsDirectory() {
+    try {
+        await fs.promises.access(accountsDir);
+    } catch {
+        await fs.promises.mkdir(accountsDir, { recursive: true });
+    }
+}
+
+// POST create new account
+app.post('/api/accounts', async (req, res) => {
+    const { username, password } = req.body;
+    if (!username || !password) {
+        return res.status(400).json({ success: false, error: 'Username and password are required' });
+    }
+    try {
+        await ensureAccountsDirectory();
+        const filePath = path.join(accountsDir, `${username}.json`);
+        
+        // Check if account already exists
+        try {
+            await fs.promises.access(filePath);
+            return res.status(409).json({ success: false, error: 'Account already exists' });
+        } catch {}
+        
+        // Save account data
+        await fs.promises.writeFile(filePath, JSON.stringify({ username, password }, null, 2), 'utf8');
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Account creation error:', err);
+        res.status(500).json({ success: false, error: 'Failed to save account' });
+    }
+});
+
 // Initialize storage and start server
 initializeDataStorage().then((loadedData) => {
     timetables = loadedData; // Assign loaded data to timetables

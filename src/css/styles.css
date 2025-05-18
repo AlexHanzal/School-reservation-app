@@ -738,13 +738,13 @@
     justify-content: center;
     align-items: center;
     opacity: 0;
-    animation: fadeOut 0.3s ease-out;
+    transition: opacity 0.3s ease-out;
 }
 
 .verification-window.active {
-    display: flex;
+    display: flex !important; /* Force display when active */
     opacity: 1;
-    animation: fadeIn 0.3s ease-out;
+    transition: opacity 0.3s ease-in;
 }
 
 .verification-content {
@@ -1037,7 +1037,7 @@ body.debug-mode {
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    display: none;
+    display: none; /* Hidden by default */
     z-index: 9999;
     font-size: 1.6em;
 }
@@ -1184,8 +1184,8 @@ body.debug-mode {
 
 .accounts-menu button:not(.close-accounts-button) {
     width: 100%;
-    padding: 15px;
-    margin: 5px 0;
+    padding: 12px;
+    margin: 10px 0;
     background-color: var(--bakalar-color-basic);
     color: black;
     border: 2px solid var(--primary-color);
@@ -1193,7 +1193,6 @@ body.debug-mode {
     cursor: pointer;
     font-weight: bold;
     font-size: 1.1em;
-    display: block;
     transition: all 0.2s ease;
 }
 
@@ -1334,4 +1333,280 @@ body.debug-mode {
 
 #accounts-button.admin-visible {
     display: block !important; /* Override default hidden */
+}
+
+/* Account Creation Pop-up Styles */
+.account-create-popup {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #fff;
+  padding: 30px;
+  border-radius: 10px;
+  min-width: 300px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  z-index: 4000;
+}
+.account-create-popup h2 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  text-align: center;
+}
+.account-create-popup .input-group {
+  margin-bottom: 15px;
+}
+.account-create-popup label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+.account-create-popup input[type="text"],
+.account-create-popup input[type="password"] {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+.account-create-actions {
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+.account-create-popup button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  background: #2196F3;
+  color: #fff;
+  cursor: pointer;
+  font-size: 1em;
+  transition: background 0.2s;
+}
+.account-create-popup button:hover {
+  background: #1976D2;
+}
+.account-create-error {
+  color: red;
+  margin-top: 10px;
+  display: none;
+}
+
+/* Account Create Overlay */
+#account-create-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 3999;
+}
+
+/* Improve the account creation popup styles */
+.account-create-popup {
+  z-index: 4000;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  background-color: var(--secondary-color);
+  color: var(--primary-color);
+  border: 2px solid var(--primary-color);
+}
+
+.account-create-popup input {
+  background-color: var(--third-color);
+  color: var(--primary-color);
+  border: 2px solid var(--primary-color);
+  border-radius: 5px;
+}
+
+.account-create-popup button {
+  background-color: var(--bakalar-color-basic);
+  color: black;
+  border: 2px solid var(--primary-color);
+  border-radius: 5px;
+  transition: all 0.2s ease;
+}
+
+.account-create-popup button:hover {
+  background-color: var(--bakalar-color-hover);
+  color: var(--primary-color);
+}
+
+.account-create-popup button:first-child {
+  margin-right: 10px;
+}
+
+/* Login styles */
+#login-button {
+    padding: 8px 16px;
+    background-color: var(--bakalar-color-basic);
+    color: black;
+    border: 2px solid var(--primary-color);
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 1em;
+    transition: all 0.2s ease;
+}
+
+#login-button:hover {
+    background-color: var(--bakalar-color-hover);
+    color: var(--primary-color);
+}
+
+#login-button.logged-in {
+    background-color: #4CAF50;
+    color: white;
+    border-color: #4CAF50;
+}
+
+.login-menu {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: var(--secondary-color);
+    border: 2px solid var(--primary-color);
+    border-radius: 10px;
+    padding: 40px 20px 20px;
+    z-index: 3000;
+    min-width: 300px;
+}
+
+.login-menu #close-login {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 30px;
+    height: 30px;
+    background: none;
+    border: none;
+    color: var(--primary-color);
+    font-size: 1.5em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    margin: 0;
+    z-index: 1;
+}
+
+.login-menu #close-login:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
+}
+
+.login-menu #submit-login {
+    width: 100%;
+    padding: 12px;
+    margin: 20px 0 0;
+    background-color: var(--bakalar-color-basic);
+    color: black;
+    border: 2px solid var(--primary-color);
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 1.1em;
+    transition: all 0.2s ease;
+}
+
+.login-menu #submit-login:hover {
+    background-color: var(--bakalar-color-hover);
+    color: var(--primary-color);
+}
+
+.login-menu.active {
+    display: block;
+}
+
+.login-menu h3 {
+    margin-top: 0;
+    color: var(--primary-color);
+    text-align: center;
+}
+
+.login-error {
+    color: #ff4444;
+    margin-top: 10px;
+    display: none;
+    text-align: center;
+}
+
+.login-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 2999;
+}
+
+.login-overlay.active {
+    display: block;
+}
+
+/* Update login menu styles */
+.login-menu {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: var(--secondary-color);
+    border: 2px solid var(--primary-color);
+    border-radius: 10px;
+    padding: 40px 20px 20px;
+    z-index: 3000;
+    min-width: 300px;
+}
+
+.login-menu #close-login {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 30px;
+    height: 30px;
+    background: none;
+    border: none;
+    color: var(--primary-color);
+    font-size: 1.5em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    margin: 0;
+    z-index: 1;
+}
+
+.login-menu #close-login:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
+}
+
+.login-menu #submit-login {
+    width: 100%;
+    padding: 12px;
+    margin: 20px 0 0;
+    background-color: var(--bakalar-color-basic);
+    color: black;
+    border: 2px solid var(--primary-color);
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 1.1em;
+    transition: all 0.2s ease;
+}
+
+.login-menu #submit-login:hover {
+    background-color: var(--bakalar-color-hover);
+    color: var(--primary-color);
 }

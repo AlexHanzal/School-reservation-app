@@ -1,8 +1,18 @@
 | CHANGES |
-- Added current date selection button into debug menu
-	(has to display a calendar where the current date can be changed)
+- Added registration and login functionality
 
+------------------------------------------------
+
+| TO DO |
+- When NOT logged into any user, hide all classes
+- Add user abbreviation to edited cells
+- Make admin user not automatically make edited cells permanent
+	- Add a "Select permanent hours" button that toggles 
+	permanent hour status for cells
+- Add logout button
+
+------------------------------------------------
 
 | NEEDS FIXING |
-- class editing buttons (delete) 
-- NEFACHA "CLOSE" BUTTON V DEBUG MENU SE POSERU KURVA
+- class editing buttons (delete)
+- There are three instances of a single class being loaded in

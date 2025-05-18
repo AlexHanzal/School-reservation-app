@@ -11,9 +11,29 @@
   <header class="header" id="header">
     <h1 class="title">Zaber si</h1>
     <div class="window-controls">
-      
+        <button id="login-button">Login</button>
     </div>
   </header>
+
+  <!-- Add login overlay and menu after header -->
+  <div class="login-overlay" id="login-overlay"></div>
+  <div class="login-menu" id="login-menu">
+    <button class="close-accounts-button" id="close-login">×</button>
+    <h3>User Login</h3>
+    <div class="input-group">
+        <label for="user-select">User:</label>
+        <select id="user-select">
+            <option value="">Select a user</option>
+        </select>
+    </div>
+    <div class="input-group">
+        <label for="password-input">Password:</label>
+        <input type="password" id="password-input" placeholder="Enter password">
+    </div>
+    <div class="login-error" id="login-error"></div>
+    <button id="submit-login">Login</button>
+  </div>
+  
   <aside class="sidebar">
     <ul>
       <li id="dynamic-links-container"></li> <!-- Container for dynamic links -->
@@ -136,27 +156,48 @@
   <script>
     // Add event listener to show save button when admin mode is activated
     document.getElementById('admin-button').addEventListener('click', function() {
-      // This will be triggered when admin mode is activated
-      // The actual admin verification may happen in renderer.js
-      // After verification is successful, make sure save button is visible
-      const saveButton = document.querySelector('.time-table-buttons .save-button');
-      if (saveButton) {
-        saveButton.style.display = 'inline-block';
-      }
+      console.log('Admin button clicked');
+      // Admin verification will now be handled in the setupAdminButton function
     });
     
-    // Add event listener for debug menu close button
-    document.addEventListener('DOMContentLoaded', function() {
-      var closeDebugBtn = document.getElementById('close-debug');
-      if (closeDebugBtn) {
-        closeDebugBtn.addEventListener('click', function() {
-          const debugMenu = document.getElementById('debug-menu');
-          const debugOverlay = document.getElementById('debug-overlay');
-          if (debugMenu) debugMenu.style.display = 'none';
-          if (debugOverlay) debugOverlay.style.display = 'none';
+    // Debug helper - logs when verification window appears/disappears
+    const verificationWindow = document.getElementById('verification-window');
+    if (verificationWindow) {
+      const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+          if (mutation.attributeName === 'style' || mutation.attributeName === 'class') {
+            console.log('Verification window visibility changed:', 
+              verificationWindow.style.display, 
+              verificationWindow.classList.contains('active'));
+          }
         });
-      }
-    });
+      });
+      
+      observer.observe(verificationWindow, { attributes: true });
+    }
+    
+    // Debug helper for keyboard shortcuts
+    console.log('Debug mode can be activated with Shift+A+S');
+    
+    // Add a direct test button (only in development)
+    if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+      const testButton = document.createElement('button');
+      testButton.textContent = 'Debug Mode Test';
+      testButton.style.position = 'fixed';
+      testButton.style.bottom = '10px';
+      testButton.style.left = '10px';
+      testButton.style.zIndex = '9999';
+      testButton.onclick = function() {
+        document.body.classList.toggle('debug-mode');
+        if (document.body.classList.contains('debug-mode')) {
+          enableDebugMode();
+        } else {
+          disableDebugMode();
+        }
+      };
+      
+      document.body.appendChild(testButton);
+    }
   </script>
   <div class="custom-alert-overlay" id="alertOverlay"></div>
   <div class="custom-alert" id="customAlert">
@@ -213,5 +254,95 @@
     <div class="loading-spinner"></div>
     <div class="loading-text">Saving changes...</div>
   </div>
+  
+  <!-- Add direct script to ensure admin button and debug mode are initialized -->
+  <script>
+    // Make sure Admin button is set up properly
+    window.addEventListener('load', function() {
+      if (typeof setupAdminButton === 'function') {
+        setupAdminButton(); 
+        console.log('Admin button setup initialized');
+      } else {
+        console.error('setupAdminButton function not found');
+      }
+      
+      if (typeof setupDebugKeyHandlers === 'function') {
+        setupDebugKeyHandlers();
+        console.log('Debug key handlers initialized');
+      } else {
+        console.error('setupDebugKeyHandlers function not found');
+      }
+      
+      // Make the admin button click event very direct
+      const adminBtn = document.getElementById('admin-button');
+      if (adminBtn) {
+        adminBtn.addEventListener('click', function() {
+          console.log('Admin button clicked directly');
+          
+          // Show verification window directly
+          const verificationWindow = document.getElementById('verification-window');
+          if (verificationWindow) {
+            verificationWindow.style.display = 'flex';
+            verificationWindow.classList.add('active');
+            
+            const verificationCode = document.getElementById('verification-code');
+            if (verificationCode) {
+              verificationCode.value = '';
+              setTimeout(() => verificationCode.focus(), 100);
+            }
+          } else {
+            console.error('Verification window not found');
+          }
+        });
+      }
+    });
+  </script>
+
+  <!-- Make sure HTML overlays and modals are properly structured -->
+  <script>
+    // Improve transitions by ensuring modals and overlays work together
+    document.addEventListener('DOMContentLoaded', function() {
+      // Helper function to show a modal with proper timing
+      function showModal(modal, overlay) {
+        // First display the elements but keep them invisible
+        if (overlay) overlay.style.display = 'block';
+        modal.style.display = 'block';
+        
+        // Force a reflow to ensure the display change applies before adding the active class
+        void modal.offsetWidth;
+        
+        // Now add active class to trigger transition
+        if (overlay) overlay.classList.add('active');
+        modal.classList.add('active');
+      }
+      
+      // Helper function to hide a modal with proper timing
+      function hideModal(modal, overlay) {
+        // First remove the active class to trigger transition
+        modal.classList.remove('active');
+        if (overlay) overlay.classList.remove('active');
+        
+        // After transition completes, set display to none
+        setTimeout(() => {
+          modal.style.display = 'none';
+          if (overlay) overlay.style.display = 'none';
+        }, 300);
+      }
+      
+      // Apply to login button
+      const loginButton = document.getElementById('login-button');
+      const loginMenu = document.getElementById('login-menu');
+      const loginOverlay = document.getElementById('login-overlay');
+      
+      if (loginButton && loginMenu && loginOverlay) {
+        loginButton.addEventListener('click', function(e) {
+          if (!loginButton.classList.contains('logged-in')) {
+            e.preventDefault();
+            showModal(loginMenu, loginOverlay);
+          }
+        });
+      }
+    });
+  </script>
 </body>
 </html>
