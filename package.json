@@ -1,9 +1,6 @@
 {
   "dependencies": {
-    "corey": "^1.0.0",
     "cors": "^2.8.5",
-    "electron": "^36.2.1",
-    "express": "^5.1.0",
-    "path": "^0.12.7"
+    "express": "^5.1.0"
   }
 }
