@@ -798,15 +798,8 @@ async function saveTimeTable() {
     await saveTimetable(currentTimetableName, timetables[currentTimetableName]);
 }
 
-const API_URL = (() => {
-    const hostname = window.location.hostname;
-    // If accessing locally, allow both localhost and local IP
-    if (hostname === 'localhost' || hostname === '127.0.0.1') {
-        return 'http://localhost:3000/api';
-    }
-    // For network access, use the actual IP or hostname
-    return `http://${hostname}:3000/api`;
-})();
+// Update the API_URL to work with the new server location
+const API_URL = 'http://localhost:3000/api';
 
 async function loadTimetables() {
     try {
@@ -938,6 +931,10 @@ function toggleAdminEditMode() {
     editButton.textContent = 'Admin Mode';
     editButton.style.backgroundColor = '#ff9800';
 
+    // Show save button in admin mode
+    const saveButton = document.querySelector('.save-button');
+    saveButton.style.display = 'block';
+
     // Add admin-active class to all button groups
     document.querySelectorAll('.button-group').forEach(group => {
         group.classList.toggle('admin-active', isAdminMode);
@@ -998,7 +995,9 @@ function showClassEditMenu(className) {
 
     deleteBtn.onclick = async () => {
         if (confirm(`Are you sure you want to delete ${className}?`)) {
-            await deleteClass(className);
+            // Use fileId for deletion
+            const fileId = timetables[className]?.fileId || className;
+            await deleteClass(fileId);
             menu.style.display = 'none';
             document.removeEventListener('keydown', handleEscKey);
         }
@@ -1060,35 +1059,29 @@ async function renameClass(oldName, newName) {
     }
 }
 
-async function deleteClass(name) {
+async function deleteClass(fileId) {
+    const confirmDelete = confirm(`Are you sure you want to delete this class? This cannot be undone.`);
+    if (!confirmDelete) return;
     try {
-        await fetch(`${API_URL}/timetables/${name}`, {
-            method: 'DELETE'
-        });
-
-        // Delete from local data
-        delete timetables[name];
-
-        // Clear localStorage if deleted class was the current one
-        if (localStorage.getItem('currentTimetable') === name) {
-            localStorage.removeItem('currentTimetable');
+        const response = await fetch(`${API_URL}/timetables/${encodeURIComponent(fileId)}`, { method: 'DELETE' });
+        if (!response.ok) throw new Error('Failed to delete');
+        // Remove from timetables by fileId or className
+        for (const key in timetables) {
+            if (timetables[key].fileId === fileId) {
+                delete timetables[key];
+                break;
+            }
         }
-
-        // Update UI
         const container = document.getElementById('dynamic-links-container');
         container.innerHTML = '';
-        Object.keys(timetables).forEach(name => {
-            container.appendChild(createDynamicButton(name));
+        Object.keys(timetables).forEach(classId => {
+            container.appendChild(createDynamicButton(classId));
         });
-
-        // Hide timetable if it was showing
-        if (currentTimetableName === name) {
+        if (currentTimetableName === fileId) {
             document.querySelector('.time-table').style.display = 'none';
         }
-
         showCustomAlert('Success', 'Class deleted successfully', 'success');
     } catch (error) {
-        console.error('Failed to delete class:', error);
         showCustomAlert('Error', 'Failed to delete class', 'error');
     }
 }
@@ -1100,19 +1093,29 @@ function enableDebugMode() {
         debugButton = document.createElement('button');
         debugButton.id = 'debug-button';
         debugButton.textContent = 'Debug Menu';
-        debugButton.style.padding = '30px 55px';
-        debugButton.style.fontSize = '1.6em';
-        document.body.appendChild(debugButton);
+        debugButton.style.padding = '10px 20px';
+        debugButton.style.fontSize = '1.2em';
+        debugButton.style.position = 'fixed';
+        debugButton.style.bottom = '20px';
+        debugButton.style.right = '20px';
+        debugButton.style.zIndex = '1000';
+        debugButton.style.display = 'block';
         
+        // Add click handler to open debug menu
         debugButton.addEventListener('click', () => {
             const debugMenu = document.getElementById('debug-menu');
             const debugOverlay = document.getElementById('debug-overlay');
+            debugMenu.style.display = 'block';
+            debugOverlay.style.display = 'block';
             debugMenu.classList.add('active');
             debugOverlay.classList.add('active');
         });
+        
+        document.body.appendChild(debugButton);
     }
-    
-    // Rest of enableDebugMode function
+    debugButton.style.display = 'block';
+
+    // ...existing code...
     isAdminMode = true;
     toggleAdminEditMode();
     
@@ -1131,6 +1134,14 @@ function enableDebugMode() {
 }
 
 function disableDebugMode() {
+    // ...existing code...
+    
+    // Hide debug button
+    const debugButton = document.getElementById('debug-button');
+    if (debugButton) {
+        debugButton.style.display = 'none';
+    }
+
     // Disable admin mode first
     isAdminMode = false;
     
@@ -1402,5 +1413,172 @@ document.addEventListener('DOMContentLoaded', () => {
     //    toggleAccountsMenu();
     //});
 
+    // ...existing code...
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    // ...existing code...
+    const closeDebugBtn = document.getElementById('close-debug');
+    if (closeDebugBtn) {
+        closeDebugBtn.addEventListener('click', () => {
+            document.getElementById('debug-menu').classList.remove('active');
+            document.getElementById('debug-overlay').classList.remove('active');
+            document.getElementById('debug-menu').style.display = 'none';
+            document.getElementById('debug-overlay').style.display = 'none';
+        });
+    }
+    // ...existing code...
+});
+
+// ...existing code...
+document.addEventListener('DOMContentLoaded', () => {
+    // ...existing code...
+    const debugButton = document.getElementById('debug-button');
+    if (debugButton) {
+        debugButton.addEventListener('click', () => {
+            const debugMenu = document.getElementById('debug-menu');
+            const debugOverlay = document.getElementById('debug-overlay');
+            if (debugMenu && debugOverlay) {
+                debugMenu.classList.add('active');
+                debugOverlay.classList.add('active');
+                debugMenu.style.display = 'block';
+                debugOverlay.style.display = 'block';
+            }
+        });
+    }
+    const closeDebug = document.getElementById('close-debug');
+    if (closeDebug) {
+        closeDebug.addEventListener('click', () => {
+            const debugMenu = document.getElementById('debug-menu');
+            const debugOverlay = document.getElementById('debug-overlay');
+            if (debugMenu && debugOverlay) {
+                debugMenu.classList.remove('active');
+                debugOverlay.classList.remove('active');
+                debugMenu.style.display = 'none';
+                debugOverlay.style.display = 'none';
+            }
+        });
+    }
+    // ...existing code...
+});
+// ...existing code...
+// Account creation modal logic
+const accountCreatePopup = document.getElementById('accountCreatePopup');
+const accountCreateSubmit = document.getElementById('account-create-submit');
+const accountCreateCancel = document.getElementById('account-create-cancel');
+const accountCreateError = document.getElementById('account-create-error');
+const accountUsername = document.getElementById('account-username');
+const accountPassword = document.getElementById('account-password');
+const createAccountsBtn = document.getElementById('create-accounts');
+
+if (createAccountsBtn) {
+    createAccountsBtn.addEventListener('click', () => {
+        closeAccountsMenu();
+        accountUsername.value = '';
+        accountPassword.value = '';
+        accountCreateError.style.display = 'none';
+        accountCreatePopup.style.display = 'block';
+        accountUsername.focus();
+    });
+}
+if (accountCreateCancel) {
+    accountCreateCancel.addEventListener('click', () => {
+        accountCreatePopup.style.display = 'none';
+    });
+}
+if (accountCreateSubmit) {
+    accountCreateSubmit.addEventListener('click', async () => {
+        const username = accountUsername.value.trim();
+        const password = accountPassword.value;
+        if (!username || !password) {
+            accountCreateError.textContent = 'Username and password are required.';
+            accountCreateError.style.display = 'block';
+            return;
+        }
+        try {
+            const res = await fetch(`${API_URL}/accounts`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            const result = await res.json();
+            if (result.success) {
+                accountCreatePopup.style.display = 'none';
+                showCustomAlert('Success', 'Account created!', 'success');
+            } else {
+                accountCreateError.textContent = result.error || 'Failed to create account.';
+                accountCreateError.style.display = 'block';
+            }
+        } catch (err) {
+            accountCreateError.textContent = 'Server error.';
+            accountCreateError.style.display = 'block';
+        }
+    });
+}
+// Remove duplicate account creation code
+document.addEventListener('DOMContentLoaded', function() {
+    // ...existing code...
+    
+    // Single clean implementation for account creation
+    const createAccountsBtn = document.getElementById('create-accounts');
+    const accountCreatePopup = document.getElementById('accountCreatePopup');
+    const accountUsername = document.getElementById('account-username');
+    const accountPassword = document.getElementById('account-password');
+    const accountCreateError = document.getElementById('account-create-error');
+    const accountCreateSubmit = document.getElementById('account-create-submit');
+    const accountCreateCancel = document.getElementById('account-create-cancel');
+    
+    if (createAccountsBtn) {
+        createAccountsBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            closeAccountsMenu();
+            console.log('Create account button clicked - showing popup');
+            
+            // Show the popup directly - don't rely on other handlers
+            accountCreatePopup.style.display = 'block';
+            accountUsername.value = '';
+            accountPassword.value = '';
+            accountCreateError.style.display = 'none';
+            setTimeout(() => accountUsername.focus(), 100);
+        });
+    }
+    
+    if (accountCreateCancel) {
+        accountCreateCancel.addEventListener('click', function() {
+            accountCreatePopup.style.display = 'none';
+        });
+    }
+    
+    if (accountCreateSubmit) {
+        accountCreateSubmit.addEventListener('click', async function() {
+            const username = accountUsername.value.trim();
+            const password = accountPassword.value;
+            if (!username || !password) {
+                accountCreateError.textContent = 'Username and password are required.';
+                accountCreateError.style.display = 'block';
+                return;
+            }
+            try {
+                const res = await fetch(`${API_URL}/accounts`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const result = await res.json();
+                if (result.success) {
+                    accountCreatePopup.style.display = 'none';
+                    showCustomAlert('Success', 'Account created!', 'success');
+                } else {
+                    accountCreateError.textContent = result.error || 'Failed to create account.';
+                    accountCreateError.style.display = 'block';
+                }
+            } catch (err) {
+                accountCreateError.textContent = 'Server error.';
+                accountCreateError.style.display = 'block';
+            }
+        });
+    }
+    
     // ...existing code...
 });
