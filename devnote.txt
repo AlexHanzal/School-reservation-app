@@ -1,0 +1,8 @@
+| CHANGES |
+- Added current date selection button into debug menu
+	(has to display a calendar where the current date can be changed)
+
+
+| NEEDS FIXING |
+- class editing buttons (delete) 
+- NEFACHA "CLOSE" BUTTON V DEBUG MENU
