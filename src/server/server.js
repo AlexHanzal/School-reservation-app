@@ -165,6 +165,84 @@ app.delete('/api/timetables/:name', async (req, res) => {
     }
 });
 
+// DELETE timetable by fileId
+app.delete('/api/timetables/:fileId', (req, res) => {
+    const fileId = req.params.fileId;
+    const timetableDir = path.join(__dirname, '../../data/timetables');
+    const filePath = path.join(timetableDir, `${fileId}.json`);
+    fs.unlink(filePath, (err) => {
+        if (err) {
+            return res.status(404).json({ success: false, message: 'Timetable not found' });
+        }
+        res.json({ success: true, message: 'Timetable deleted' });
+    });
+});
+
+// Helper to generate a random string
+function generateRandomId(length = 10) {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    for (let i = 0; i < length; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+}
+
+// POST create new timetable (class)
+app.post('/api/timetables', async (req, res) => {
+    try {
+        const randomId = generateRandomId(10);
+        const dir = await ensureDirectory();
+        const filePath = path.join(dir, `${randomId}.json`);
+        const timetableData = {
+            className: randomId,
+            fileId: randomId,
+            data: {},
+            permanentHours: {},
+            calendar: '',
+            currentWeek: new Date().toISOString()
+        };
+        await writeJSONFile(filePath, timetableData);
+        res.json({ success: true, fileId: randomId, className: randomId });
+    } catch (error) {
+        console.error('Error creating timetable:', error);
+        res.status(500).json({ success: false, error: 'Failed to create timetable' });
+    }
+});
+
+const accountsDir = path.join(__dirname, '../../data/accounts');
+
+// Ensure accounts directory exists
+async function ensureAccountsDirectory() {
+    try {
+        await fs.access(accountsDir);
+    } catch {
+        await fs.mkdir(accountsDir, { recursive: true });
+    }
+}
+
+// POST create new account
+app.post('/api/accounts', async (req, res) => {
+    const { username, password } = req.body;
+    if (!username || !password) {
+        return res.status(400).json({ success: false, error: 'Username and password are required' });
+    }
+    await ensureAccountsDirectory();
+    const filePath = path.join(accountsDir, `${username}.json`);
+    try {
+        // Check if account already exists
+        try {
+            await fs.access(filePath);
+            return res.status(409).json({ success: false, error: 'Account already exists' });
+        } catch {}
+        // Save account data
+        await fs.writeFile(filePath, JSON.stringify({ username, password }, null, 2), 'utf8');
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ success: false, error: 'Failed to save account' });
+    }
+});
+
 // Add at the bottom of the file
 const port = 3000;
 app.listen(port, () => {
