@@ -188,5 +188,23 @@
     <div class="loading-spinner"></div>
     <div class="loading-text">Saving changes...</div>
   </div>
+  <!-- Account Creation Pop-up Window -->
+  <div class="account-create-popup" id="accountCreatePopup">
+    <h2>Create Account</h2>
+    <div class="input-group">
+      <label for="account-username">Username:</label>
+      <input type="text" id="account-username" autocomplete="off">
+    </div>
+    <div class="input-group">
+      <label for="account-password">Password:</label>
+      <input type="password" id="account-password">
+    </div>
+    <div class="account-create-actions">
+      <button id="account-create-submit">Create</button>
+      <button id="account-create-cancel">Cancel</button>
+    </div>
+    <div id="account-create-error" class="account-create-error"></div>
+  </div>
+  <!-- End Account Creation Pop-up Window -->
 </body>
 </html>
