@@ -15,6 +15,13 @@ const translations = {
 
 let currentLanguage = 'cs'; // Default language
 
+// Add current user tracking
+let currentUser = {
+    name: null,
+    abbreviation: null,
+    isLoggedIn: false
+};
+
 let currentDate = new Date();
 let currentMonth = currentDate.getMonth();
 let currentYear = currentDate.getFullYear();
@@ -170,16 +177,24 @@ function showTimetable(name) {
         } else {
             updateTimetableForWeek(new Date());
         }
-        
-        if (savedData.data) {
+          if (savedData.data) {
             const weekData = savedData.data[new Date(savedData.currentWeek).toISOString().split('T')[0]];
             const rows = document.querySelectorAll('.week-table tbody tr');
             
             rows.forEach((row, dayIndex) => {
                 const cells = row.querySelectorAll('td:not(:first-child)');
                 if (weekData && Array.isArray(weekData[dayIndex])) {
-                    weekData[dayIndex].forEach((content, cellIndex) => {
-                        cells[cellIndex].textContent = content || '';
+                    weekData[dayIndex].forEach((cellData, cellIndex) => {
+                        if (cellData) {
+                            // Check if cellData is an object with content property or a string
+                            const cellContent = typeof cellData === 'object' && cellData.content !== undefined 
+                                ? cellData.content 
+                                : (typeof cellData === 'string' ? cellData : '');
+                            
+                            cells[cellIndex].textContent = cellContent;
+                        } else {
+                            cells[cellIndex].textContent = '';
+                        }
                     });
                 }
             });
@@ -196,6 +211,13 @@ document.getElementById('submit-button').addEventListener('click', async () => {
     
     if (name) {
         try {
+            // Show loading overlay during API call
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            if (loadingOverlay) {
+                loadingOverlay.classList.add('active');
+                loadingOverlay.style.display = 'flex';
+            }
+            
             const response = await fetch(`${API_URL}/timetables`, {
                 method: 'POST',
                 headers: {
@@ -205,9 +227,32 @@ document.getElementById('submit-button').addEventListener('click', async () => {
             });
             
             const result = await response.json();
+            
+            // Hide loading overlay
+            if (loadingOverlay) {
+                loadingOverlay.classList.remove('active');
+            }
+            
             if (result.success) {
+                // Clear any existing button with the same name first
+                const existingButton = document.querySelector(`.dynamic-button[data-name="${name}"]`);
+                if (existingButton) {
+                    const container = existingButton.closest('.button-group');
+                    if (container) {
+                        container.remove();
+                    }
+                }
+                
+                // Create a new button
                 const dynamicButton = createDynamicButton(name);
                 const container = document.getElementById('dynamic-links-container');
+                
+                // Add data attribute for identification
+                const buttonElement = dynamicButton.querySelector('.dynamic-button');
+                if (buttonElement) {
+                    buttonElement.setAttribute('data-name', name);
+                }
+                
                 container.appendChild(dynamicButton);
                 
                 timetables[name] = {
@@ -220,16 +265,30 @@ document.getElementById('submit-button').addEventListener('click', async () => {
                 showTimetable(name);
                 document.getElementById('select-screen').style.display = 'none';
                 nameInput.value = '';
+                
+                // Show success message
+                showCustomAlert('Success', 'New class created successfully', 'success');
+            } else {
+                showCustomAlert('Error', result.error || 'Failed to create class', 'error');
             }
         } catch (error) {
             console.error('Failed to create timetable:', error);
             showCustomAlert('Error', 'Failed to create timetable', 'error');
+            
+            // Hide loading overlay on error
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            if (loadingOverlay) {
+                loadingOverlay.classList.remove('active');
+            }
         }
+    } else {
+        showCustomAlert('Error', 'Please enter a class name', 'error');
     }
 });
 
 // Load saved timetables on startup
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize timetables
     loadTimetables().then(() => {
         // Restore previous view state
         const savedTimetable = localStorage.getItem('currentTimetable');
@@ -240,69 +299,61 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error('Error during initialization:', error);
         showCustomAlert('Error', 'Failed to initialize application', 'error');
     });
-
-    // Remove nested DOMContentLoaded and move debug menu functionality here
+    
+    // Add event listener for the create-new button to show select screen
+    const createNewBtn = document.getElementById('create-new');
+    if (createNewBtn) {
+        createNewBtn.addEventListener('click', () => {
+            showSelectScreen();
+        });
+    }// Update debug menu button handlers
+document.addEventListener('DOMContentLoaded', () => {
     const debugButton = document.getElementById('debug-button');
     const debugMenu = document.getElementById('debug-menu');
     const debugOverlay = document.getElementById('debug-overlay');
     const closeDebug = document.getElementById('close-debug');
-
-    // Debug menu button handlers
-    document.getElementById('debug-reset-all').addEventListener('click', async () => {
-        const confirmReset = confirm('Are you sure you want to delete all timetables? This cannot be undone.');
-        if (confirmReset) {
-            try {
-                await fetch(`${API_URL}/timetables`, { method: 'DELETE' });
-                timetables = {};
-                document.getElementById('dynamic-links-container').innerHTML = '';
-                document.querySelector('.time-table').style.display = 'none';
-                showCustomAlert('Success', 'All timetables have been deleted', 'success');
-            } catch (error) {
-                console.error('Failed to reset timetables:', error);
-                showCustomAlert('Error', 'Failed to reset timetables', 'error');
-            }
-        }
-        document.getElementById('debug-menu').classList.remove('active');
-        document.getElementById('debug-overlay').classList.remove('active');
-    });
-
-    document.getElementById('debug-create-new').addEventListener('click', () => {
-        const selectScreen = document.getElementById('select-screen');
-        selectScreen.classList.add('active');
-        setTimeout(() => selectScreen.classList.add('active'), 10);
-        generateCalendar();
-        debugMenu.classList.remove('active');
-        debugOverlay.classList.remove('active');
-    });
-
-    document.getElementById('debug-accounts').addEventListener('click', () => {
-        const accountsMenu = document.getElementById('accounts-menu');
-        const accountsOverlay = document.getElementById('accounts-overlay');
-        accountsMenu.classList.add('active');
-        accountsOverlay.classList.add('active');
-        debugMenu.classList.remove('active');
-        debugOverlay.classList.remove('active');
-    });
-
-    debugButton.addEventListener('click', () => {
-        debugMenu.classList.add('active');
-        debugOverlay.classList.add('active');
-        debugMenu.style.display = 'block';
-        debugOverlay.style.display = 'block';
-    });
-
-    document.getElementById('close-debug').addEventListener('click', () => {
-        const debugMenu = document.getElementById('debug-menu');
-        const debugOverlay = document.getElementById('debug-overlay');
-        debugMenu.classList.remove('active');
-        debugOverlay.classList.remove('active');
+    
+    // Only set these up if the elements exist
+    if (debugButton && debugMenu && debugOverlay && closeDebug) {        // Debug menu button handlers
+        document.getElementById('debug-reset-all').addEventListener('click', async () => {
+            await resetAllTimetables();
+            // Close debug menu after reset operation is done
+            document.getElementById('debug-menu').classList.remove('active');
+            document.getElementById('debug-overlay').classList.remove('active');
+        });
         
-        // Add a small delay before hiding to allow the transition to complete
-        setTimeout(() => {
-            debugMenu.style.display = 'none';
-            debugOverlay.style.display = 'none';
-        }, 300); // Adjust this timing to match your CSS transition duration
-    });
+        document.getElementById('debug-create-new').addEventListener('click', () => {
+            showSelectScreen();
+            debugMenu.classList.remove('active');
+            debugOverlay.classList.remove('active');
+        });
+        
+        document.getElementById('debug-accounts').addEventListener('click', () => {
+            const accountsMenu = document.getElementById('accounts-menu');
+            const accountsOverlay = document.getElementById('accounts-overlay');
+            accountsMenu.classList.add('active');
+            accountsOverlay.classList.add('active');
+            debugMenu.classList.remove('active');
+            debugOverlay.classList.remove('active');
+        });
+        
+        debugButton.addEventListener('click', () => {
+            debugMenu.classList.add('active');
+            debugOverlay.classList.add('active');
+            debugMenu.style.display = 'block';
+            debugOverlay.style.display = 'block';
+        });
+        
+        closeDebug.addEventListener('click', () => {
+            debugMenu.classList.remove('active');
+            debugOverlay.classList.remove('active');
+            setTimeout(() => {
+                debugMenu.style.display = 'none';
+                debugOverlay.style.display = 'none';
+            }, 300);
+        });
+    }
+});
 
     // Fix accounts menu close button
     document.getElementById('close-accounts').addEventListener('click', () => {
@@ -453,11 +504,18 @@ async function handleLogin() {
         });
 
         const data = await response.json();
-        
-        if (response.ok) {
+          if (response.ok) {
             const loginButton = document.getElementById('login-button');
             loginButton.textContent = data.name;
             loginButton.classList.add('logged-in');
+            
+            // Store user information in our global object
+            currentUser = {
+                name: data.name,
+                abbreviation: userSelect.value,
+                isLoggedIn: true
+            };
+            console.log('User logged in:', currentUser);
             
             // Close login menu immediately after successful login
             const loginMenu = document.getElementById('login-menu');
@@ -544,11 +602,11 @@ function setupLoginHandlers() {
     }
 }
 
-// Add to DOMContentLoaded event listener
 document.addEventListener('DOMContentLoaded', () => {
+    // We need to make sure this only runs once
     console.log('Document loaded, initializing...');
     
-    // Load timetables first
+    // Load timetables first - single source of truth for initialization
     loadTimetables().then(() => {
         console.log('Timetables loaded, restoring previous state...');
         const savedTimetable = localStorage.getItem('currentTimetable');
@@ -780,12 +838,18 @@ function updateTimetableForWeek(selectedDate) {
                 cell.classList.add('permanent-hour');
                 cell.dataset.permanent = 'true';
                 return; // Skip further processing for this cell
-            }
-
-            // If not permanent, check for regular content
-            const savedData = timetables[currentTimetableName]?.data?.[dateString]?.[hourIndex];
-            if (savedData && !savedData.isPermanent) {
-                cell.textContent = savedData.content;
+            }            // If not permanent, check for regular content from saved data
+            if (timetables[currentTimetableName]?.data?.[dateString]?.[index]?.[hourIndex]) {
+                const cellData = timetables[currentTimetableName].data[dateString][index][hourIndex];
+                if (typeof cellData === 'object' && cellData !== null) {
+                    // Handle legacy data format (objects with content property)
+                    cell.textContent = cellData.content || '';
+                } else {
+                    // Handle string data - ensuring proper text display with line breaks
+                    cell.textContent = cellData || '';
+                }
+            } else {
+                cell.textContent = '';
             }
         });
 
@@ -882,23 +946,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 editButton.textContent = isEditMode ? 'Cancel' : 'Edit';
                 
                 const cells = document.querySelectorAll('.week-table tbody td:not(:first-child)');
-                cells.forEach(cell => {
-                    if (!cell.classList.contains('permanent-hour')) {
-                        cell.setAttribute('contenteditable', isEditMode);
-                        cell.classList.toggle('editable', isEditMode);
-                    }
-                });
-                
-                // Show/hide save button based on edit mode
-                const saveButton = document.querySelector('.save-button');
-                if (saveButton) {
-                    saveButton.style.display = isEditMode ? 'block' : 'none';
+                cells.forEach(cell => {                if (!cell.classList.contains('permanent-hour')) {
+                    cell.setAttribute('contenteditable', isEditMode);
+                    cell.classList.toggle('editable', isEditMode);
                 }
+            });
+            
+            // Apply cell editing with abbreviation support when in edit mode
+            if (isEditMode) {
+                setupCellEditing();
+            }
+            
+            // Show/hide save button based on edit mode
+            const saveButton = document.querySelector('.save-button');
+            if (saveButton) {
+                saveButton.style.display = isEditMode ? 'block' : 'none';
+            }
             }
         });
-    }
-
-    // Add Save button handler
+    }    // Add Save button handler
     const saveButton = document.querySelector('.save-button');
     if (saveButton) {
         saveButton.addEventListener('click', () => {
@@ -910,11 +976,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             saveButton.style.display = 'none';
             
-            // Make cells non-editable
+            // Make cells non-editable and remove edited-cell class
             const cells = document.querySelectorAll('.week-table tbody td:not(:first-child)');
             cells.forEach(cell => {
                 cell.setAttribute('contenteditable', 'false');
                 cell.classList.remove('editable');
+                cell.classList.remove('edited-cell');
             });
         });
     }
@@ -1375,6 +1442,19 @@ document.addEventListener('DOMContentLoaded', () => {
             showTimetable(savedTimetable);
         }
     });
+      // Set up close button for select screen
+    const closeSelectBtn = document.getElementById('close-select');
+    if (closeSelectBtn) {
+        closeSelectBtn.addEventListener('click', () => {
+            const selectScreen = document.getElementById('select-screen');
+            if (selectScreen) {
+                selectScreen.style.display = 'none';
+                selectScreen.style.visibility = 'hidden';
+                selectScreen.style.opacity = '0';
+                selectScreen.classList.remove('active');
+            }
+        });
+    }
     
     // ...existing code...
 });
@@ -1396,33 +1476,35 @@ function closeAccountsMenu() {
 
 async function loadTimetables() {
     try {
-        // Clear existing timetables from memory and UI
+        // First, clear existing buttons to prevent duplicates
+        document.querySelectorAll('.button-group').forEach(group => {
+            group.remove();
+        });
+        
+        // Clear existing timetables from memory
         timetables = {};
         const container = document.getElementById('dynamic-links-container');
         if (container) {
             container.innerHTML = '';
         }
         
-        // First get list of timetable names
+        // First get list of timetable names - ensure we only get unique names
         const response = await fetch(`${API_URL}/timetables`);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         
-        const timetableNames = await response.json();
-        console.log('Found timetables:', timetableNames);
+        // Get unique timetable names 
+        let timetableNames = await response.json();
+        // Ensure uniqueness by converting to Set and back to array
+        timetableNames = [...new Set(timetableNames)];
+        console.log('Found unique timetables:', timetableNames);
         
-        // Create a Set to track unique class names
-        const loadedClasses = new Set();
+        // Create a Map to track the newest version of each class
+        const newestTimetables = new Map();
 
         // Load each timetable's full data
         for (const name of timetableNames) {
-            // Skip if we've already loaded this class
-            if (loadedClasses.has(name)) {
-                console.log(`Skipping duplicate class: ${name}`);
-                continue;
-            }
-            
             try {
                 const timetableResponse = await fetch(`${API_URL}/timetables/${encodeURIComponent(name)}`);
                 if (!timetableResponse.ok) {
@@ -1438,23 +1520,39 @@ async function loadTimetables() {
                     fileId: timetableData.fileId,
                     data: timetableData.data || {},
                     permanentHours: timetableData.permanentHours || {},
-                    currentWeek: timetableData.currentWeek || new Date().toISOString()
+                    currentWeek: timetableData.currentWeek || new Date().toISOString(),
+                    createdAt: timetableData.createdAt || new Date().toISOString()
                 };
-
-                // Create and add button only once per class
-                const dynamicButton = createDynamicButton(name);
-                if (container) {
-                    container.appendChild(dynamicButton);
-                }
                 
-                // Mark this class as loaded
-                loadedClasses.add(name);
+                // Store this timetable in our map (will overwrite older versions with same name)
+                newestTimetables.set(name, timetableData);
                 
                 console.log(`Loaded timetable: ${name}`);
             } catch (error) {
                 console.error(`Error loading timetable ${name}:`, error);
             }
         }
+          // Only now create buttons for the unique classes
+        newestTimetables.forEach((timetableData, name) => {
+            // Check if button for this class already exists
+            const existingButton = document.querySelector(`.dynamic-button[data-name="${name}"]`);
+            if (existingButton) {
+                console.log(`Button for ${name} already exists, skipping creation`);
+                return; // Skip creating a new button
+            }
+            
+            const dynamicButton = createDynamicButton(name);
+            
+            // Set data-name attribute for identification
+            const buttonElement = dynamicButton.querySelector('.dynamic-button');
+            if (buttonElement) {
+                buttonElement.setAttribute('data-name', name);
+            }
+            
+            if (container) {
+                container.appendChild(dynamicButton);
+            }
+        });
         
         console.log('Finished loading all timetables');
     } catch (error) {
@@ -1504,15 +1602,28 @@ async function saveTimeTable() {
     }
     if (!timetables[currentTimetableName].data[dateString]) {
         timetables[currentTimetableName].data[dateString] = [];
-    }
-
-    // Collect data from the table
+    }    // Process edited cells and add abbreviations 
+    document.querySelectorAll('.week-table tbody td.edited-cell').forEach(cell => {
+        if (currentUser.isLoggedIn && cell.textContent.trim() !== '') {
+            const text = cell.textContent.trim();
+            
+            // Only add the abbreviation if it's not already there
+            if (!text.includes(`(${currentUser.abbreviation})`)) {
+                // Format without using HTML tags to avoid rendering issues on reload
+                cell.textContent = `${text}\n(${currentUser.abbreviation})`;
+            }
+        }
+        
+        // Remove the edited-cell class since we've processed it
+        cell.classList.remove('edited-cell');
+    });
+      // Collect data from the table
     rows.forEach((row, dayIndex) => {
         const cells = row.querySelectorAll('td:not(:first-child)');
-        const dayData = Array.from(cells).map(cell => ({
-            content: cell.textContent,
-            isPermanent: cell.classList.contains('permanent-hour')
-        }));
+        const dayData = Array.from(cells).map(cell => {
+            // Store the content as plain text
+            return cell.textContent.trim();
+        });
         timetables[currentTimetableName].data[dateString][dayIndex] = dayData;
     });
 
@@ -1523,10 +1634,427 @@ async function saveTimeTable() {
         timetables[currentTimetableName].permanentHours[dayIndex] = {};
         cells.forEach((cell, hourIndex) => {
             if (cell.classList.contains('permanent-hour')) {
-                timetables[currentTimetableName].permanentHours[dayIndex][hourIndex + 1] = cell.textContent;
+                timetables[currentTimetableName].permanentHours[dayIndex][hourIndex + 1] = cell.textContent.trim();
             }
         });
     });
 
     await saveTimetable(currentTimetableName, timetables[currentTimetableName]);
+}
+
+// Function to show and initialize the select screen
+function showSelectScreen() {
+    const selectScreen = document.getElementById('select-screen');
+    if (!selectScreen) return;
+    
+    // Reset and prepare the select screen
+    const nameInput = document.getElementById('name-input');
+    const typeSelect = document.getElementById('type-select');
+    
+    // Clear previous input
+    if (nameInput) nameInput.value = '';
+    if (typeSelect) typeSelect.selectedIndex = 0;
+    
+    // Make sure the select screen is fully visible with proper styling
+    selectScreen.style.display = 'flex';
+    selectScreen.style.visibility = 'visible';
+    selectScreen.style.opacity = '1';
+    selectScreen.style.zIndex = '1000';
+    selectScreen.style.position = 'fixed';
+    selectScreen.style.top = '0';
+    selectScreen.style.left = '0';
+    selectScreen.style.width = '100%';
+    selectScreen.style.height = '100%';
+    selectScreen.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+    selectScreen.style.justifyContent = 'center';
+    selectScreen.style.alignItems = 'center';
+    
+    // Style the select window
+    const selectWindow = selectScreen.querySelector('.select-window');
+    if (selectWindow) {
+        selectWindow.style.backgroundColor = 'white';
+        selectWindow.style.padding = '20px';
+        selectWindow.style.borderRadius = '5px';
+        selectWindow.style.boxShadow = '0 0 10px rgba(0, 0, 0, 0.3)';
+        selectWindow.style.minWidth = '300px';
+    }
+    
+    // Focus on the name input field
+    if (nameInput) {
+        nameInput.focus();
+    }
+}
+
+function setupCellEditing() {
+    const cells = document.querySelectorAll('.week-table tbody td:not(:first-child)');
+    cells.forEach(cell => {
+        // Remove any existing input event listeners
+        const newCell = cell.cloneNode(true);
+        cell.parentNode.replaceChild(newCell, cell);
+        
+        // Add new event listener - but don't add abbreviation yet
+        newCell.addEventListener('input', function() {
+            // Just mark the cell as edited
+            this.classList.add('edited-cell');
+            
+            // In admin mode, also handle permanent hours
+            if (isAdminMode && this.textContent.trim() !== '') {
+                this.classList.add('permanent-hour');
+                this.dataset.permanent = 'true';
+            }
+        });
+        
+        // Prevent line breaks from creating actual new lines
+        newCell.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+            }
+        });
+    });
+}
+
+// Function to handle the reset all button
+async function resetAllTimetables() {
+    const confirmReset = confirm('Are you sure you want to delete all timetables? This cannot be undone.');
+    if (!confirmReset) return;
+    
+    try {
+        // Show loading overlay
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        if (loadingOverlay) {
+            loadingOverlay.classList.add('active');
+            loadingOverlay.style.display = 'flex';
+        }
+        
+        // First delete on server
+        const response = await fetch(`${API_URL}/timetables`, { 
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+        }
+        
+        // Clear ALL in-memory data
+        timetables = {};
+        
+        // Remove ALL buttons from UI
+        document.querySelectorAll('.button-group').forEach(group => {
+            group.remove();
+        });
+        
+        // Also ensure container is empty
+        const container = document.getElementById('dynamic-links-container');
+        if (container) {
+            container.innerHTML = '';
+        }
+        
+        // Hide the timetable view
+        const timeTable = document.querySelector('.time-table');
+        if (timeTable) {
+            timeTable.style.display = 'none';
+        }
+        
+        // Hide loading overlay
+        if (loadingOverlay) {
+            loadingOverlay.classList.remove('active');
+        }
+        
+        showCustomAlert('Success', 'All timetables have been deleted', 'success');
+    } catch (error) {
+        console.error('Failed to reset timetables:', error);
+        
+        // Hide loading overlay
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        if (loadingOverlay) {
+            loadingOverlay.classList.remove('active');
+        }
+        
+        showCustomAlert('Error', `Failed to reset timetables: ${error.message}`, 'error');
+    }
+}
+
+// Flag to track if app has been initialized
+let hasAppInitialized = false;
+
+// Consolidated DOMContentLoaded event handler
+document.addEventListener('DOMContentLoaded', () => {
+    // Prevent multiple initializations
+    if (hasAppInitialized) {
+        console.log('App already initialized, skipping duplicate initialization');
+        return;
+    }
+    
+    console.log('Initializing app - ONE TIME ONLY');
+    hasAppInitialized = true;
+    
+    // Initialize timetables
+    loadTimetables().then(() => {
+        // Restore previous view state
+        const savedTimetable = localStorage.getItem('currentTimetable');
+        if (savedTimetable && timetables[savedTimetable]) {
+            showTimetable(savedTimetable);
+        }
+    }).catch(error => {
+        console.error('Error during initialization:', error);
+        showCustomAlert('Error', 'Failed to initialize application', 'error');
+    });
+    
+    // Set up all other handlers
+    setupLoginHandlers();
+    setupVerificationWindow();
+    setupDebugMenuHandlers();
+    setupUIHandlers();
+});
+
+// Setup debug menu handlers
+function setupDebugMenuHandlers() {
+    const debugButton = document.getElementById('debug-button');
+    const debugMenu = document.getElementById('debug-menu');
+    const debugOverlay = document.getElementById('debug-overlay');
+    const closeDebug = document.getElementById('close-debug');
+    
+    // Only set these up if the elements exist
+    if (debugButton && debugMenu && debugOverlay && closeDebug) {
+        // Debug menu button handlers
+        document.getElementById('debug-reset-all').addEventListener('click', async () => {
+            await resetAllTimetables();
+            // Close debug menu after reset operation is done
+            document.getElementById('debug-menu').classList.remove('active');
+            document.getElementById('debug-overlay').classList.remove('active');
+        });
+        
+        document.getElementById('debug-create-new').addEventListener('click', () => {
+            showSelectScreen();
+            debugMenu.classList.remove('active');
+            debugOverlay.classList.remove('active');
+        });
+        
+        document.getElementById('debug-accounts').addEventListener('click', () => {
+            const accountsMenu = document.getElementById('accounts-menu');
+            const accountsOverlay = document.getElementById('accounts-overlay');
+            if (accountsMenu && accountsOverlay) {
+                accountsMenu.classList.add('active');
+                accountsOverlay.classList.add('active');
+                debugMenu.classList.remove('active');
+                debugOverlay.classList.remove('active');
+            }
+        });
+        
+        debugButton.addEventListener('click', () => {
+            debugMenu.classList.add('active');
+            debugOverlay.classList.add('active');
+            debugMenu.style.display = 'block';
+            debugOverlay.style.display = 'block';
+        });
+        
+        closeDebug.addEventListener('click', () => {
+            debugMenu.classList.remove('active');
+            debugOverlay.classList.remove('active');
+            setTimeout(() => {
+                debugMenu.style.display = 'none';
+                debugOverlay.style.display = 'none';
+            }, 300);
+        });
+    }
+    
+    // Add date picker functionality
+    const datePickerBtn = document.getElementById('debug-set-date');
+    const datePickerOverlay = document.getElementById('datePickerOverlay');
+    if (datePickerBtn && datePickerOverlay) {
+        datePickerBtn.addEventListener('click', () => {
+            datePickerOverlay.style.display = 'block';
+            generateDatePickerCalendar();
+            if (debugMenu && debugOverlay) {
+                debugMenu.classList.remove('active');
+                debugOverlay.classList.remove('active');
+            }
+        });
+    }
+    
+    const saveCustomDateBtn = document.getElementById('save-custom-date');
+    if (saveCustomDateBtn) {
+        saveCustomDateBtn.addEventListener('click', () => {
+            const selectedDate = new Date(currentYear, currentMonth, parseInt(document.querySelector('#date-picker-calendar .selected')?.textContent) || 1);
+            if (selectedDate) {
+                customDate = selectedDate;
+                document.getElementById('customDateText').textContent = selectedDate.toLocaleDateString();
+                document.getElementById('customDateNotice').classList.add('active');
+                generateCalendar();
+                updateTimetableForWeek(customDate);
+            }
+            document.getElementById('datePickerOverlay').style.display = 'none';
+        });
+    }
+    
+    const cancelCustomDateBtn = document.getElementById('cancel-custom-date');
+    if (cancelCustomDateBtn) {
+        cancelCustomDateBtn.addEventListener('click', () => {
+            document.getElementById('datePickerOverlay').style.display = 'none';
+        });
+    }
+    
+    const resetDateBtn = document.getElementById('resetDateBtn');
+    if (resetDateBtn) {
+        resetDateBtn.addEventListener('click', () => {
+            customDate = null;
+            document.getElementById('customDateNotice').classList.remove('active');
+            generateCalendar();
+            updateTimetableForWeek(new Date());
+        });
+    }
+}
+
+// Setup general UI handlers
+function setupUIHandlers() {
+    // Add event listener for the create-new button to show select screen
+    const createNewBtn = document.getElementById('create-new');
+    if (createNewBtn) {
+        createNewBtn.addEventListener('click', () => {
+            showSelectScreen();
+        });
+    }
+    
+    // Fix accounts menu close button
+    const closeAccountsBtn = document.getElementById('close-accounts');
+    if (closeAccountsBtn) {
+        closeAccountsBtn.addEventListener('click', () => {
+            const accountsMenu = document.getElementById('accounts-menu');
+            const accountsOverlay = document.getElementById('accounts-overlay');
+            if (accountsMenu && accountsOverlay) {
+                accountsMenu.classList.remove('active');
+                accountsOverlay.classList.remove('active');
+            }
+        });
+    }
+    
+    // Update accounts button functionality
+    const accountsButton = document.getElementById('accounts-button');
+    if (accountsButton) {
+        accountsButton.addEventListener('click', () => {
+            // Allow if in admin mode OR debug mode
+            if (isAdminMode || document.body.classList.contains('debug-mode')) {
+                const accountsMenu = document.getElementById('accounts-menu');
+                const accountsOverlay = document.getElementById('accounts-overlay');
+                
+                if (accountsMenu && accountsOverlay) {
+                    if (accountsMenu.style.display !== 'block') {
+                        accountsMenu.style.display = 'block';
+                        accountsMenu.style.visibility = 'visible';
+                        accountsOverlay.style.display = 'block';
+                        accountsOverlay.style.visibility = 'visible';
+                    } else {
+                        accountsMenu.style.display = 'none';
+                        accountsMenu.style.visibility = 'hidden';
+                        accountsOverlay.style.display = 'none';
+                        accountsOverlay.style.visibility = 'hidden';
+                    }
+                }
+            }
+        });
+    }
+    
+    // Ensure consistent overlay click handling
+    const accountsOverlay = document.getElementById('accounts-overlay');
+    if (accountsOverlay) {
+        accountsOverlay.addEventListener('click', () => {
+            closeAccountsMenu();
+        });
+    }
+    
+    // Set up close button for select screen
+    const closeSelectBtn = document.getElementById('close-select');
+    if (closeSelectBtn) {
+        closeSelectBtn.addEventListener('click', () => {
+            const selectScreen = document.getElementById('select-screen');
+            if (selectScreen) {
+                selectScreen.style.display = 'none';
+                selectScreen.style.visibility = 'hidden';
+                selectScreen.style.opacity = '0';
+                selectScreen.classList.remove('active');
+            }
+        });
+    }
+    
+    // Add Edit button functionality
+    const editButton = document.querySelector('.edit-button');
+    if (editButton) {
+        editButton.addEventListener('click', () => {
+            if (!isAdminMode) {
+                isEditMode = !isEditMode;
+                editButton.textContent = isEditMode ? 'Cancel' : 'Edit';
+                
+                const cells = document.querySelectorAll('.week-table tbody td:not(:first-child)');
+                cells.forEach(cell => {                
+                    if (!cell.classList.contains('permanent-hour')) {
+                        cell.setAttribute('contenteditable', isEditMode);
+                        cell.classList.toggle('editable', isEditMode);
+                    }
+                });
+                
+                // Apply cell editing with abbreviation support when in edit mode
+                if (isEditMode) {
+                    setupCellEditing();
+                }
+                
+                // Show/hide save button based on edit mode
+                const saveButton = document.querySelector('.save-button');
+                if (saveButton) {
+                    saveButton.style.display = isEditMode ? 'block' : 'none';
+                }
+            }
+        });
+    }
+    
+    // Add Save button handler
+    const saveButton = document.querySelector('.save-button');
+    if (saveButton) {
+        saveButton.addEventListener('click', () => {
+            saveTimeTable();
+            isEditMode = false;
+            const editButton = document.querySelector('.edit-button');
+            if (editButton) {
+                editButton.textContent = 'Edit';
+            }
+            saveButton.style.display = 'none';
+            
+            // Make cells non-editable and remove edited-cell class
+            const cells = document.querySelectorAll('.week-table tbody td:not(:first-child)');
+            cells.forEach(cell => {
+                cell.setAttribute('contenteditable', 'false');
+                cell.classList.remove('editable');
+                cell.classList.remove('edited-cell');
+            });
+        });
+    }
+    
+    // Accounts menu button event listeners
+    const modifyAccountsBtn = document.getElementById('modify-accounts');
+    const removeAccountsBtn = document.getElementById('remove-accounts');
+    const createAccountsBtn = document.getElementById('create-accounts');
+
+    if (modifyAccountsBtn) {
+        modifyAccountsBtn.addEventListener('click', () => {
+            console.log('Modify Accounts button clicked');
+            closeAccountsMenu(); // Close the menu after clicking
+        });
+    }
+
+    if (removeAccountsBtn) {
+        removeAccountsBtn.addEventListener('click', () => {
+            console.log('Remove Accounts button clicked');
+            closeAccountsMenu(); // Close the menu after clicking
+        });
+    }
+
+    if (createAccountsBtn) {
+        createAccountsBtn.addEventListener('click', () => {
+            console.log('Create Accounts button clicked');
+            showAccountCreatePopup();
+            closeAccountsMenu(); // Close the menu after clicking
+        });
+    }
 }
