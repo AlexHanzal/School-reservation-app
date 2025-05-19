@@ -102,7 +102,9 @@ app.get('/api/timetables', async (req, res) => {
             }
         }
         
+        // Return only unique class names as an array
         const uniqueClassNames = Array.from(uniqueTimetables.keys());
+        console.log('Sending unique class names:', uniqueClassNames);
         res.json(uniqueClassNames);
     } catch (error) {
         console.error('Failed to list timetables:', error);
