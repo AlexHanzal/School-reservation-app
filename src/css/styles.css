@@ -1610,3 +1610,37 @@ body.debug-mode {
     background-color: var(--bakalar-color-hover);
     color: var(--primary-color);
 }
+
+/* Custom styles for user abbreviations */
+.user-abbreviation {
+    display: block;
+    font-size: 0.8em;
+    font-style: italic;
+    color: #777;
+    margin-top: 2px;
+}
+
+/* Style for cells that have been edited but not yet saved */
+.edited-cell {
+    position: relative;
+}
+
+.edited-cell::after {
+    content: "•";
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    color: #ff6600;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+/* Make sure the week table cells can handle multi-line content */
+.week-table td {
+    vertical-align: top;
+    padding: 5px;
+    min-height: 30px;
+    white-space: pre-line; /* This allows \n to create line breaks */
+    font-family: Arial, sans-serif;
+    line-height: 1.3;
+}
