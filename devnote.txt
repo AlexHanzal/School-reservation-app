@@ -1,11 +1,10 @@
 | CHANGES |
-- Added registration and login functionality
+- Added abberation when loged in
 
 ------------------------------------------------
 
 | TO DO |
 - When NOT logged into any user, hide all classes
-- Add user abbreviation to edited cells
 - Make admin user not automatically make edited cells permanent
 	- Add a "Select permanent hours" button that toggles 
 	permanent hour status for cells
@@ -15,4 +14,6 @@
 
 | NEEDS FIXING |
 - class editing buttons (delete)
-- There are three instances of a single class being loaded in
+- edit button 
+- admni comfirm button
+- debug menu
