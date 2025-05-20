@@ -1,19 +1,19 @@
 | CHANGES |
-- Added abberation when loged in
-
+fixed most of bugs
+added when NOT logged into any user, hide all classes
+Added user abbreviation to edited cells
+Added logout button
+permanent hour toggle in admin
 ------------------------------------------------
 
 | TO DO |
-- When NOT logged into any user, hide all classes
-- Make admin user not automatically make edited cells permanent
-	- Add a "Select permanent hours" button that toggles 
-	permanent hour status for cells
-- Add logout button
+- When creating an account an option for an admin account should be selectable
+- Copy the permanent hours into all weeks
 
 ------------------------------------------------
 
 | NEEDS FIXING |
-- class editing buttons (delete)
-- edit button 
-- admni comfirm button
-- debug menu
+- just writte something in a class and change the date to another week then back you will see
+-fix callendar
+	only loads 1 month and it doesnt fuck with the timetable :)
+	i would say it beacouse of the custom date in debug get rid of it
