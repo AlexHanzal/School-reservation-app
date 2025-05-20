@@ -139,10 +139,16 @@ function createDynamicButton(name) {
     editButton.title = 'Edit class';
     editButton.addEventListener('click', (e) => {
         e.stopPropagation(); // Prevent triggering the timetable show
+        console.log('Edit button clicked for class:', name, 'Admin mode:', isAdminMode);
         if (isAdminMode) {
             showClassEditMenu(name);
         }
     });
+    
+    // Make sure the edit button is visible in admin mode
+    if (isAdminMode) {
+        editButton.classList.add('visible');
+    }
     
     container.appendChild(button);
     container.appendChild(editButton);
@@ -503,10 +509,11 @@ async function handleLogin() {
             })
         });
 
-        const data = await response.json();
-          if (response.ok) {
+        const data = await response.json();        if (response.ok) {
             const loginButton = document.getElementById('login-button');
-            loginButton.textContent = data.name;
+            loginButton.textContent = data.name; // Show user name
+            loginButton.title = "Click to logout"; // Add tooltip text
+            loginButton.setAttribute('aria-label', `${data.name} (Click to logout)`); // Accessibility
             loginButton.classList.add('logged-in');
             
             // Store user information in our global object
@@ -527,10 +534,25 @@ async function handleLogin() {
             loginOverlay.classList.remove('active');
             loginMenu.style.display = 'none';
             loginOverlay.style.display = 'none';
-            passwordInput.value = '';
+            passwordInput.value = '';            
+            
+            // Load the timetables now that the user is logged in
+            loadTimetables().then(() => {
+                // Restore previous view state if possible
+                const savedTimetable = localStorage.getItem('currentTimetable');
+                if (savedTimetable && timetables[savedTimetable]) {
+                    showTimetable(savedTimetable);
+                    
+                    // Fix the edit functionality after login and timetable is loaded
+                    setTimeout(() => {
+                        console.log('Setting up edit functionality with delay after login');
+                        enableCellEditingAfterLogin();
+                    }, 500); // Small delay to ensure DOM is ready
+                }
+            });
             
             showCustomAlert('Success', 'Logged in successfully', 'success');
-        } else {
+        }else {
             loginError.textContent = data.error || 'Invalid password';
             loginError.style.display = 'block';
         }
@@ -559,8 +581,7 @@ function setupLoginHandlers() {
     const loginOverlay = document.getElementById('login-overlay');
     const closeLoginButton = document.getElementById('close-login');
     
-    if (loginButton && loginMenu && loginOverlay) {
-        loginButton.addEventListener('click', () => {
+    if (loginButton && loginMenu && loginOverlay) {        loginButton.addEventListener('click', () => {
             if (!loginButton.classList.contains('logged-in')) {
                 loginMenu.style.display = 'block';
                 loginOverlay.style.display = 'block';
@@ -568,6 +589,9 @@ function setupLoginHandlers() {
                 loginOverlay.classList.add('active');
                 // Load users immediately when opening menu
                 loadUserOptions();
+            } else {
+                // If already logged in, show logout confirmation
+                showLogoutConfirmation();
             }
         });
         
@@ -886,16 +910,14 @@ function toggleAdminEditMode() {
         cell.setAttribute('contenteditable', 'true');
         cell.classList.add('editable');
         
-        // Add input event listener for making cells permanent
+        // Add input event listener for making cells permanent only when toggle is enabled
         cell.addEventListener('input', function() {
-            if (isAdminMode && this.textContent.trim() !== '') {
+            if (isAdminMode && permanentHourModeEnabled && this.textContent.trim() !== '') {
                 this.classList.add('permanent-hour');
                 this.dataset.permanent = 'true';
             }
         });
-    });
-
-    // Change edit button to show admin mode
+    });    // Change edit button to show admin mode
     const editButton = document.querySelector('.edit-button');
     editButton.textContent = 'Admin Mode';
     editButton.style.backgroundColor = '#ff9800';
@@ -905,6 +927,50 @@ function toggleAdminEditMode() {
     if (saveButton) {
         saveButton.style.display = 'block';
     }
+      // Add permanent hour toggle button if it doesn't exist
+    let toggleButton = document.getElementById('toggle-permanent-btn');
+    if (!toggleButton) {
+        toggleButton = document.createElement('button');
+        toggleButton.id = 'toggle-permanent-btn';
+        toggleButton.className = 'toggle-permanent-btn';
+        toggleButton.textContent = 'Permanent Hours: OFF';
+        toggleButton.onclick = togglePermanentHourMode;
+        toggleButton.style.display = 'inline-block'; // Ensure it's visible
+        
+        // Insert the button next to the save button
+        const timeTableButtons = document.querySelector('.time-table-buttons');
+        if (timeTableButtons) {
+            timeTableButtons.appendChild(toggleButton);
+        } else {
+            // If time-table-buttons doesn't exist, create it and append to time-table
+            const timeTable = document.querySelector('.time-table');
+            if (timeTable) {
+                const newButtonContainer = document.createElement('div');
+                newButtonContainer.className = 'time-table-buttons';
+                newButtonContainer.appendChild(toggleButton);
+                
+                // Insert after the title
+                const title = timeTable.querySelector('h2');
+                if (title && title.nextSibling) {
+                    timeTable.insertBefore(newButtonContainer, title.nextSibling);
+                } else {
+                    timeTable.appendChild(newButtonContainer);
+                }
+            }
+        }
+    } else {
+        toggleButton.style.display = 'inline-block'; // Ensure it's visible
+    }
+
+    // Add admin-active class to all button groups
+    document.querySelectorAll('.button-group').forEach(group => {
+        group.classList.toggle('admin-active', isAdminMode);
+    });
+
+    // Show gear icons for all classes
+    document.querySelectorAll('.gear-icon').forEach(icon => {
+        icon.classList.toggle('visible', isAdminMode);
+    });
 
     // Add admin-active class to all button groups
     document.querySelectorAll('.button-group').forEach(group => {
@@ -1052,6 +1118,15 @@ function disableDebugMode() {
     const editButton = document.querySelector('.edit-button');
     editButton.textContent = 'Edit';
     editButton.style.backgroundColor = '';
+    
+    // Hide permanent hour toggle button
+    const toggleButton = document.getElementById('toggle-permanent-btn');
+    if (toggleButton) {
+        toggleButton.style.display = 'none';
+    }
+    
+    // Reset permanent hour mode
+    permanentHourModeEnabled = false;
     
     // Hide admin features
     document.querySelectorAll('.gear-icon').forEach(icon => {
@@ -1488,17 +1563,37 @@ async function loadTimetables() {
             container.innerHTML = '';
         }
         
+        // Check if user is logged in - if not, don't load any classes
+        if (!currentUser.isLoggedIn) {
+            console.log('User not logged in, hiding all classes');
+            // Show message in the container indicating login is required
+            const loginMessage = document.createElement('div');
+            loginMessage.className = 'login-required-message';
+            loginMessage.textContent = 'Please log in to view classes';
+            loginMessage.style.textAlign = 'center';
+            loginMessage.style.padding = '20px';
+            loginMessage.style.color = '#777';
+            container.appendChild(loginMessage);
+            return; // Exit early - don't load any classes
+        }
+        
+        // Get the list of locally deleted classes
+        const deletedClasses = JSON.parse(localStorage.getItem('deletedClasses') || '[]');
+        console.log('Locally deleted classes:', deletedClasses);
+        
         // First get list of timetable names - ensure we only get unique names
         const response = await fetch(`${API_URL}/timetables`);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         
-        // Get unique timetable names 
+        // Get unique timetable names and filter out deleted ones
         let timetableNames = await response.json();
+        // Filter out any classes that are in our deleted list
+        timetableNames = timetableNames.filter(name => !deletedClasses.includes(name));
         // Ensure uniqueness by converting to Set and back to array
         timetableNames = [...new Set(timetableNames)];
-        console.log('Found unique timetables:', timetableNames);
+        console.log('Found unique timetables (after filtering deleted):', timetableNames);
         
         // Create a Map to track the newest version of each class
         const newestTimetables = new Map();
@@ -1697,12 +1792,29 @@ function setupCellEditing() {
             // Just mark the cell as edited
             this.classList.add('edited-cell');
             
-            // In admin mode, also handle permanent hours
-            if (isAdminMode && this.textContent.trim() !== '') {
+            // In admin mode, also handle permanent hours if toggle is on
+            if (isAdminMode && permanentHourModeEnabled && this.textContent.trim() !== '') {
                 this.classList.add('permanent-hour');
                 this.dataset.permanent = 'true';
             }
         });
+        
+        // Add click handler for toggling permanent status in admin mode
+        if (isAdminMode) {
+            newCell.addEventListener('click', function(e) {
+                // If in admin mode with permanent hours toggle on, ctrl+click toggles permanent status
+                if (isAdminMode && permanentHourModeEnabled && e.ctrlKey) {
+                    e.preventDefault();
+                    if (this.classList.contains('permanent-hour')) {
+                        this.classList.remove('permanent-hour');
+                        delete this.dataset.permanent;
+                    } else if (this.textContent.trim() !== '') {
+                        this.classList.add('permanent-hour');
+                        this.dataset.permanent = 'true';
+                    }
+                }
+            });
+        }
         
         // Prevent line breaks from creating actual new lines
         newCell.addEventListener('keydown', function(e) {
@@ -1715,10 +1827,12 @@ function setupCellEditing() {
 
 // Function to handle the reset all button
 async function resetAllTimetables() {
+    console.log("Reset all timetables function called");
     const confirmReset = confirm('Are you sure you want to delete all timetables? This cannot be undone.');
     if (!confirmReset) return;
     
     try {
+        console.log("Resetting all timetables...");
         // Show loading overlay
         const loadingOverlay = document.getElementById('loadingOverlay');
         if (loadingOverlay) {
@@ -1738,8 +1852,12 @@ async function resetAllTimetables() {
             throw new Error(`Server returned ${response.status}: ${response.statusText}`);
         }
         
-        // Clear ALL in-memory data
+        console.log("Server response received, clearing UI elements...");
+          // Clear ALL in-memory data
         timetables = {};
+        currentTimetableName = '';
+        localStorage.removeItem('currentTimetable');
+        localStorage.removeItem('deletedClasses'); // Also clear the list of deleted classes
         
         // Remove ALL buttons from UI
         document.querySelectorAll('.button-group').forEach(group => {
@@ -1761,8 +1879,10 @@ async function resetAllTimetables() {
         // Hide loading overlay
         if (loadingOverlay) {
             loadingOverlay.classList.remove('active');
+            loadingOverlay.style.display = 'none';
         }
         
+        console.log("Reset completed successfully");
         showCustomAlert('Success', 'All timetables have been deleted', 'success');
     } catch (error) {
         console.error('Failed to reset timetables:', error);
@@ -1771,6 +1891,7 @@ async function resetAllTimetables() {
         const loadingOverlay = document.getElementById('loadingOverlay');
         if (loadingOverlay) {
             loadingOverlay.classList.remove('active');
+            loadingOverlay.style.display = 'none';
         }
         
         showCustomAlert('Error', `Failed to reset timetables: ${error.message}`, 'error');
@@ -1816,16 +1937,28 @@ function setupDebugMenuHandlers() {
     const debugMenu = document.getElementById('debug-menu');
     const debugOverlay = document.getElementById('debug-overlay');
     const closeDebug = document.getElementById('close-debug');
-    
-    // Only set these up if the elements exist
+      // Only set these up if the elements exist
     if (debugButton && debugMenu && debugOverlay && closeDebug) {
         // Debug menu button handlers
-        document.getElementById('debug-reset-all').addEventListener('click', async () => {
-            await resetAllTimetables();
-            // Close debug menu after reset operation is done
-            document.getElementById('debug-menu').classList.remove('active');
-            document.getElementById('debug-overlay').classList.remove('active');
-        });
+        const resetAllBtn = document.getElementById('debug-reset-all');
+        if (resetAllBtn) {
+            // Remove any existing event listeners to avoid duplicates
+            const newResetAllBtn = resetAllBtn.cloneNode(true);
+            resetAllBtn.parentNode.replaceChild(newResetAllBtn, resetAllBtn);
+            
+            newResetAllBtn.addEventListener('click', async () => {
+                console.log('Reset All button clicked');
+                try {
+                    await resetAllTimetables();
+                    // Close debug menu after reset operation is done
+                    debugMenu.classList.remove('active');
+                    debugOverlay.classList.remove('active');
+                } catch (error) {
+                    console.error('Error in resetAllTimetables:', error);
+                    showCustomAlert('Error', 'Failed to reset timetables: ' + error.message, 'error');
+                }
+            });
+        }
         
         document.getElementById('debug-create-new').addEventListener('click', () => {
             showSelectScreen();
@@ -1982,16 +2115,25 @@ function setupUIHandlers() {
     // Add Edit button functionality
     const editButton = document.querySelector('.edit-button');
     if (editButton) {
-        editButton.addEventListener('click', () => {
+        // First remove any existing event listeners to avoid duplicates
+        const newEditButton = editButton.cloneNode(true);
+        if (editButton.parentNode) {
+            editButton.parentNode.replaceChild(newEditButton, editButton);
+        }
+        
+        newEditButton.addEventListener('click', function() {
+            console.log('Edit button clicked');
             if (!isAdminMode) {
                 isEditMode = !isEditMode;
-                editButton.textContent = isEditMode ? 'Cancel' : 'Edit';
+                console.log('Edit mode toggled:', isEditMode);
+                this.textContent = isEditMode ? 'Cancel' : 'Edit';
                 
                 const cells = document.querySelectorAll('.week-table tbody td:not(:first-child)');
                 cells.forEach(cell => {                
                     if (!cell.classList.contains('permanent-hour')) {
-                        cell.setAttribute('contenteditable', isEditMode);
+                        cell.setAttribute('contenteditable', isEditMode ? 'true' : 'false');
                         cell.classList.toggle('editable', isEditMode);
+                        console.log('Cell editable set to:', cell.getAttribute('contenteditable'));
                     }
                 });
                 
@@ -2057,4 +2199,565 @@ function setupUIHandlers() {
             closeAccountsMenu(); // Close the menu after clicking
         });
     }
+}
+
+// Function to enable editing after login
+function enableCellEditingAfterLogin() {
+    console.log('Enabling cell editing after login');
+    
+    // Fix the edit button functionality first
+    const editButton = document.querySelector('.edit-button');
+    if (!editButton) {
+        console.error('Edit button not found');
+        return;
+    }
+    
+    // First, remove any existing event listeners to avoid duplicates
+    const newEditButton = editButton.cloneNode(true);
+    if (editButton.parentNode) {
+        editButton.parentNode.replaceChild(newEditButton, editButton);
+    }
+    
+    // Make sure the edit button properly toggles edit mode
+    newEditButton.addEventListener('click', function() {
+        console.log('Edit button clicked after login');
+        if (!isAdminMode) {
+            // Toggle edit mode
+            isEditMode = !isEditMode;
+            console.log('Edit mode toggled to:', isEditMode);
+            
+            // Update button text
+            this.textContent = isEditMode ? 'Cancel' : 'Edit';
+            
+            // Make cells editable or non-editable
+            const cells = document.querySelectorAll('.week-table tbody td:not(:first-child)');
+            cells.forEach(cell => {
+                if (!cell.classList.contains('permanent-hour')) {
+                    cell.setAttribute('contenteditable', isEditMode ? 'true' : 'false');
+                    cell.classList.toggle('editable', isEditMode);
+                    console.log('Cell editable set to:', cell.getAttribute('contenteditable'));
+                }
+            });
+            
+            // Set up cell editing with proper event handlers
+            if (isEditMode) {
+                setupCellEditing();
+            }
+            
+            // Show/hide save button based on edit mode
+            const saveButton = document.querySelector('.save-button');
+            if (saveButton) {
+                saveButton.style.display = isEditMode ? 'block' : 'none';
+            }
+        }
+    });
+}
+
+// Function to show class edit menu for admin operations
+function showClassEditMenu(name) {
+    console.log('Opening class edit menu for:', name);
+    
+    // Create popup if it doesn't exist
+    let popup = document.getElementById('class-edit-popup');
+    if (!popup) {
+        popup = document.createElement('div');
+        popup.id = 'class-edit-popup';
+        popup.className = 'class-edit-popup';
+        
+        popup.innerHTML = `
+            <h2>Edit Class</h2>
+            <div class="input-group">
+                <label for="class-name-edit">Class Name</label>
+                <input type="text" id="class-name-edit" placeholder="Enter new class name">
+            </div>
+            <div class="class-edit-error" id="class-edit-error"></div>
+            <div class="class-edit-actions">
+                <button id="rename-class-btn" class="primary-btn">Rename Class</button>
+                <button id="delete-class-btn" class="danger-btn">Delete Class</button>
+                <button id="cancel-class-edit-btn">Cancel</button>
+            </div>
+        `;
+        
+        document.body.appendChild(popup);
+        
+        // Add event listener for the cancel button
+        document.getElementById('cancel-class-edit-btn').addEventListener('click', hideClassEditMenu);
+        
+        // Add overlay if it doesn't exist
+        let overlay = document.getElementById('class-edit-overlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'class-edit-overlay';
+            overlay.className = 'accounts-overlay';
+            overlay.addEventListener('click', hideClassEditMenu);
+            document.body.appendChild(overlay);
+        }
+    }
+    
+    // Set current class name
+    const nameInput = document.getElementById('class-name-edit');
+    nameInput.value = name;
+    
+    // Clear any previous errors
+    const errorElement = document.getElementById('class-edit-error');
+    errorElement.style.display = 'none';
+    errorElement.textContent = '';
+    
+    // Set data attribute to keep track of which class we're editing
+    popup.dataset.className = name;
+    
+    // Set up event handlers for rename and delete buttons
+    const renameBtn = document.getElementById('rename-class-btn');
+    renameBtn.onclick = () => renameClass(name);
+    
+    const deleteBtn = document.getElementById('delete-class-btn');
+    deleteBtn.onclick = () => deleteClass(name);
+    
+    // Show the popup and overlay
+    popup.style.display = 'block';
+    document.getElementById('class-edit-overlay').style.display = 'block';
+}
+
+// Function to hide the class edit menu
+function hideClassEditMenu() {
+    const popup = document.getElementById('class-edit-popup');
+    const overlay = document.getElementById('class-edit-overlay');
+    
+    if (popup) popup.style.display = 'none';
+    if (overlay) overlay.style.display = 'none';
+}
+
+// Function to rename a class
+async function renameClass(oldName) {
+    const nameInput = document.getElementById('class-name-edit');
+    const errorElement = document.getElementById('class-edit-error');
+    const newName = nameInput.value.trim();
+    
+    // Clear previous error
+    errorElement.style.display = 'none';
+    errorElement.textContent = '';
+    
+    // Validate new name
+    if (!newName) {
+        errorElement.textContent = 'Please enter a class name';
+        errorElement.style.display = 'block';
+        return;
+    }
+    
+    if (newName === oldName) {
+        hideClassEditMenu();
+        return; // No change needed
+    }
+    
+    // Check if the new name already exists
+    if (timetables[newName]) {
+        errorElement.textContent = 'A class with this name already exists';
+        errorElement.style.display = 'block';
+        return;
+    }
+    
+    // Show loading overlay
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    if (loadingOverlay) {
+        loadingOverlay.classList.add('active');
+        loadingOverlay.style.display = 'flex';
+    }
+    
+    try {
+        // Clone the timetable data with the new name
+        const timetableData = { ...timetables[oldName] };
+        
+        // Create new timetable with the new name
+        const response = await fetch(`${API_URL}/timetables`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ name: newName })
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to create new class');
+        }
+        
+        const result = await response.json();
+          // Update the data for the new class
+        const updateResponse = await fetch(`${API_URL}/timetables/${encodeURIComponent(newName)}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                fileId: result.fileId,
+                data: timetableData.data || {}, // Ensure we have at least an empty object
+                permanentHours: timetableData.permanentHours || {},
+                currentWeek: timetableData.currentWeek || new Date().toISOString()
+            })
+        });
+        
+        if (!updateResponse.ok) {
+            throw new Error('Failed to update class data');
+        }
+          // Delete the old class - using the correct API format
+        const deleteResponse = await fetch(`${API_URL}/timetables`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ name: oldName })
+        });
+        
+        if (!deleteResponse.ok) {
+            throw new Error(`Failed to delete old class: ${deleteResponse.status}`);
+        }
+        
+        // Update local data
+        timetables[newName] = {
+            ...timetableData,
+            className: newName,
+            fileId: result.fileId
+        };
+        delete timetables[oldName];
+        
+        // Update UI
+        const existingButton = document.querySelector(`.dynamic-button[data-name="${oldName}"]`);
+        if (existingButton) {
+            const container = existingButton.closest('.button-group');
+            if (container) {
+                container.remove();
+            }
+        }
+        
+        // Create new button
+        const dynamicButton = createDynamicButton(newName);
+        const container = document.getElementById('dynamic-links-container');
+        
+        // Set data attribute
+        const buttonElement = dynamicButton.querySelector('.dynamic-button');
+        if (buttonElement) {
+            buttonElement.setAttribute('data-name', newName);
+        }
+        
+        container.appendChild(dynamicButton);
+        
+        // Update current timetable name if we're renaming the active timetable
+        if (currentTimetableName === oldName) {
+            currentTimetableName = newName;
+            localStorage.setItem('currentTimetable', newName);
+            
+            // Update title
+            const timeTableTitle = document.querySelector('.time-table h2');
+            if (timeTableTitle) {
+                timeTableTitle.textContent = newName;
+            }
+        }
+        
+        // Hide loading overlay and edit menu
+        if (loadingOverlay) {
+            loadingOverlay.classList.remove('active');
+            loadingOverlay.style.display = 'none';
+        }
+        
+        hideClassEditMenu();
+        showCustomAlert('Success', 'Class renamed successfully', 'success');
+          } catch (error) {
+        console.error('Failed to rename class:', error);
+        
+        // Hide loading overlay
+        if (loadingOverlay) {
+            loadingOverlay.classList.remove('active');
+            loadingOverlay.style.display = 'none';
+        }
+        
+        // Show detailed error in UI
+        errorElement.textContent = `Failed to rename class: ${error.message}`;
+        errorElement.style.display = 'block';
+        
+        // Show alert with error details
+        showCustomAlert('Error', `Unable to rename the class. Please try again. (${error.message})`, 'error');
+    }
+}
+
+// Function to delete a class
+async function deleteClass(name) {
+    // Ask for confirmation
+    const confirmDelete = confirm(`Are you sure you want to delete the class "${name}"? This cannot be undone.`);
+    if (!confirmDelete) return;
+    
+    // Show loading overlay
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    if (loadingOverlay) {
+        loadingOverlay.classList.add('active');
+        loadingOverlay.style.display = 'flex';
+    }
+    
+    try {
+        console.log(`Attempting to delete class: ${name}`);
+        
+        // We'll focus only on local deletion as server deletion is problematic
+        console.log(`Performing local deletion and tracking in localStorage`);
+        
+        // Make a best-effort background request to delete on server but don't wait for it
+        const fileId = timetables[name]?.fileId;
+        if (fileId) {
+            try {
+                console.log(`Sending background delete request for fileId: ${fileId}`);
+                fetch(`${API_URL}/timetables/file/${fileId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                }).then(response => {
+                    console.log(`Background delete request completed with status: ${response.status}`);
+                }).catch(error => {
+                    console.log(`Error in background delete request: ${error}`);
+                });
+            } catch (fetchError) {
+                console.log(`Error initiating background delete request: ${fetchError}`);
+                // Ignore fetch errors - we'll still proceed with local deletion
+            }
+        }
+        
+        // Remove from local data
+        delete timetables[name];
+        
+        // Add an entry to localStorage to track deleted classes
+        let deletedClasses = JSON.parse(localStorage.getItem('deletedClasses') || '[]');
+        deletedClasses.push(name);
+        localStorage.setItem('deletedClasses', JSON.stringify(deletedClasses));
+        console.log(`Added ${name} to deleted classes list in localStorage`);
+        
+        // Remove button from UI
+        const existingButton = document.querySelector(`.dynamic-button[data-name="${name}"]`);
+        if (existingButton) {
+            const container = existingButton.closest('.button-group');
+            if (container) {
+                container.remove();
+            }
+        }
+        
+        // If this was the current timetable, hide it
+        if (currentTimetableName === name) {
+            const timeTable = document.querySelector('.time-table');
+            if (timeTable) {
+                timeTable.style.display = 'none';
+            }
+            currentTimetableName = '';
+            localStorage.removeItem('currentTimetable');
+        }
+        
+        // Hide loading overlay and edit menu
+        if (loadingOverlay) {
+            loadingOverlay.classList.remove('active');
+            loadingOverlay.style.display = 'none';
+        }
+        
+        hideClassEditMenu();
+        showCustomAlert('Success', 'Class deleted successfully', 'success');
+    } catch (error) {
+        console.error('Failed to delete class:', error);
+        
+        // Hide loading overlay
+        if (loadingOverlay) {
+            loadingOverlay.classList.remove('active');
+            loadingOverlay.style.display = 'none';
+        }
+        
+        // Show detailed error in UI
+        const errorElement = document.getElementById('class-edit-error');
+        errorElement.textContent = `Failed to delete class: ${error.message}`;
+        errorElement.style.display = 'block';
+        
+        // Show alert with error details
+        showCustomAlert('Error', `Unable to delete the class. Please try again. (${error.message})`, 'error');
+    }
+}
+
+// Function to show custom alerts
+function showCustomAlert(title, message, type = 'info') {
+    // Create the alert element if it doesn't exist
+    let customAlert = document.getElementById('custom-alert');
+    if (!customAlert) {
+        customAlert = document.createElement('div');
+        customAlert.id = 'custom-alert';
+        customAlert.className = 'custom-alert';
+        
+        customAlert.innerHTML = `
+            <h2></h2>
+            <p></p>
+            <button>OK</button>
+        `;
+        
+        document.body.appendChild(customAlert);
+        
+        // Add event listener to close button
+        customAlert.querySelector('button').addEventListener('click', () => {
+            customAlert.classList.remove('active');
+            const overlay = document.getElementById('custom-alert-overlay');
+            if (overlay) overlay.classList.remove('active');
+        });
+        
+        // Create overlay if it doesn't exist
+        let overlay = document.getElementById('custom-alert-overlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'custom-alert-overlay';
+            overlay.className = 'custom-alert-overlay';
+            document.body.appendChild(overlay);
+        }
+    }
+    
+    // Set the content and type
+    customAlert.querySelector('h2').textContent = title;
+    customAlert.querySelector('p').textContent = message;
+    
+    // Remove any existing type classes
+    customAlert.classList.remove('info', 'error', 'success', 'warning');
+    
+    // Add the appropriate type class
+    customAlert.classList.add(type);
+    
+    // Make the alert visible
+    customAlert.classList.add('active');
+    
+    // Make the overlay visible
+    const overlay = document.getElementById('custom-alert-overlay');
+    if (overlay) overlay.classList.add('active');
+    
+    // Auto-hide after 3 seconds for success messages
+    if (type === 'success') {
+        setTimeout(() => {
+            customAlert.classList.remove('active');
+            if (overlay) overlay.classList.remove('active');
+        }, 3000);
+    }
+}
+
+// Function to show logout confirmation
+function showLogoutConfirmation() {
+    // Create the confirmation popup if it doesn't exist
+    let confirmPopup = document.getElementById('logout-confirm');
+    if (!confirmPopup) {
+        confirmPopup = document.createElement('div');
+        confirmPopup.id = 'logout-confirm';
+        confirmPopup.className = 'logout-confirm';
+        
+        confirmPopup.innerHTML = `
+            <div class="logout-confirm-content">
+                <h3>Confirm Logout</h3>
+                <p>Are you sure you want to log out?</p>
+                <div class="logout-buttons">
+                    <button id="confirm-logout">Yes, Log Out</button>
+                    <button id="cancel-logout">Cancel</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(confirmPopup);
+        
+        // Add overlay if it doesn't exist
+        let overlay = document.getElementById('logout-overlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'logout-overlay';
+            overlay.className = 'logout-overlay';
+            document.body.appendChild(overlay);
+        }
+        
+        // Add event listeners for buttons
+        document.getElementById('confirm-logout').addEventListener('click', performLogout);
+        document.getElementById('cancel-logout').addEventListener('click', hideLogoutConfirmation);
+        
+        // Add event listener to overlay for dismissal
+        overlay.addEventListener('click', hideLogoutConfirmation);
+    }
+    
+    // Show the popup and overlay
+    confirmPopup.style.display = 'flex';
+    document.getElementById('logout-overlay').style.display = 'block';
+}
+
+// Function to hide logout confirmation
+function hideLogoutConfirmation() {
+    const confirmPopup = document.getElementById('logout-confirm');
+    const overlay = document.getElementById('logout-overlay');
+    
+    if (confirmPopup) confirmPopup.style.display = 'none';
+    if (overlay) overlay.style.display = 'none';
+}
+
+// Function to perform the logout
+function performLogout() {
+    // Reset user information
+    currentUser = {
+        name: null,
+        abbreviation: null,
+        isLoggedIn: false
+    };
+    
+    // Update UI
+    const loginButton = document.getElementById('login-button');
+    loginButton.textContent = 'Login';
+    loginButton.classList.remove('logged-in');
+    
+    // Hide the timetable view
+    const timeTable = document.querySelector('.time-table');
+    if (timeTable) {
+        timeTable.style.display = 'none';
+    }
+    
+    // Hide logout confirmation
+    hideLogoutConfirmation();
+    
+    // Clear timetable data from memory
+    timetables = {};
+    currentTimetableName = '';
+    
+    // Remove all timetable buttons
+    document.querySelectorAll('.button-group').forEach(group => {
+        group.remove();
+    });
+    
+    // Clear timetable container
+    const container = document.getElementById('dynamic-links-container');
+    if (container) {
+        container.innerHTML = '';
+        
+        // Show login required message
+        const loginMessage = document.createElement('div');
+        loginMessage.className = 'login-required-message';
+        loginMessage.textContent = 'Please log in to view classes';
+        loginMessage.style.textAlign = 'center';
+        loginMessage.style.padding = '20px';
+        loginMessage.style.color = '#777';
+        container.appendChild(loginMessage);
+    }
+    
+    // Show success message
+    showCustomAlert('Success', 'You have been logged out', 'success');
+}
+
+// Function to toggle permanent hour mode
+let permanentHourModeEnabled = false;
+
+function togglePermanentHourMode() {
+    permanentHourModeEnabled = !permanentHourModeEnabled;
+    const toggleButton = document.getElementById('toggle-permanent-btn');
+    
+    if (toggleButton) {
+        if (permanentHourModeEnabled) {
+            toggleButton.classList.add('active');
+            toggleButton.textContent = 'Permanent Hours: ON';
+        } else {
+            toggleButton.classList.remove('active');
+            toggleButton.textContent = 'Permanent Hours: OFF';
+        }
+    }
+    
+    // Show feedback to user
+    showCustomAlert('Admin Mode', 
+        permanentHourModeEnabled ? 
+        'Permanent hours mode is now ON. Edited cells will become permanent.' : 
+        'Permanent hours mode is now OFF. Edited cells will be regular entries.', 
+        'info');
 }
