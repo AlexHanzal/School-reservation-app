@@ -1,8 +1,50 @@
+const Module = require('module');
+const path = require('path');
+const originalRequire = Module.prototype.require;
+const os = require('os');
+
+// Get the global npm modules directory
+function getGlobalNodeModulesPath() {
+  // Common paths for global modules based on platform
+  if (process.platform === 'win32') {
+    // Use AppData location for Windows
+    const appDataPath = process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming');
+    return path.join(appDataPath, 'npm', 'node_modules');
+  } else {
+    // For Unix-like systems
+    return '/usr/local/lib/node_modules';
+  }
+}
+
+const globalModulesPath = getGlobalNodeModulesPath();
+console.log('Using global modules from:', globalModulesPath);
+
+// Only modify the require behavior if we're in production mode
+if (process.env.NODE_ENV === 'production') {
+  // Extend the require function to check global modules first
+  Module.prototype.require = function(moduleName) {
+    try {
+      // Try the original require first
+      return originalRequire.call(this, moduleName);
+    } catch (e) {
+      // If it fails, try requiring it from the global modules
+      try {
+        const globalModulePath = path.join(globalModulesPath, moduleName);
+        console.log(`Attempting to load module from global path: ${globalModulePath}`);
+        return originalRequire.call(this, globalModulePath);
+      } catch (err) {
+        console.error(`Failed to load module '${moduleName}' globally:`, err.message);
+        // If that also fails, throw the original error
+        throw e;
+      }
+    }
+  };
+}
+
+// Now require the dependencies
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
 const fs = require('fs').promises;
-const os = require('os');
 const app = express();
 const port = 3000;
 
@@ -68,7 +110,7 @@ async function initializeDataStorage() {
 }
 
 // In-memory storage (now backed by file)
-let timetables = {};
+let timetables = {}
 
 // API routes
 // Update the timetables endpoint to return only the latest version of each class
