@@ -1,0 +1,14 @@
+| CHANGES |
+- Updated the UI
+- Fixed issue with cell data disappearing when switching weeks
+- Fixed issue with cell data not being saved properly
+- Fixed issue with cell data not loading
+
+------------------------------------------------
+
+| TO DO |
+- When creating an account an option for an admin account should be selectable
+
+------------------------------------------------
+
+| NEEDS FIXING |
