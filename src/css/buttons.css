@@ -257,26 +257,7 @@
 }
 
 #admin-button {
-    width: 100%; /* Change from 85% to 100% */
-    padding: 10px 15px;
-    font-size: 1.1em;
-    position: relative; /* Change from absolute to relative */
-    margin-top: 10px; /* Add some top margin for spacing */
-    margin-bottom: 5px; /* Add bottom margin for spacing */
-    display: block; /* Ensure it's a block element */
-    box-sizing: border-box; /* Include padding in width calculation */
-}
-
-#admin-button.admin-active {
-    background-color: #cccccc;
-    border-color: #999999;
-    color: #666666;
-    cursor: not-allowed;
-}
-
-#admin-button.admin-active:hover {
-    background-color: #cccccc;
-    color: #666666;
+    display: none; /* Hide admin button */
 }
 
 .reset-all {
@@ -443,12 +424,11 @@ body.debug-mode .reset-all {
 }
 
 #accounts-button {
-    display: none; /* Hide by default */
-    width: 100%; /* Change from 85% to 100% */
+    width: 100%;
     padding: 10px 15px;
     font-size: 1.1em;
-    position: relative; /* Change from absolute to relative */
-    margin-top: 10px; /* Add margin for spacing */
+    position: relative;
+    margin-top: 10px;
     margin-bottom: 5px;
     background-color: var(--bakalar-color-basic);
     color: black;
@@ -459,7 +439,8 @@ body.debug-mode .reset-all {
 }
 
 #accounts-button.admin-visible {
-    display: block;
+    background-color: var(--primary-color);
+    color: white;
 }
 
 #accounts-button:hover {

@@ -1110,7 +1110,14 @@ body.debug-mode {
     padding: 30px 55px;
     background: #ff9800;
     color: white;
-    border: none;
+    border: 8px solid;
+    border-image: repeating-linear-gradient(
+        45deg,
+        #000,
+        #000 10px,
+        #ff0 10px,
+        #ff0 20px
+    ) 8;
     border-radius: 4px;
     cursor: pointer;
     display: none; /* Hidden by default */
@@ -1446,6 +1453,15 @@ body.debug-mode {
   border-radius: 4px;
   box-sizing: border-box;
 }
+/* Add style for checkbox container */
+.account-create-popup label input[type="checkbox"] {
+  margin-right: 8px;
+  vertical-align: middle;
+}
+.account-create-popup label {
+  cursor: pointer;
+  user-select: none;
+}
 .account-create-actions {
   margin-top: 20px;
   display: flex;
@@ -1469,51 +1485,6 @@ body.debug-mode {
   color: red;
   margin-top: 10px;
   display: none;
-}
-
-/* Account Create Overlay */
-#account-create-overlay {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 3999;
-}
-
-/* Improve the account creation popup styles */
-.account-create-popup {
-  z-index: 4000;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-  background-color: var(--secondary-color);
-  color: var(--primary-color);
-  border: 2px solid var(--primary-color);
-}
-
-.account-create-popup input {
-  background-color: var(--third-color);
-  color: var(--primary-color);
-  border: 2px solid var(--primary-color);
-  border-radius: 5px;
-}
-
-.account-create-popup button {
-  background-color: var(--bakalar-color-basic);
-  color: black;
-  border: 2px solid var(--primary-color);
-  border-radius: 5px;
-  transition: all 0.2s ease;
-}
-
-.account-create-popup button:hover {
-  background-color: var(--bakalar-color-hover);
-  color: var(--primary-color);
-}
-
-.account-create-popup button:first-child {
-  margin-right: 10px;
 }
 
 /* Login styles */
@@ -1910,179 +1881,6 @@ body.debug-mode {
 
 .not-logged-in .calendar-placeholder {
     display: block;
-}
-
-/* Hide edit button and calendar when not logged in */
-.not-logged-in .edit-button,
-.not-logged-in .save-button,
-.not-logged-in .timetable-calendar,
-.not-logged-in .bottom-content {
-    display: none !important;
-}
-
-/* Add styles to ensure timetable cells are properly visible when logged in */
-body:not(.not-logged-in) .week-table td {
-    opacity: 1 !important;
-    pointer-events: auto !important;
-    background-color: var(--secondary-color);
-}
-
-body:not(.not-logged-in) .week-table td.editable {
-    cursor: text !important;
-}
-
-/* Add styles to make cells look disabled when not logged in */
-.not-logged-in .week-table td:not(:first-child) {
-    opacity: 0.7;
-    pointer-events: none;
-    cursor: default !important;
-    background-color: #e0e0e0 !important;
-}
-
-/* Fix bottom content visibility */
-body:not(.not-logged-in) .bottom-content {
-    display: grid !important;
-}
-
-/* Fix time-table-buttons visibility */
-body:not(.not-logged-in) .time-table-buttons {
-    display: flex !important;
-}
-
-/* Style for login required message */
-.login-required-message {
-    margin-top: 20px;
-    font-style: italic;
-}
-
-/* Update login button style when logged in */
-#login-button.logged-in {
-    background-color: var(--primary-color);
-    color: white;
-    position: relative;
-    padding-right: 60px; /* More room for the logout icon */
-    padding-left: 15px; /* More padding on the left */
-    margin: 10px; /* Add margin all around */
-    font-size: 1.1em; /* Slightly larger text */
-    border: 2px solid var(--bakalar-color-basic); /* Black border */
-    display: flex;
-    align-items: center; /* Vertically center content */
-}
-
-#login-button.logged-in::after {
-    content: "⏻";  /* Power/logout symbol */
-    position: absolute;
-    right: 15px;
-    font-size: 1.1em; /* Same size as the text */
-    margin-left: 10px; /* More space between text and icon */
-    line-height: 1; /* Ensure proper vertical alignment */
-    display: flex;
-    align-items: center;
-    height: 100%;
-}
-
-#login-button.logged-in:hover {
-    background-color: #ff5252;
-    color: white;
-    box-shadow: 0 0 8px rgba(0,0,0,0.3); /* Add shadow on hover */
-    border-color: #000; /* Keep the border black on hover */
-}
-
-#login-button.logged-in:hover::before {
-    content: "Click to logout";
-    position: absolute;
-    bottom: -35px; /* More space below */
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: rgba(0, 0, 0, 0.7);
-    color: white;
-    padding: 6px 12px; /* Larger padding */
-    border-radius: 4px;
-    font-size: 0.9em; /* Slightly larger tooltip */
-    white-space: nowrap;
-    z-index: 1000;
-    box-shadow: 0 3px 5px rgba(0,0,0,0.2); /* Add shadow to tooltip */
-}
-
-.toggle-permanent-btn {
-    padding: 3px 8px;
-    font-size: 0.85em;
-    margin: 0 2px 0 5px; /* Reduced vertical margin to 0 */
-    position: relative;
-    display: none; /* Hidden by default, shown in admin mode by JS */
-    z-index: 100; /* Ensure it's above other elements */
-}
-
-.toggle-permanent-btn:hover {
-    background-color: #d0d0d0;
-}
-
-.toggle-permanent-btn.active {
-    background-color: #ff9800;
-    color: white;
-    border-color: #e68a00;
-}
-
-.toggle-permanent-btn.active:hover {
-    background-color: #e68a00;
-}
-
-/* Add a highlight effect for cells that would be marked permanent */
-.toggle-permanent-btn.active + .week-table td[contenteditable="true"]:focus {
-    box-shadow: 0 0 0 2px #ff9800;
-    background-color: #fff3e0 !important;
-}
-
-/* Container for time table buttons */
-.time-table-buttons {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 2px; /* Smaller gap */
-    margin: 0; /* Reduced from 2px 0 */
-    padding: 3px;
-    align-items: center;
-    justify-content: flex-end;
-}
-
-/* Fix timetable title to use less space */
-.time-table h2 {
-  margin: 3px 0 5px 0; /* Reduced bottom margin from 10px to 5px */
-  font-size: 1.3em; /* Smaller title */
-}
-
-/* Make the calendar more compact overall */
-.calendar {
-  transform: none;
-  display: block !important;
-  width: 100%;
-  visibility: visible !important;
-  min-height: 200px; /* Add minimum height to ensure visibility */
-  height: auto; /* Let height adjust naturally */
-  max-height: 200px; /* Control maximum height */
-}
-
-/* Add a container for sidebar buttons at the bottom */
-.sidebar-buttons {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  margin-top: auto; /* Push to bottom of sidebar */
-  padding-top: 10px;
-  border-top: 1px solid #ccc; /* Add separator */
-}
-
-.sidebar-buttons button {
-  width: 100%;
-  margin-bottom: 8px;
-}
-
-/* Make sure the login-required-message is styled properly */
-.login-required-message {
-  margin: 20px 0;
-  text-align: center;
-  padding: 10px;
-  color: #777;
-  font-style: italic;
 }
 
 /* Hide edit button and calendar when not logged in */

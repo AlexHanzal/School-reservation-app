@@ -113,26 +113,42 @@ async function initializeDataStorage() {
 let timetables = {}
 
 // API routes
-// Update the timetables endpoint to return only the latest version of each class
+// Update the timetables endpoint to better handle errors and logging
 app.get('/api/timetables', async (req, res) => {
     try {
+        console.log('Request received for /api/timetables');
+        
+        // Ensure the directory exists
+        await fs.mkdir(DATA_DIR, { recursive: true });
+        
         const files = await fs.readdir(DATA_DIR);
+        console.log(`Found ${files.length} files in timetables directory`);
+        
         const uniqueTimetables = new Map();
         
         // Sort files by creation time to get newest first
         const fileStats = await Promise.all(
             files.filter(f => f.endsWith('.json'))
                 .map(async file => {
-                    const filePath = path.join(DATA_DIR, file);
-                    const stat = await fs.stat(filePath);
-                    const data = await fs.readFile(filePath, 'utf8');
-                    return {
-                        file,
-                        data: JSON.parse(data),
-                        mtime: stat.mtime
-                    };
+                    try {
+                        const filePath = path.join(DATA_DIR, file);
+                        const stat = await fs.stat(filePath);
+                        const data = await fs.readFile(filePath, 'utf8');
+                        const parsedData = JSON.parse(data);
+                        return {
+                            file,
+                            data: parsedData,
+                            mtime: stat.mtime
+                        };
+                    } catch (error) {
+                        console.error(`Error processing file ${file}:`, error);
+                        return null; // Skip this file on error
+                    }
                 })
+                .filter(item => item !== null) // Filter out nulls
         );
+        
+        console.log(`Successfully processed ${fileStats.length} timetable files`);
         
         // Sort by modification time, newest first
         fileStats.sort((a, b) => b.mtime - a.mtime);
@@ -150,7 +166,7 @@ app.get('/api/timetables', async (req, res) => {
         res.json(uniqueClassNames);
     } catch (error) {
         console.error('Failed to list timetables:', error);
-        res.status(500).json({ success: false, error: 'Failed to list timetables' });
+        res.status(500).json({ success: false, error: 'Failed to list timetables: ' + error.message });
     }
 });
 
@@ -321,7 +337,7 @@ async function initializeUsersDirectory() {
 // Update the user creation endpoint
 app.post('/api/users', async (req, res) => {
     try {
-        const { name, abbreviation, password } = req.body;
+        const { name, abbreviation, password, isAdmin } = req.body;
         
         // Input validation
         if (!name?.trim() || !abbreviation?.trim() || !password?.trim()) {
@@ -359,6 +375,7 @@ app.post('/api/users', async (req, res) => {
             name: name.trim(),
             abbreviation: abbreviation.trim(),
             password: password.trim(),
+            isAdmin: Boolean(isAdmin), // Add isAdmin property
             createdAt: new Date().toISOString()
         };
 
@@ -388,53 +405,127 @@ app.post('/api/users', async (req, res) => {
 // Update users listing endpoint to handle errors better
 app.get('/api/users', async (req, res) => {
     try {
+        console.log('Request received for /api/users');
+        
         // Ensure Users directory exists
         await fs.mkdir(USERS_DIR, { recursive: true });
         
-        console.log('Reading users from:', USERS_DIR);
-        const files = await fs.readdir(USERS_DIR);
-        const users = [];
-        
-        for (const file of files) {
-            if (file.endsWith('.json')) {
-                try {
-                    const filePath = path.join(USERS_DIR, file);
-                    console.log('Reading user file:', filePath);
-                    const data = await fs.readFile(filePath, 'utf8');
-                    const userData = JSON.parse(data);
-                    // Don't send password to client
-                    const { password, ...userWithoutPassword } = userData;
-                    users.push(userWithoutPassword);
-                } catch (error) {
-                    console.error(`Error reading user file ${file}:`, error);
-                    continue;
-                }
+        console.log('Reading users from directory:', USERS_DIR);
+        let files;
+        try {
+            files = await fs.readdir(USERS_DIR);
+            console.log(`Found ${files.length} files in users directory:`, files);
+        } catch (readDirError) {
+            console.error('Error reading users directory:', readDirError);
+            
+            // If directory doesn't exist or can't be read, create it
+            if (readDirError.code === 'ENOENT') {
+                await fs.mkdir(USERS_DIR, { recursive: true });
+                console.log('Created users directory');
+                files = [];
+            } else {
+                throw readDirError;
             }
         }
         
-        console.log('Sending users:', users.length);
+        // If no users exist yet, create the default admin user
+        if (!files || files.length === 0 || !files.some(f => f.endsWith('.json'))) {
+            console.log('No users found, creating default admin user');
+            
+            // Create default admin user
+            const userId = generateFileId();
+            const defaultUser = {
+                id: userId,
+                name: 'Admin User',
+                abbreviation: 'admin',
+                password: 'admin',
+                isAdmin: true,
+                createdAt: new Date().toISOString()
+            };
+            
+            const userFilename = `${userId}.json`;
+            const userFilePath = path.join(USERS_DIR, userFilename);
+            
+            await fs.writeFile(
+                userFilePath,
+                JSON.stringify(defaultUser, null, 2)
+            );
+            
+            console.log('Created default admin user at:', userFilePath);
+            
+            // Update files list
+            files = [userFilename];
+        }
+        
+        const users = [];
+        const jsonFiles = files.filter(file => file.endsWith('.json'));
+        
+        console.log(`Processing ${jsonFiles.length} JSON files`);
+        
+        for (const file of jsonFiles) {
+            try {
+                const filePath = path.join(USERS_DIR, file);
+                console.log('Reading user file:', filePath);
+                
+                const data = await fs.readFile(filePath, 'utf8');
+                const userData = JSON.parse(data);
+                
+                // Don't send password to client
+                const { password, ...userWithoutPassword } = userData;
+                users.push(userWithoutPassword);
+                
+                console.log(`Processed user: ${userWithoutPassword.name}, isAdmin: ${userWithoutPassword.isAdmin}`);
+            } catch (fileError) {
+                console.error(`Error reading user file ${file}:`, fileError);
+                continue;
+            }
+        }
+        
+        console.log(`Sending ${users.length} users to client`);
         res.json(users);
     } catch (error) {
         console.error('Failed to list users:', error);
-        res.status(500).json({ success: false, error: 'Failed to list users' });
+        res.status(500).json({ 
+            success: false, 
+            error: 'Failed to list users: ' + error.message 
+        });
     }
 });
 
-// Add login endpoint
+// Update login endpoint to add fallback for debug user
 app.post('/api/users/login', async (req, res) => {
     try {
+        console.log('Login attempt received for:', req.body.abbreviation);
         const { abbreviation, password } = req.body;
         
+        // Special case for debug user
+        if (abbreviation === 'debug' && password === 'debug') {
+            console.log('Debug user login successful');
+            return res.json({
+                id: 'debug',
+                name: 'Debug User',
+                abbreviation: 'debug',
+                isAdmin: true
+            });
+        }
+        
+        // Ensure Users directory exists
+        await fs.mkdir(USERS_DIR, { recursive: true });
+        
         const files = await fs.readdir(USERS_DIR);
+        console.log(`Searching through ${files.length} user files`);
+        
         for (const file of files) {
             if (file.endsWith('.json')) {
                 const data = await fs.readFile(path.join(USERS_DIR, file), 'utf8');
                 const userData = JSON.parse(data);
                 if (userData.abbreviation === abbreviation) {
                     if (userData.password === password) {
+                        console.log(`Login successful for: ${userData.name}`);
                         const { password: _, ...userWithoutPassword } = userData;
                         return res.json(userWithoutPassword);
                     } else {
+                        console.log('Invalid password for:', abbreviation);
                         return res.status(401).json({
                             success: false,
                             error: 'Invalid password'
@@ -443,9 +534,11 @@ app.post('/api/users/login', async (req, res) => {
                 }
             }
         }
+        
+        console.log('User not found:', abbreviation);
         res.status(401).json({
             success: false,
-            error: 'Invalid password'
+            error: 'User not found'
         });
     } catch (error) {
         console.error('Login failed:', error);
@@ -456,11 +549,78 @@ app.post('/api/users/login', async (req, res) => {
     }
 });
 
-// Initialize storage and start server
+// Add this function to create default data if none exists
+async function createDefaultDataIfNeeded() {
+    try {
+        // Check if users directory exists and is empty
+        await fs.mkdir(USERS_DIR, { recursive: true });
+        const userFiles = await fs.readdir(USERS_DIR);
+        const jsonUserFiles = userFiles.filter(file => file.endsWith('.json'));
+        
+        if (jsonUserFiles.length === 0) {
+            console.log('No users found, creating default admin user');
+            
+            // Create default admin user
+            const userId = generateFileId();
+            const defaultUser = {
+                id: userId,
+                name: 'Admin User',
+                abbreviation: 'admin',
+                password: 'admin',  // In a real app, this should be hashed
+                isAdmin: true,
+                createdAt: new Date().toISOString()
+            };
+            
+            await fs.writeFile(
+                path.join(USERS_DIR, `${userId}.json`),
+                JSON.stringify(defaultUser, null, 2)
+            );
+            
+            console.log('Created default admin user');
+        }
+        
+        // Check if timetables directory exists and is empty
+        await fs.mkdir(DATA_DIR, { recursive: true });
+        const timetableFiles = await fs.readdir(DATA_DIR);
+        const jsonTimetableFiles = timetableFiles.filter(file => file.endsWith('.json'));
+        
+        if (jsonTimetableFiles.length === 0) {
+            console.log('No timetables found, creating example timetable');
+            
+            // Create example timetable
+            const fileId = generateFileId();
+            const exampleTimetable = {
+                className: 'Example Class',
+                fileId: fileId,
+                data: {},
+                currentWeek: new Date().toISOString(),
+                permanentHours: {},
+                createdAt: new Date().toISOString()
+            };
+            
+            await fs.writeFile(
+                path.join(DATA_DIR, `${fileId}.json`),
+                JSON.stringify(exampleTimetable, null, 2)
+            );
+            
+            console.log('Created example timetable');
+        }
+        
+        return true;
+    } catch (error) {
+        console.error('Error creating default data:', error);
+        return false;
+    }
+}
+
+// Update initialization function to create default data
 async function initialize() {
     try {
         await initializeDataStorage();
         await initializeUsersDirectory();
+        
+        // Create default data if needed
+        await createDefaultDataIfNeeded();
         
         app.listen(port, '0.0.0.0', () => {
             console.log(`Server running at http://${host}:${port}/`);
@@ -475,3 +635,90 @@ async function initialize() {
 
 // Replace the initialization at the bottom with our new function
 initialize();
+
+// Add function to show account creation popup
+function showAccountCreatePopup() {
+    // Create the popup if it doesn't exist
+    let popup = document.getElementById('account-create-popup');
+    if (!popup) {
+        popup = document.createElement('div');
+        popup.id = 'account-create-popup';
+        popup.className = 'account-create-popup';
+        
+        popup.innerHTML = `
+            <h2>Create New Account</h2>
+            <div class="input-group">
+                <label for="account-name">Full Name</label>
+                <input type="text" id="account-name" placeholder="Enter full name">
+            </div>
+            <div class="input-group">
+                <label for="account-abbreviation">Abbreviation</label>
+                <input type="text" id="account-abbreviation" placeholder="Enter abbreviation">
+            </div>
+            <div class="input-group">
+                <label for="account-password">Password</label>
+                <input type="password" id="account-password" placeholder="Enter password">
+            </div>
+            <div class="input-group">
+                <label for="account-admin">
+                    <input type="checkbox" id="account-admin">
+                    Admin Privileges
+                </label>
+            </div>
+            <div class="account-create-error" id="account-create-error">Error message will appear here</div>
+            <div class="account-create-actions">
+                <button id="create-account-btn">Create Account</button>
+                <button id="cancel-account-btn">Cancel</button>
+            </div>
+        `;
+        
+        document.body.appendChild(popup);
+        
+        // Add event listeners for buttons
+        document.getElementById('create-account-btn').addEventListener('click', createNewAccount);
+        document.getElementById('cancel-account-btn').addEventListener('click', hideAccountCreatePopup);
+        
+        // Add keyboard event handlers
+        popup.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                hideAccountCreatePopup();
+            } else if (e.key === 'Enter') {
+                createNewAccount();
+            }
+        });
+    }
+    
+    // Clear any previous values and errors
+    document.getElementById('account-name').value = '';
+    document.getElementById('account-abbreviation').value = '';
+    document.getElementById('account-password').value = '';
+    document.getElementById('account-admin').checked = false;
+    document.getElementById('account-create-error').style.display = 'none';
+    
+    // Show the popup
+    popup.style.display = 'block';
+    
+    // Add overlay if it doesn't exist
+    let overlay = document.getElementById('account-create-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'account-create-overlay';
+        overlay.className = 'accounts-overlay';
+        overlay.addEventListener('click', hideAccountCreatePopup);
+        document.body.appendChild(overlay);
+    }
+    
+    // Show the overlay
+    overlay.style.display = 'block';
+    
+    // Focus on the first input field
+    document.getElementById('account-name').focus();
+}
+
+function hideAccountCreatePopup() {
+    const popup = document.getElementById('account-create-popup');
+    const overlay = document.getElementById('account-create-overlay');
+    
+    if (popup) popup.style.display = 'none';
+    if (overlay) overlay.style.display = 'none';
+}

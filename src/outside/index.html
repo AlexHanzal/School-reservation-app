@@ -42,7 +42,7 @@
     </ul>
     <div class="sidebar-buttons">
       <button id="accounts-button">Accounts</button>
-      <button class="admin-button" id="admin-button">Admin Mode</button>
+      <!-- Admin button removed -->
     </div>
   </aside>
 
@@ -159,13 +159,8 @@
     </div>
   </div>
   <script src="/js/renderer.js"></script>
+  <script src="/js/user-loader.js"></script>
   <script>
-    // Add event listener to show save button when admin mode is activated
-    document.getElementById('admin-button').addEventListener('click', function() {
-      console.log('Admin button clicked');
-      // Admin verification will now be handled in the setupAdminButton function
-    });
-    
     // Debug helper - logs when verification window appears/disappears
     const verificationWindow = document.getElementById('verification-window');
     if (verificationWindow) {
@@ -184,26 +179,6 @@
     
     // Debug helper for keyboard shortcuts
     console.log('Debug mode can be activated with Shift+A+S');
-    
-    // Add a direct test button (only in development)
-    if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
-      const testButton = document.createElement('button');
-      testButton.textContent = 'Debug Mode Test';
-      testButton.style.position = 'fixed';
-      testButton.style.bottom = '10px';
-      testButton.style.left = '10px';
-      testButton.style.zIndex = '9999';
-      testButton.onclick = function() {
-        document.body.classList.toggle('debug-mode');
-        if (document.body.classList.contains('debug-mode')) {
-          enableDebugMode();
-        } else {
-          disableDebugMode();
-        }
-      };
-      
-      document.body.appendChild(testButton);
-    }
   </script>
   <div class="custom-alert-overlay" id="alertOverlay"></div>
   <div class="custom-alert" id="customAlert">
@@ -333,6 +308,70 @@
           }
         });
       }
+    });
+  </script>
+
+  <!-- Add this script block right before the closing body tag -->
+  <script>
+    // Ensure users are loaded as soon as possible
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('Document loaded, attempting to preload users');
+      
+      // Directly attempt to load users from the API
+      fetch('http://' + window.location.hostname + ':3000/api/users')
+        .then(response => {
+          console.log('User preload response status:', response.status);
+          return response.json();
+        })
+        .then(users => {
+          console.log('Preloaded users:', users);
+          
+          // Populate the user select dropdown directly
+          const userSelect = document.getElementById('user-select');
+          if (userSelect) {
+            // Clear any existing options
+            userSelect.innerHTML = '<option value="">Select a user</option>';
+            
+            if (Array.isArray(users) && users.length > 0) {
+              users.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user.abbreviation;
+                option.textContent = user.name;
+                userSelect.appendChild(option);
+              });
+            } else {
+              // Add fallback options if no users found
+              const adminOption = document.createElement('option');
+              adminOption.value = "admin";
+              adminOption.textContent = "Admin User";
+              userSelect.appendChild(adminOption);
+              
+              const debugOption = document.createElement('option');
+              debugOption.value = "debug";
+              debugOption.textContent = "Debug User";
+              userSelect.appendChild(debugOption);
+            }
+          }
+        })
+        .catch(error => {
+          console.error('Error preloading users:', error);
+          
+          // Add fallback options on error
+          const userSelect = document.getElementById('user-select');
+          if (userSelect) {
+            userSelect.innerHTML = '<option value="">Select a user</option>';
+            
+            const adminOption = document.createElement('option');
+            adminOption.value = "admin";
+            adminOption.textContent = "Admin User";
+            userSelect.appendChild(adminOption);
+            
+            const debugOption = document.createElement('option');
+            debugOption.value = "debug";
+            debugOption.textContent = "Debug User";
+            userSelect.appendChild(debugOption);
+          }
+        });
     });
   </script>
 </body>

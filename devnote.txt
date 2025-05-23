@@ -4,14 +4,17 @@
 - Fixed issue with cell data not being saved properly
 - Fixed issue with cell data not loading
 - Now using src/server/init.js for server starting and initialization
+- Removed admin verification - admin privileges now granted during account creation
+- Added debug mode user login with automatic admin privileges
+- Added admin checkbox to account creation form
 
 
 ------------------------------------------------
 
 | TO DO |
-- When creating an account an option for an admin account should be selectable
+-
 
 ------------------------------------------------
 
 | NEEDS FIXING |
-- 
+-
