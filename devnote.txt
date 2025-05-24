@@ -1,0 +1,18 @@
+| CHANGES |
+- Updated the UI
+- Fixed issue with cell data disappearing when switching weeks
+- Fixed issue with cell data not being saved properly
+- Fixed issue with cell data not loading
+- Now using src/server/init.js for server starting and initialization
+- Removed admin verification - admin privileges now granted during account creation
+
+
+------------------------------------------------
+
+| TO DO |
+- Add admin checkbox to account creation form
+
+------------------------------------------------
+
+| NEEDS FIXING |
+- Login.

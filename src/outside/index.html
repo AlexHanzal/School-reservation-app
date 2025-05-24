@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day App</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/buttons.css">
+</head>
+<body class="not-logged-in">
+  <header class="header" id="header">
+    <h1 class="title">Zaber si</h1>
+    <div class="window-controls">
+        <button id="login-button">Login</button>
+        <button id="logout-button" class="logout-button">Logout</button>
+    </div>
+  </header>
+
+  <!-- Add login overlay and menu after header -->
+  <div class="login-overlay" id="login-overlay"></div>
+  <div class="login-menu" id="login-menu">
+    <button class="close-accounts-button" id="close-login">×</button>
+    <h3>User Login</h3>
+    <div class="input-group">
+        <label for="user-select">User:</label>
+        <select id="user-select">
+            <option value="">Select a user</option>
+        </select>
+    </div>
+    <div class="input-group">
+        <label for="password-input">Password:</label>
+        <input type="password" id="password-input" placeholder="Enter password">
+    </div>
+    <div class="login-error" id="login-error"></div>
+    <button id="submit-login">Login</button>
+  </div>
+  
+  <!-- Replace the existing sidebar with this well-structured version -->
+  <aside class="sidebar">
+    <ul>
+      <li id="dynamic-links-container">
+        <!-- Replace with properly centered message -->
+        <div class="login-required-sidebar-message">Please log in to view classes</div>
+      </li>
+      <li><button class="create-new" id="create-new">+</button></li>
+    </ul>
+    <div class="sidebar-buttons">
+      <button id="accounts-button">Accounts</button>
+      <!-- Admin button removed -->
+    </div>
+  </aside>
+
+  <!-- Add accounts overlay -->
+  <div class="accounts-overlay" id="accounts-overlay"></div>
+  
+  <div class="select-screen" id="select-screen">
+    <div class="select-window">
+      <button class="close-select" id="close-select">X</button>
+      <div class="input-group">
+        <label for="name-input">Name:</label>
+        <input type="text" id="name-input" placeholder="Enter name">
+      </div>
+      <div class="input-group">
+        <label for="type-select">Type:</label>
+        <select id="type-select">
+          <option value="thing">Thing</option>
+          <option value="class">Class</option>
+        </select>
+      </div>
+      <button class="submit-button" id="submit-button">Submit</button>
+    </div>
+  </div>
+  
+  <div class="time-table not-logged-in">
+    <h2>Time Table</h2>
+    <div class="timetable-content">
+      <div class="table-container">
+        <table class="week-table">
+          <thead>
+            <tr>
+              <th>Day</th>
+              <th>1</th>
+              <th>2</th>
+              <th>3</th>
+              <th>4</th>
+              <th>5</th>
+              <th>6</th>
+              <th>7</th>
+              <th>8</th>
+              <th>9</th>
+              <th>10</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Po</td> <!-- Shortened day names -->
+              <td></td><td></td><td></td><td></td><td></td>
+              <td></td><td></td><td></td><td></td><td></td>
+            </tr>
+            <tr>
+              <td>Út</td>
+              <td></td><td></td><td></td><td></td><td></td>
+              <td></td><td></td><td></td><td></td><td></td>
+            </tr>
+            <tr>
+              <td>St</td>
+              <td></td><td></td><td></td><td></td><td></td>
+              <td></td><td></td><td></td><td></td><td></td>
+            </tr>
+            <tr>
+              <td>Čt</td>
+              <td></td><td></td><td></td><td></td><td></td>
+              <td></td><td></td><td></td><td></td><td></td>
+            </tr>
+            <tr>
+              <td>Pá</td>
+              <td></td><td></td><td></td><td></td><td></td>
+              <td></td><td></td><td></td><td></td><td></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="bottom-content">
+        <div class="time-table-buttons">
+          <button class="edit-button">Edit</button>
+          <button class="save-button" style="display: none;">Save</button>
+        </div>
+        <div class="timetable-calendar">
+          <div class="calendar-header">
+            <button class="prev-button">&lt;</button>
+            <h3 class="calendar-title" id="timetable-calendar-title"></h3>
+            <button class="next-button">&gt;</button>
+          </div>
+          <div class="calendar" id="timetable-calendar"></div>
+        </div>
+      </div>
+      <div class="calendar-placeholder">
+        Please log in to access the calendar and edit functionality
+      </div>
+    </div>
+  </div>
+  
+  <!-- Add welcome container for non-logged in users -->
+  <div class="welcome-container">
+    <h2>Welcome to the Classroom Reservation System!</h2>
+    <p>Please log in to view and manage your timetables</p>
+  </div>
+  
+  <div class="pop-up" id="pop-up">
+    <div class="calendar-header">
+      <h2 class="calendar-title" id="calendar-title"></h2>
+    </div>
+    <button class="close-button" id="close-button">X</button>
+    <div class="calendar" id="calendar"></div>
+    <div class="calendar-buttons">
+      <button class="prev-button">&lt;</button>
+      <button class="next-button">&gt;</button>
+    </div>
+  </div>
+  <div class="verification-window" id="verification-window">
+    <div class="verification-content">
+      <h2>Verification</h2>
+      <button class="close-verification-button" id="close-verification">X</button>
+      <p>Please enter the code:</p>
+      <input type="password" id="verification-code" placeholder="Enter code">
+      <div class="verification-buttons">
+        <button class="confirm-verification" id="confirm-verification">Confirm</button>
+      </div>
+    </div>
+  </div>
+  <script src="/js/renderer.js"></script>
+  <script src="/js/user-loader.js"></script>
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Saving changes...</div>
+  </div>
+  
+  <!-- Remove all existing login-related scripts -->
+
+  <script>
+  // Ultra simple login script - minimal code to avoid conflicts
+  document.addEventListener('DOMContentLoaded', function() {
+    console.log('Minimal login handler initialized');
+    
+    // Basic elements
+    const loginButton = document.getElementById('login-button');
+    const loginMenu = document.getElementById('login-menu');
+    const loginOverlay = document.getElementById('login-overlay');
+    const closeLoginBtn = document.getElementById('close-login');
+    const submitLoginBtn = document.getElementById('submit-login');
+    const passwordInput = document.getElementById('password-input');
+    const userSelect = document.getElementById('user-select');
+    const loginError = document.getElementById('login-error');
+    const logoutButton = document.getElementById('logout-button');
+    
+    // Clear any existing handlers
+    const cloneAndReplace = (element) => {
+      if (!element) return null;
+      const clone = element.cloneNode(true);
+      element.parentNode.replaceChild(clone, element);
+      return clone;
+    };
+    
+    // Replace elements with clones to clear event handlers
+    const newLoginButton = cloneAndReplace(loginButton);
+    const newLoginOverlay = cloneAndReplace(loginOverlay);
+    const newCloseLoginBtn = cloneAndReplace(closeLoginBtn);
+    const newSubmitLoginBtn = cloneAndReplace(submitLoginBtn);
+    const newLogoutButton = cloneAndReplace(logoutButton);
+    
+    // Simple show/hide functions
+    function showLoginMenu() {
+      loginMenu.style.display = 'block';
+      loginOverlay.style.display = 'block';
+      setTimeout(() => {
+        loginMenu.classList.add('active');
+        loginOverlay.classList.add('active');
+      }, 10);
+    }
+    
+    function hideLoginMenu() {
+      loginMenu.classList.remove('active');
+      loginOverlay.classList.remove('active');
+      setTimeout(() => {
+        loginMenu.style.display = 'none';
+        loginOverlay.style.display = 'none';
+        passwordInput.value = ''; // Clear password
+        loginError.style.display = 'none'; // Hide any errors
+      }, 300);
+    }
+    
+    // Add minimal event listeners
+    newLoginButton.addEventListener('click', function(e) {
+      e.preventDefault();
+      if (!this.classList.contains('logged-in')) {
+        showLoginMenu();
+      }
+    });
+    
+    newCloseLoginBtn.addEventListener('click', hideLoginMenu);
+    newLoginOverlay.addEventListener('click', hideLoginMenu);
+    
+    newSubmitLoginBtn.addEventListener('click', function() {
+      // Ultra simple credential check
+      const username = userSelect.value;
+      const password = passwordInput.value;
+      
+      console.log('Login attempt:', username);
+      loginError.style.display = 'none';
+      
+      // Direct credential check
+      if ((username === 'admin' && password === 'admin') || 
+          (username === 'debug' && password === 'debug')) {
+        
+        const isAdmin = (username === 'admin');
+        loginButton.textContent = isAdmin ? 'Admin User' : 'Debug User';
+        loginButton.classList.add('logged-in');
+        document.body.classList.remove('not-logged-in');
+        logoutButton.classList.add('visible');
+        
+        // Enable admin features if admin
+        if (isAdmin) {
+          window.isAdminMode = true;
+          const accountsButton = document.getElementById('accounts-button');
+          if (accountsButton) {
+            accountsButton.style.display = 'block';
+            accountsButton.classList.add('admin-visible');
+          }
+        }
+        
+        // Hide welcome screen, show timetable
+        const welcomeContainer = document.querySelector('.welcome-container');
+        if (welcomeContainer) welcomeContainer.style.display = 'none';
+        
+        const timeTable = document.querySelector('.time-table');
+        if (timeTable) timeTable.classList.remove('not-logged-in');
+        
+        // Close login menu and show success
+        hideLoginMenu();
+        alert('Login successful');
+      } else {
+        // Show error message
+        loginError.textContent = 'Invalid username or password';
+        loginError.style.display = 'block';
+      }
+    });
+    
+    // Handle Enter key
+    passwordInput.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        newSubmitLoginBtn.click();
+      }
+    });
+    
+    // Logout button
+    newLogoutButton.addEventListener('click', function() {
+      loginButton.textContent = 'Login';
+      loginButton.classList.remove('logged-in');
+      this.classList.remove('visible');
+      document.body.classList.add('not-logged-in');
+      
+      const timeTable = document.querySelector('.time-table');
+      if (timeTable) timeTable.classList.add('not-logged-in');
+      
+      const welcomeContainer = document.querySelector('.welcome-container');
+      if (welcomeContainer) welcomeContainer.style.display = 'flex';
+      
+      window.isAdminMode = false;
+      
+      const accountsButton = document.getElementById('accounts-button');
+      if (accountsButton) {
+        accountsButton.style.display = 'none';
+        accountsButton.classList.remove('admin-visible');
+      }
+      
+      alert('Logged out successfully');
+    });
+    
+    // Add default users to dropdown
+    userSelect.innerHTML = '<option value="">Select a user</option>';
+    userSelect.innerHTML += '<option value="admin">Admin User</option>';
+    userSelect.innerHTML += '<option value="debug">Debug User</option>';
+  });
+  </script>
+
+  <!-- Add authors attribution box at the end of body, but before scripts -->
+  <div class="authors-box">
+  Created by <strong>Alex Hanzal</strong> and his humble friend and assistant <strong>Štěpán Kádár</strong>
+  </div>
+</body>
+</html>

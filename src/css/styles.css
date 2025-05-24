@@ -1,0 +1,1087 @@
+:root {
+    /* Dark theme (default) */
+    --primary-color: #50b0ff;
+    --secondary-color: #eeeeee;
+    --third-color: #f1f1f1;
+    --fifth-color: #ffffff;
+    --header-bg: rgb(224, 224, 224);
+    --sidebar-bg: #e6e6e6;
+    --font-family: Arial, Helvetica, sans-serif;
+    --sidebar-width: 15%; /* Increased from 12% */
+    --header-height: 10%;
+    --highlight-color: #afafaf;
+    --highlight-cell-color: #a7a7a7;
+    --bakalar-color-basic: #ffffff;
+    --bakalar-color-hover: #ffffff;
+  }
+  
+  :root[data-theme="light"] {
+    /* Light theme */
+    --primary-color: #474747;
+    --secondary-color: #d9d9d9;
+    --third-color: #f0f0f0;
+    --fifth-color: #000000;
+    --header-bg: #c2c2c2;
+    --sidebar-bg: #cccccc;
+    --highlight-color: #a8a8a8;
+    --highlight-cell-color: #b3b3b3;
+  }
+  
+  /*{
+    border: red solid 1px;
+  }*/
+  
+  * {
+    font-family: var(--font-family);
+  }
+  
+  html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+  
+  .sidebar {
+    width: var(--sidebar-width);
+    height: 90%; /* Adjust height to fit below the header */
+    background-color: var(--sidebar-bg);
+    padding: 10px; /* Reduced from 15px */
+    position: fixed;
+    top: 10%; /* Start below the header */
+    left: 0;
+    color: var (--primary-color);
+    z-index: 500; /* Ensure it stays below the header */
+    border-right: var(--fifth-color) solid 1px; /* Change from full border to right-only */
+    box-sizing: border-box;
+    overflow-y: hidden; /* Keep hidden to prevent scrollbar */
+    display: flex; /* Add flex display */
+    flex-direction: column; /* Stack children vertically */
+  }
+  
+  .sidebar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    width: 100%; /* Ensure full width */
+    flex: 1; /* Take available space */
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    max-height: calc(90vh - 100px); /* Limit max height */
+    overflow: visible; /* Let content overflow without scrollbar */
+  }
+  
+  .sidebar li {
+    margin: 0;
+    padding: 0;
+    text-align: center;
+    width: 100%; /* Ensure list items use full width */
+    box-sizing: border-box;
+    margin-bottom: 5px; /* Add spacing between items */
+  }
+  
+  .sidebar > button {
+    width: 100%; /* Ensure all direct child buttons use full width */
+    margin: 5px 0;
+    box-sizing: border-box;
+    position: relative; /* Ensure proper positioning */
+  }
+  
+  body {
+    background-color: #fefefe;
+    margin: 0;
+    padding: 0;
+  }
+  
+  .title {
+    color: var(--primary-color)   ;
+    font-size: 2em;
+    text-align: center;
+    padding: auto;
+    font-weight: bold;
+    text-shadow: 2px 2px 4px #000000;
+  }
+  
+  header {
+    background-color: var(--third-color);
+    text-align: center;
+    color: #455459;
+    font-size: 1.5em;
+    font-weight: bold;
+    height: 10%;
+    display: flex; /* Use flexbox */
+    align-items: center; /* Vertically center content */
+    justify-content: center; /* Horizontally center content */
+    border-bottom: #d9d9d9 solid 1px;
+    position: fixed; /* Fix the header at the top */
+    top: 0;
+    left: 0;
+    width: 100%; /* Ensure it spans the full width */
+    z-index: 1000; /* Ensure it stays above the sidebars */
+  }
+  
+  ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  td {
+    padding: 0; /* Remove padding from all cells */
+    text-align: center; /* Center align the numbers */
+    border-radius: 5px; /* Add rounded corners to all table cells */
+    width: 14.28%; /* Ensure cells take equal width (100% / 7 days) */
+    height: 40px; /* Set a consistent height for cells */
+    vertical-align: middle; /* Center align text vertically */
+    border: 1px solid var(--secondary-color); /* Optional: Add a border for clarity */
+  }
+  
+  table {
+    border-collapse: collapse; /* Remove gaps between table cells */
+    width: 100%; /* Make the table take the full width of its container */
+    table-layout: fixed; /* Ensure all columns have equal width */
+  }
+  
+  td, th {
+    padding: 0; /* Remove padding from all cells */
+    text-align: center; /* Center align the text */
+    width: 14.28%; /* Ensure each cell takes up an equal width (100% / 7 days) */
+    height: 40px; /* Set a consistent height for cells */
+    vertical-align: middle; /* Center align text vertically */
+    border: 1px solid var(--secondary-color); /* Optional: Add a border for clarity */
+  }
+  
+  th {
+    font-weight: bold; /* Make header text bold */
+    color: black; /* Use primary color for header text */
+  }
+  
+  .select-screen {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 2000;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    animation: fadeOut 0.3s ease-out;
+  }
+  
+  .select-screen.active {
+    display: flex;
+    opacity: 1;
+    animation: fadeIn 0.3s ease-out;
+  }
+  
+  .select-window {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #ffffff;
+    color: var(--primary-color);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3);
+    width: 300px; /* Set a fixed width */
+    height: auto; /* Adjust height dynamically */
+    text-align: center;
+    z-index: 2001;
+  }
+  
+  .select-window input,
+  .select-window select {
+    pointer-events: auto !important;
+    user-select: text !important;
+    cursor: text !important;
+  }
+  
+  .input-group {
+    margin: 10px 0;
+    text-align: left;
+  }
+  
+  .input-group label {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--primary-color);
+    font-weight: bold;
+  }
+  
+  .input-group input,
+  .input-group select {
+    width: 100%; /* Ensure both input and select take the full width */
+    padding: 8px;
+    border: 2px solid var(--primary-color);
+    border-radius: 5px;
+    background-color: var(--secondary-color);
+    color: var(--primary-color);
+    box-sizing: border-box; /* Include padding and border in the element's width */
+  }
+  
+  .input-group input:focus,
+  .input-group select:focus {
+    outline: none;
+    border-color: var(--secondary-color);
+  }
+  
+  .dynamic-link {
+    display: block;
+    margin: 10px auto; /* Center the link and add spacing */
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: bold;
+    text-align: center; /* Ensure text is centered */
+  }
+  
+  .dynamic-link:hover {
+    text-decoration: underline;
+  }
+  
+  #dynamic-links-container {
+    text-align: center; /* Center the container for buttons */
+    display: flex; /* Use flexbox for layout */
+    flex-wrap: wrap; /* Allow wrapping to a new row */
+    gap: 10px; /* Add spacing between buttons */
+    justify-content: center; /* Center buttons horizontally */
+    flex-direction: column;
+    margin: 0;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0; /* Remove any padding */
+    min-height: 100px; /* Add minimum height to ensure centering */
+  }
+  
+  .time-table {
+    display: none;
+    background-color: #FEFEFE;
+    color: var(--primary-color);
+    padding: 10px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3);
+    position: fixed;
+    top: var(--header-height);
+    left: var(--sidebar-width);
+    width: calc(100% - var(--sidebar-width));
+    height: calc(100% - var(--header-height)); /* Remove subtraction to use full available height */
+    overflow: hidden;
+    text-align: center;
+    font-size: 0.9em;
+    box-sizing: border-box;
+    margin-left: 0;
+    margin-right: 0;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .week-table {
+    border-collapse: collapse;
+    width: 90%;
+    height: 100%; /* Changed from 155% to fit container perfectly */
+    margin: 0 auto;
+    background-color: var(--secondary-color);
+    position: relative;
+    table-layout: fixed;
+    font-size: 0.85em;
+  }
+  
+  .week-table th, .week-table td {
+    border: 1px solid var(--primary-color);
+    padding: 2px; /* Reduced padding even more */
+    text-align: center;
+    color: black;
+    height: 30px; /* Reduced height */
+    overflow: hidden; /* Prevent content overflow */
+    position: relative; /* Needed for proper positioning of permanent hour indicator */
+  }
+  
+  .week-table th {
+    background-color: var(--secondary-color);
+    font-weight: bold;
+  }
+  
+  .week-table td:first-child {
+    font-weight: bold;
+    background-color: var(--secondary-color);
+    color: black;
+    text-align: center; /* Center text */
+    padding: 0 2px; /* Smaller padding */
+    width: 12%; /* Slightly narrower */
+    vertical-align: middle; /* Vertically center */
+    height: auto; /* Allow height to adjust */
+    white-space: nowrap; /* Prevent day names from wrapping */
+  }
+  
+  .week-table td[contenteditable="true"] {
+    cursor: text;
+    user-select: text;
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    outline: 2px dashed var(--primary-color);
+    background-color: var(--secondary-color);
+  }
+  
+  .week-table td[contenteditable="true"]:focus {
+    background-color: white !important;
+    outline: 2px solid var(--primary-color);
+  }
+  
+  .week-table td[contenteditable="true"] {
+    cursor: text;
+    outline: 1px solid var(--primary-color);
+  }
+  
+  .week-table td[contenteditable="true"]:focus {
+    background-color: #666 !important;
+    outline: 2px solid var(--primary-color);
+  }
+  
+  .week-table td.current-day {
+    background-color: var(--highlight-color);
+    font-weight: bold;
+    border: 2px solid var(--primary-color);
+    z-index: 1;
+    position: relative;
+  }
+  
+  /* Add highlighting for all cells in current day row */
+  .week-table tr:has(td.current-day) td:not(:first-child) {
+    background-color: var(--highlight-cell-color);
+    border: 1px solid var(--primary-color);
+    z-index: 0;
+    position: relative;
+  }
+  
+  .week-table th:not(:first-child),
+  .week-table td:not(:first-child) {
+    width: 8.8%; /* (100% - 12% for first column) / 10 columns */
+  }
+  
+  .permanent-hour {
+    background-color: #ffebcc !important;
+    font-weight: bold;
+    color: #ff0000 !important;
+    position: relative;
+    box-sizing: border-box;
+    transition: all 0.2s ease;
+    border-radius: 0 !important;
+    border: 1px solid #ff9800 !important; /* Thinner border */
+    margin: 0 !important; /* Remove margin to prevent overlap */
+    z-index: 1; /* Ensure proper stacking */
+  }
+  
+  .permanent-hour::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border: none;
+    border-radius: 0;
+  }
+  
+  .timetable-content {
+    display: flex;
+    flex-direction: column;
+    height: 75%; /* Changed to use full container height */
+    width: 100%;
+    padding: 0 30px 0 0; /* Right padding only */
+    box-sizing: border-box;
+    overflow: hidden;
+    position: relative; /* Added for absolute positioning of login message */
+  }
+  
+  .table-container {
+    width: 100%;
+    flex: 1 1 auto;
+    overflow: visible; /* Changed from auto to visible to prevent scrolling */
+    margin: 0;
+    padding: 5px 0 0 0; /* Remove horizontal padding */
+    box-sizing: border-box;
+    max-height: none; /* Remove max-height constraint */
+  }
+  
+  .bottom-content {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: start;
+    width: 100%;
+    gap: 15px; /* Increased from 10px */
+    margin-top: 20px; /* Reduced from 45px to give more space to the timetable */
+    height: auto;
+    box-sizing: border-box;
+    padding-bottom: 20px; /* Increased from 15px */
+    padding-right: 0; /* Remove right padding */
+    padding-left: 0; /* Remove left padding */
+    max-height: 320px; /* Adjusted from 370px to be more proportional */
+  }
+  
+  .time-table-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px; /* Maintain smaller gap */
+    margin: 0; /* Remove margins */
+    padding: 3px 0; /* Add vertical padding only */
+    align-items: center;
+    justify-content: flex-start; /* Align buttons to the left */
+  }
+  
+  .date-cell {
+    font-size: 0.9em;
+    color: black;
+    font-weight: normal;
+    text-align: center;
+    background-color: var(--secondary-color);
+  }
+  
+  .window-controls {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  
+  .class-button-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    max-width: 200px; /* Increased to accommodate both buttons */
+    margin: 10px auto;
+  }
+  
+  .edit-menu {
+    display: none;
+    position: absolute;
+    right: -120px;
+    top: 0;
+    background-color: var(--secondary-color);
+    border: 2px solid var(--primary-color);
+    border-radius: 5px;
+    padding: 10px;
+    z-index: 1000;
+  }
+  
+  .edit-menu.active {
+    display: block;
+  }
+  
+  .confirmation-dialog {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 3000;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .confirmation-content {
+    background-color: var(--secondary-color);
+    color: var(--primary-color);
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    width: 300px;
+  }
+  
+  .confirmation-buttons {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 20px;
+  }
+  
+  .class-name-edit {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 3000;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .edit-content {
+    background-color: var(--secondary-color);
+    color: var(--primary-color);
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    width: 300px;
+  }
+  
+  .edit-content input {
+    width: 100%;
+    padding: 8px;
+    margin: 10px 0;
+    border: 2px solid var(--primary-color);
+    border-radius: 5px;
+    background-color: var(--third-color);
+    color: var(--primary-color);
+    box-sizing: border-box;
+  }
+  
+  .customization-menu {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: var(--secondary-color);
+    border: 2px solid var(--primary-color);
+    border-radius: 10px;
+    padding: 20px;
+    z-index: 3000;
+    min-width: 300px;
+  }
+  
+  .customization-menu h2 {
+    margin-top: 20px;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  
+  .customization-menu.active {
+    display: block;
+  }
+  
+  .customization-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 2999;
+    opacity: 0;
+    animation: fadeOut 0.3s ease-out;
+  }
+  
+  .customization-overlay.active {
+    display: block;
+    opacity: 1;
+    animation: fadeIn 0.3s ease-out;
+  }
+  
+  .admin-controls {
+    margin-top: 10px;
+    text-align: center;
+  }
+  
+  .sidebar-bottom {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: absolute;
+    bottom: 65%; /* Moved up slightly more */
+    left: 0;
+    width: 100%;
+    text-align: center;
+    padding: 0 15px;
+    margin: 15px 0; /* Added margin for extra spacing */
+    box-sizing: border-box;
+  }
+  
+  .customization-menu h2,
+  .current-directory p {
+    color: var(--primary-color);
+  }
+  
+  .language-window {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: var(--secondary-color);
+    border: 2px solid var(--primary-color);
+    border-radius: 10px;
+    padding: 20px;
+    z-index: 3000;
+    min-width: 300px;
+  }
+  
+  .language-content {
+    position: relative;
+  }
+  
+  .language-content h2 {
+    color: var(--primary-color);
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  
+  .language-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .appearance-window {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: var(--secondary-color);
+    border: 2px solid var(--primary-color);
+    border-radius: 10px;
+    padding: 20px;
+    z-index: 3000;
+    min-width: 300px;
+  }
+  
+  .appearance-content {
+    position: relative;
+  }
+  
+  .appearance-content h2 {
+    color: var(--primary-color);
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  
+  .appearance-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .calendar-table {
+    width: 100%; /* Ensure table is full width of container */
+    height: 100%; /* Allow natural height */
+    border-collapse: collapse;
+    margin-top: 15px;
+    table-layout: fixed;
+    display: table !important;
+    font-size: 0.95em; /* Slightly smaller font */
+}
+
+.calendar-table th,
+.calendar-table td {
+    padding: 4px; /* Increased from 2px */
+    text-align: center;
+    border: 1px solid var(--primary-color);
+    width: 32px; /* Increased from 28px */
+    height: 32px; /* Increased from 26px */
+    font-size: 0.95em; /* Slightly increased from 0.9em */
+}
+
+.calendar-table th {
+    background-color: var(--secondary-color);
+    color: black;
+    font-weight: bold;
+}
+
+.calendar-table td {
+    cursor: pointer;
+    color: black;
+}
+
+.calendar-table td:hover {
+    background-color: var(--highlight-color);
+}
+
+.calendar-table td.current-day {
+    background-color: var(--primary-color);
+    color: white;
+    font-weight: bold;
+}
+
+.calendar-table td.selected {
+    background-color: var(--highlight-cell-color);
+    font-weight: bold;
+}
+
+.timetable-calendar {
+    max-width: 380px;
+    height: auto;
+    font-size: 0.95em;
+    margin: 0;
+    padding: 5px;
+    overflow: visible;
+    order: 2;
+    justify-self: start;
+    margin-top: 0;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: relative;
+    z-index: 101;
+    min-height: 250px; /* Corrected the value */
+    max-height: 300px; /* Kept a reasonable maximum height */
+}
+
+.timetable-calendar .calendar-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px; /* Increased from 10px */
+    margin-bottom: 10px; /* Increased from 8px */
+    visibility: visible !important;
+    width: 100%; /* Ensure full width */
+    position: relative; /* For proper centering */
+}
+
+.timetable-calendar .calendar-title {
+    margin: 0;
+    font-size: 1.1em; /* Increased from 0.95em */
+    min-width: 120px; /* Increased from 90px */
+    text-align: center;
+    font-weight: bold;
+    display: block !important;
+    visibility: visible !important;
+}
+
+.timetable-calendar .prev-button,
+.timetable-calendar .next-button {
+    padding: 4px 10px; /* Increased padding */
+    font-size: 1em; /* Increased from 0.9em */
+    cursor: pointer;
+    background: none;
+    border: none;
+    color: var(--primary-color);
+    font-weight: bold;
+    display: inline-block !important; /* Force display */
+    visibility: visible !important;
+}
+
+/* Hide timetable elements completely when not logged in */
+.not-logged-in.time-table {
+    display: none !important;
+}
+
+/* Style for login required message - updated to center in the page */
+.login-required-message {
+    margin: 0;
+    text-align: center;
+    padding: 10px;
+    color: #777;
+    font-style: italic;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    font-size: 1.1em;
+}
+
+/* Calendar placeholder message - shown when not logged in */
+.calendar-placeholder {
+    text-align: center;
+    padding: 20px;
+    color: #777;
+    font-style: italic;
+    margin-top: 20px;
+    display: none;
+}
+
+/* Make sure calendar placeholder is visible when not logged in */
+.not-logged-in .calendar-placeholder {
+    display: block;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+}
+
+/* Remove all debug mode styling */
+body.debug-mode::after,
+#debug-menu,
+#debug-button,
+#debug-overlay,
+#debug-reset-all,
+#debug-input,
+body.debug-mode,
+.custom-date-notice,
+.reset-date-btn {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+}
+
+/* Remove debug border styles */
+body.debug-mode {
+    border: none !important;
+    min-height: auto !important;
+}
+
+/* Modify welcome container to show even for admins */
+.welcome-container {
+    display: none;
+    position: fixed;
+    top: var(--header-height);
+    left: var(--sidebar-width);
+    width: calc(100% - var(--sidebar-width));
+    height: calc(100% - var(--header-height));
+    background-color: #FEFEFE;
+    color: var(--primary-color);
+    text-align: center;
+    padding: 20px;
+    box-sizing: border-box;
+    z-index: 90;
+}
+
+.not-logged-in .welcome-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Fix sidebar layout to better center login message */
+#dynamic-links-container {
+    text-align: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    flex-direction: column;
+    margin: 0;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0;
+    min-height: 100px; /* Add minimum height to ensure centering */
+}
+
+/* Remove debug related classes that may be present */
+.debug-mode,
+.debug-active,
+.debug-visible {
+    display: none !important;
+    visibility: hidden !important;
+}
+
+/* Fix any debug-related buttons that might be visible */
+#accounts-button:not(.admin-visible) {
+    display: none !important;
+}
+
+/* Add styles for login message in sidebar to center it */
+.login-required-sidebar-message {
+    text-align: center;
+    padding: 20px 10px;
+    color: #777;
+    font-style: italic;
+    width: 100%;
+    box-sizing: border-box;
+    margin-top: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100px;
+  }
+  
+  /* Login menu styles - fix visibility issues */
+.login-menu {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: var(--secondary-color);
+  border: 2px solid var(--primary-color);
+  border-radius: 10px;
+  padding: 40px 20px 20px;
+  z-index: 3001 !important;
+  min-width: 300px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.login-menu h3 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: var(--primary-color);
+  font-size: 1.5em;
+  text-align: center;
+}
+
+.login-menu.active {
+  display: block;
+  opacity: 1;
+}
+
+.login-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 3000;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.login-overlay.active {
+  display: block;
+  opacity: 1;
+}
+
+/* Styling for close button in login menu */
+.close-accounts-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  color: var(--primary-color);
+  font-size: 1.5em;
+  cursor: pointer;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
+}
+
+.close-accounts-button:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Enhanced login button styles */
+#login-button {
+  background-color: var(--primary-color);
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+#login-button:hover {
+  background-color: #3d8bd8; /* Slightly darker shade */
+}
+
+#login-button.logged-in {
+  background-color: #4CAF50; /* Green for logged in state */
+}
+
+#submit-login {
+  background-color: var(--primary-color);
+  color: white;
+  padding: 10px 0;
+  width: 100%;
+  border: none;
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 15px;
+  transition: background-color 0.2s ease;
+}
+
+#submit-login:hover {
+  background-color: #3d8bd8; /* Slightly darker shade */
+}
+
+/* Logout button styling */
+.logout-button {
+  display: none;
+  padding: 8px 16px;
+  background-color: #f44336;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  margin-left: 10px;
+  transition: background-color 0.2s ease;
+}
+
+.logout-button.visible {
+  display: inline-block;
+}
+
+.logout-button:hover {
+  background-color: #d32f2f; /* Darker red */
+}
+
+/* Login error message styling */
+.login-error {
+  color: #d32f2f;
+  background-color: rgba(211, 47, 47, 0.1);
+  border: 1px solid #d32f2f;
+  border-radius: 4px;
+  padding: 8px 12px;
+  margin: 10px 0;
+  text-align: center;
+  display: none;
+  font-weight: bold;
+  font-size: 0.9em;
+}
+
+/* Style for user-select dropdown */
+#user-select {
+  padding: 10px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  background-color: white;
+  color: #333;
+  width: 100%;
+  cursor: pointer;
+}
+
+/* Style for password-input */
+#password-input {
+  padding: 10px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  background-color: white;
+  color: #333;
+}
+
+/* Authors attribution box - ensure it's visible at all times */
+.authors-box {
+  position: fixed;
+  bottom: 15px;
+  right: 15px;
+  background-color: rgba(255, 255, 255, 0.8);
+  padding: 8px 12px;
+  border-radius: 5px;
+  font-size: 0.8em;
+  color: #666;
+  z-index: 1000;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  border: 1px solid #ddd;
+  max-width: 300px;
+  text-align: right;
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+  pointer-events: none; /* Make sure it doesn't interfere with clicks */
+}
+
+.authors-box:hover {
+  opacity: 1;
+}
+
+.authors-box strong {
+  color: #444;
+  font-weight: bold;
+}
