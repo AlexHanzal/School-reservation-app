@@ -4,12 +4,22 @@ const translations = {
     cs: {
         weekdays: ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'],
         months: ['Leden', 'Únor', 'Březen', 'Duben', 'Květen', 'Červen', 
-                'Červenec', 'Srpen', 'Září', 'Říjen', 'Listopad', 'Prosinec']
+                'Červenec', 'Srpen', 'Září', 'Říjen', 'Listopad', 'Prosinec'],
+        timetable: {
+            selectDate: 'Vyberte datum',
+            noDateSelected: 'Žádné datum není vybráno',
+            weekView: 'Týdenní zobrazení'
+        }
     },
     en: {
         weekdays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
         months: ['January', 'February', 'March', 'April', 'May', 'June',
-                'July', 'August', 'September', 'October', 'November', 'December']
+                'July', 'August', 'September', 'October', 'November', 'December'],
+        timetable: {
+            selectDate: 'Select a date',
+            noDateSelected: 'No date selected',
+            weekView: 'Week view'
+        }
     }
 };
 
@@ -31,7 +41,9 @@ let currentTimetableName = '';
 let isEditMode = false;
 let customDate = null; // New variable for custom date
 
+// Update function to generate calendar - now with better timetable integration
 function generateCalendar() {
+    const currentRealDate = getCurrentDate();
     const calendar = document.getElementById('timetable-calendar');
     const calendarTitle = document.getElementById('timetable-calendar-title');
 
@@ -76,13 +88,25 @@ function generateCalendar() {
         cell.classList.add('hoverable');
         
         // Check if current day
-        if (day === currentDate.getDate() && 
-            currentMonth === currentDate.getMonth() && 
-            currentYear === currentDate.getFullYear()) {
+        if (day === currentRealDate.getDate() && 
+            currentMonth === currentRealDate.getMonth() && 
+            currentYear === currentRealDate.getFullYear()) {
             cell.classList.add('current-day');
         }
 
-        cell.addEventListener('click', () => selectDate(day));
+        // Find if this day is the selected day for the current timetable
+        if (currentTimetableName && timetables[currentTimetableName]) {
+            const timetableDate = new Date(timetables[currentTimetableName].currentWeek);
+            if (day === timetableDate.getDate() && 
+                currentMonth === timetableDate.getMonth() && 
+                currentYear === timetableDate.getFullYear()) {
+                cell.classList.add('selected');
+            }
+        }
+
+        cell.addEventListener('click', (e) => {
+            selectDate(day, e);
+        });
         row.appendChild(cell);
 
         // Start new row every 7 days
@@ -107,54 +131,140 @@ function generateCalendar() {
     table.appendChild(tableBody);
     calendar.innerHTML = '';
     calendar.appendChild(table);
+    
+    // Add navigation for months if it doesn't exist
+    if (!document.querySelector('.calendar-nav')) {
+        addCalendarNavigation(calendar);
+    }
 }
 
-function selectDate(day = currentDate.getDate()) {
+// Add calendar navigation buttons
+function addCalendarNavigation(calendar) {
+    const navigation = document.createElement('div');
+    navigation.className = 'calendar-nav';
+    
+    const prevBtn = document.createElement('button');
+    prevBtn.innerHTML = '&laquo;';
+    prevBtn.className = 'calendar-nav-btn prev';
+    prevBtn.addEventListener('click', () => {
+        navigateMonth(-1);
+    });
+    
+    const nextBtn = document.createElement('button');
+    nextBtn.innerHTML = '&raquo;';
+    nextBtn.className = 'calendar-nav-btn next';
+    nextBtn.addEventListener('click', () => {
+        navigateMonth(1);
+    });
+    
+    const todayBtn = document.createElement('button');
+    todayBtn.textContent = 'Today';
+    todayBtn.className = 'calendar-nav-btn today';
+    todayBtn.addEventListener('click', () => {
+        const today = new Date();
+        currentMonth = today.getMonth();
+        currentYear = today.getFullYear();
+        generateCalendar();
+    });
+    
+    navigation.appendChild(prevBtn);
+    navigation.appendChild(todayBtn);
+    navigation.appendChild(nextBtn);
+    
+    // Insert navigation before the calendar
+    const calendarContainer = calendar.parentNode;
+    calendarContainer.insertBefore(navigation, calendar);
+}
+
+// Navigate months in the calendar
+function navigateMonth(direction) {
+    currentMonth += direction;
+    
+    if (currentMonth < 0) {
+        currentMonth = 11;
+        currentYear--;
+    } else if (currentMonth > 11) {
+        currentMonth = 0;
+        currentYear++;
+    }
+    
+    generateCalendar();
+}
+
+// Function to get the current date (with support for custom date if set)
+function getCurrentDate() {
+    return customDate || new Date();
+}
+
+// Updated selectDate function that better integrates with timetables
+function selectDate(day = currentDate.getDate(), event) {
+    if (!currentTimetableName) {
+        showCustomAlert('Error', 'No timetable selected', 'error');
+        return;
+    }
+    
     const selectedDate = new Date(currentYear, currentMonth, day);
+    
     // Clear previous selections
     document.querySelectorAll('.calendar-table td.selected').forEach(cell => {
         cell.classList.remove('selected');
     });
+    
     // Add selection to clicked date
-    event.target.classList.add('selected');
-    // Update timetable week view here
-    updateTimetableForWeek(selectedDate);
-}
-
-// Update timetables initialization
-let timetables = {};
-
-function createDynamicButton(name) {
-    const container = document.createElement('div');
-    container.className = 'button-group';
-    
-    const button = document.createElement('button');
-    button.className = 'dynamic-button';
-    button.textContent = name;
-    button.addEventListener('click', () => showTimetable(name));
-    
-    const editButton = document.createElement('button');
-    editButton.className = 'gear-icon';
-    editButton.innerHTML = '✎';
-    editButton.title = 'Edit class';
-    editButton.addEventListener('click', (e) => {
-        e.stopPropagation(); // Prevent triggering the timetable show
-        console.log('Edit button clicked for class:', name, 'Admin mode:', isAdminMode);
-        if (isAdminMode) {
-            showClassEditMenu(name);
+    if (event && event.target) {
+        event.target.classList.add('selected');
+    } else {
+        // Find and select the cell manually if no event is provided
+        const cells = document.querySelectorAll('.calendar-table td.hoverable');
+        for (const cell of cells) {
+            if (parseInt(cell.textContent) === day) {
+                cell.classList.add('selected');
+                break;
+            }
         }
-    });
-    
-    // Make sure the edit button is visible in admin mode
-    if (isAdminMode) {
-        editButton.classList.add('visible');
     }
     
-    container.appendChild(button);
-    container.appendChild(editButton);
-    return container;
+    // Store the selected date for the current timetable
+    if (timetables[currentTimetableName]) {
+        timetables[currentTimetableName].currentWeek = selectedDate.toISOString();
+    }
+    
+    // Update timetable week view
+    updateTimetableForWeek(selectedDate);
+    
+    // Update week view title to show the selected date range
+    updateWeekViewTitle(selectedDate);
 }
 
+// Function to update the week view title
+function updateWeekViewTitle(selectedDate) {
+    const weekViewTitle = document.getElementById('week-view-title');
+    if (!weekViewTitle) return;
+    
+    const startOfWeek = getStartOfWeek(selectedDate);
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    
+    const startMonth = translations[currentLanguage].months[startOfWeek.getMonth()];
+    const endMonth = translations[currentLanguage].months[endOfWeek.getMonth()];
+    
+    if (startOfWeek.getMonth() === endOfWeek.getMonth()) {
+        weekViewTitle.textContent = `${startMonth} ${startOfWeek.getDate()} - ${endOfWeek.getDate()}, ${startOfWeek.getFullYear()}`;
+    } else {
+        weekViewTitle.textContent = `${startMonth} ${startOfWeek.getDate()} - ${endMonth} ${endOfWeek.getDate()}, ${startOfWeek.getFullYear()}`;
+    }
+}
+
+// Helper function to get the start of the week (Monday) for a given date
+function getStartOfWeek(date) {
+    const result = new Date(date);
+    const day = result.getDay();
+    const diff = result.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
+    result.setDate(diff);
+    return result;
+}
+
+// Update the showTimetable function to properly use the calendar
 function showTimetable(name) {
     console.log('Showing timetable:', name);
     if (!timetables[name]) {
@@ -167,8 +277,11 @@ function showTimetable(name) {
     const timeTableTitle = timeTable.querySelector('h2');
     timeTableTitle.textContent = timetables[name].className;
     timeTable.style.display = 'block';
-    generateCalendar();
+    
     currentTimetableName = name;
+    
+    // Display the calendar for this timetable
+    generateCalendar();
     
     // Clear any permanent hour styling from previous timetables
     document.querySelectorAll('.week-table tbody td').forEach(cell => {
@@ -178,39 +291,220 @@ function showTimetable(name) {
 
     const savedData = timetables[name];
     if (savedData) {
-        if (savedData.currentWeek) {
-            updateTimetableForWeek(new Date(savedData.currentWeek));
-        } else {
-            updateTimetableForWeek(new Date());
+        // If no currentWeek is set for this timetable, set it to today
+        if (!savedData.currentWeek) {
+            savedData.currentWeek = new Date().toISOString();
         }
-          if (savedData.data) {
-            const weekData = savedData.data[new Date(savedData.currentWeek).toISOString().split('T')[0]];
-            const rows = document.querySelectorAll('.week-table tbody tr');
-            
-            rows.forEach((row, dayIndex) => {
-                const cells = row.querySelectorAll('td:not(:first-child)');
-                if (weekData && Array.isArray(weekData[dayIndex])) {
-                    weekData[dayIndex].forEach((cellData, cellIndex) => {
-                        if (cellData) {
-                            // Check if cellData is an object with content property or a string
-                            const cellContent = typeof cellData === 'object' && cellData.content !== undefined 
-                                ? cellData.content 
-                                : (typeof cellData === 'string' ? cellData : '');
-                            
-                            cells[cellIndex].textContent = cellContent;
-                        } else {
-                            cells[cellIndex].textContent = '';
-                        }
-                    });
-                }
-            });
-        }
+        
+        const selectedDate = new Date(savedData.currentWeek);
+        
+        // Update the calendar to show the month containing the selected date
+        currentMonth = selectedDate.getMonth();
+        currentYear = selectedDate.getFullYear();
+        
+        // Regenerate calendar with the correct month/year
+        generateCalendar();
+        
+        // Select the date in the calendar (without an event object)
+        selectDate(selectedDate.getDate());
+        
+        // Update week view with the stored date
+        updateTimetableForWeek(selectedDate);
+        
+        // Update the week view title
+        updateWeekViewTitle(selectedDate);
     }
     
     localStorage.setItem('currentTimetable', name);
 }
 
-// Update submit button handler
+// Update the updateTimetableForWeek function to better handle the calendar integration
+function updateTimetableForWeek(date) {
+    if (!currentTimetableName) return;
+    
+    const startOfWeek = getStartOfWeek(date);
+    
+    // Store the date in the timetable object
+    timetables[currentTimetableName].currentWeek = startOfWeek.toISOString();
+    
+    // Update the weekday headers in the timetable (which now also updates the hour cells)
+    updateWeekdayHeaders(startOfWeek);
+    
+    // Update week view title
+    updateWeekViewTitle(startOfWeek);
+    
+    // Display timetable data for this week
+    displayTimetableDataForWeek(startOfWeek);
+}
+
+// Function to update weekday headers with actual dates - now showing HOURS at the top
+function updateWeekdayHeaders(startOfWeek) {
+    const headerCells = document.querySelectorAll('.week-table thead th:not(:first-child)');
+    if (!headerCells.length) return;
+    
+    // Define the hours for the day (8:00 to 16:00)
+    const hours = [
+        '8:00', '9:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00'
+    ];
+    
+    // First cell shows empty cell or a label
+    const firstHeaderCell = document.querySelector('.week-table thead th:first-child');
+    if (firstHeaderCell) {
+        firstHeaderCell.textContent = '';  // Empty for the corner cell
+    }
+    
+    // Set the hour headers
+    for (let i = 0; i < Math.min(headerCells.length, hours.length); i++) {
+        headerCells[i].innerHTML = `<strong>${hours[i]}</strong>`;
+        headerCells[i].style.display = '';
+    }
+    
+    // Hide any extra columns beyond our hours
+    for (let i = hours.length; i < headerCells.length; i++) {
+        headerCells[i].style.display = 'none';
+    }
+    
+    // Now update the day cells in the first column (Mon-Fri with dates)
+    updateDayCells(startOfWeek);
+}
+
+// New function to initialize the day cells in the first column
+function updateDayCells(startOfWeek) {
+    const dayCells = document.querySelectorAll('.week-table tbody tr td:first-child');
+    
+    // Only use Monday through Friday (first 5 weekdays)
+    const weekdays = translations[currentLanguage].weekdays.slice(0, 5);
+    
+    // Get today's date for highlighting
+    const today = new Date();
+    const todayDateStr = today.getDate() + '-' + today.getMonth() + '-' + today.getFullYear();
+    
+    // Set the weekday for each cell
+    dayCells.forEach((cell, index) => {
+        if (index < weekdays.length) {
+            const dayDate = new Date(startOfWeek);
+            dayDate.setDate(startOfWeek.getDate() + index);
+            
+            cell.innerHTML = `<strong>${weekdays[index]}</strong><br><small>${dayDate.getDate()}.${dayDate.getMonth() + 1}.</small>`;
+            cell.style.display = '';
+            
+            // Highlight today's date with more visible styling
+            const cellDateStr = dayDate.getDate() + '-' + dayDate.getMonth() + '-' + dayDate.getFullYear();
+            if (cellDateStr === todayDateStr) {
+                cell.classList.add('today-cell');
+                cell.style.backgroundColor = '#a7a7a7'; // Yellow highlight
+                cell.style.fontWeight = 'bold';
+                cell.style.borderLeft = '4px solidrgb(8, 6, 1)'; // Orange border
+                
+                // Also highlight the entire row
+                const row = cell.parentElement;
+                if (row) {
+                    row.classList.add('today-row');
+                    row.style.backgroundColor = '#fff8e1'; // Light yellow background
+                }
+            } else {
+                cell.classList.remove('today-cell');
+                cell.style.backgroundColor = '';
+                cell.style.fontWeight = '';
+                cell.style.borderLeft = '';
+                
+                // Remove highlight from non-today rows
+                const row = cell.parentElement;
+                if (row) {
+                    row.classList.remove('today-row');
+                    row.style.backgroundColor = '';
+                }
+            }
+            
+            // Show the corresponding row
+            const row = cell.parentElement;
+            if (row) {
+                row.style.display = '';
+            }
+        } else {
+            // Hide extra rows
+            const row = cell.parentElement;
+            if (row) {
+                row.style.display = 'none';
+            }
+        }
+    });
+}
+
+// Function to display timetable data for the selected week - modified for flipped structure
+function displayTimetableDataForWeek(startOfWeek) {
+    if (!currentTimetableName || !timetables[currentTimetableName]) return;
+    
+    const timetableData = timetables[currentTimetableName];
+    const dateString = startOfWeek.toISOString().split('T')[0];
+    
+    // Clear previous data - only in cells that aren't in the first column
+    const cells = document.querySelectorAll('.week-table tbody td:not(:first-child)');
+    cells.forEach(cell => {
+        cell.textContent = '';
+        cell.classList.remove('has-data');
+    });
+    
+    // Apply permanent hours first - limit to first 5 days (Mon-Fri)
+    if (timetableData.permanentHours) {
+        for (const dayIndex in timetableData.permanentHours) {
+            // Skip weekend days
+            if (parseInt(dayIndex) >= 5) continue;
+            
+            for (const hourIndex in timetableData.permanentHours[dayIndex]) {
+                const rowIndex = parseInt(dayIndex); // Now day is the row
+                const colIndex = parseInt(hourIndex) - 1; // Hour is the column
+                
+                if (rowIndex >= 0 && colIndex >= 0 && colIndex < 9) { // 9 hours
+                    const rows = document.querySelectorAll('.week-table tbody tr');
+                    if (rows[rowIndex]) {
+                        const cells = rows[rowIndex].querySelectorAll('td:not(:first-child)');
+                        if (cells[colIndex]) {
+                            cells[colIndex].textContent = timetableData.permanentHours[dayIndex][hourIndex];
+                            cells[colIndex].classList.add('permanent-hour');
+                            cells[colIndex].dataset.permanent = 'true';
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    // Then apply data for the specific week if it exists - limit to first 5 days (Mon-Fri)
+    if (timetableData.data && timetableData.data[dateString]) {
+        const weekData = timetableData.data[dateString];
+        
+        // Process only Monday through Friday
+        const daysToProcess = Math.min(weekData.length, 5);
+        
+        for (let dayIndex = 0; dayIndex < daysToProcess; dayIndex++) {
+            const dayData = weekData[dayIndex];
+            if (!dayData) continue;
+            
+            const row = document.querySelectorAll('.week-table tbody tr')[dayIndex];
+            if (!row) continue;
+            
+            const cells = row.querySelectorAll('td:not(:first-child)');
+            
+            for (let hourIndex = 0; hourIndex < Math.min(dayData.length, 9); hourIndex++) {
+                const cell = cells[hourIndex];
+                if (!cell) continue;
+                
+                const cellData = dayData[hourIndex];
+                
+                if (cellData) {
+                    // Only apply if not a permanent hour or if the cell is empty
+                    if (!cell.classList.contains('permanent-hour') || cell.textContent.trim() === '') {
+                        cell.textContent = cellData;
+                        cell.classList.add('has-data');
+                    }
+                }
+            }
+        }
+    }
+}
+
+// submit button handler
 document.getElementById('submit-button').addEventListener('click', async () => {
     const nameInput = document.getElementById('name-input');
     const name = nameInput.value.trim();
@@ -424,36 +718,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Add date picker functionality
-    document.getElementById('debug-set-date').addEventListener('click', () => {
-        datePickerOverlay.style.display = 'block';
-        generateDatePickerCalendar();
-        debugMenu.classList.remove('active');
-        debugOverlay.classList.remove('active');
-    });
-
-    document.getElementById('save-custom-date').addEventListener('click', () => {
-        const selectedDate = new Date(currentYear, currentMonth, parseInt(document.querySelector('#date-picker-calendar .selected')?.textContent) || 1);
-        if (selectedDate) {
-            customDate = selectedDate;
-            document.getElementById('customDateText').textContent = selectedDate.toLocaleDateString();
-            document.getElementById('customDateNotice').classList.add('active');
-            generateCalendar();
-            updateTimetableForWeek(customDate);
-        }
-        document.getElementById('datePickerOverlay').style.display = 'none';
-    });
-
-    document.getElementById('cancel-custom-date').addEventListener('click', () => {
-        document.getElementById('datePickerOverlay').style.display = 'none';
-    });
-
-    document.getElementById('resetDateBtn').addEventListener('click', () => {
-        customDate = null;
-        document.getElementById('customDateNotice').classList.remove('active');
-        generateCalendar();
-        updateTimetableForWeek(new Date());
-    });
 
     // Accounts menu button event listeners
     const modifyAccountsBtn = document.getElementById('modify-accounts');
@@ -483,7 +747,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-    // Login functionality
+// Login functionality
 async function handleLogin() {
     const userSelect = document.getElementById('user-select');
     const passwordInput = document.getElementById('password-input');
@@ -650,410 +914,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // ...existing code...
 });
 
-// New function for date picker calendar
-function generateDatePickerCalendar() {
-    const calendar = document.getElementById('date-picker-calendar');
-    calendar.innerHTML = ''; // Clear existing content
-    
-    const now = new Date();
-    const table = document.createElement('table');
-    table.className = 'calendar-table';
-    
-    // Generate calendar similar to existing generateCalendar function
-    // but with click handlers for date selection
-    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-    const firstDayOfWeek = new Date(currentYear, currentMonth, 1).getDay();
-    const daysInPrevMonth = new Date(currentYear, currentMonth, 0).getDate();
-
-    const tableBody = document.createElement('tbody');
-
-    // Add weekday headers
-    const headerRow = document.createElement('tr');
-    translations[currentLanguage].weekdays.forEach(weekday => {
-        const headerCell = document.createElement('th');
-        headerCell.textContent = weekday;
-        headerRow.appendChild(headerCell);
-    });
-    tableBody.appendChild(headerRow);
-
-    // Adjust first day of week to start on Monday
-    const adjustedFirstDayOfWeek = (firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1);
-
-    let row = document.createElement('tr');
-
-    // Add previous month days
-    for (let i = adjustedFirstDayOfWeek; i > 0; i--) {
-        const prevMonthDay = daysInPrevMonth - i + 1;
-        const cell = document.createElement('td');
-        cell.textContent = prevMonthDay;
-        cell.classList.add('prev-month', 'month-dates');
-        row.appendChild(cell);
-    }
-
-    // Add current month days
-    for (let day = 1; day <= daysInMonth; day++) {
-        const cell = document.createElement('td');
-        cell.textContent = day;
-        cell.classList.add('hoverable');
-        
-        cell.addEventListener('click', () => {
-            // Clear previous selections
-            document.querySelectorAll('#date-picker-calendar td.selected').forEach(cell => {
-                cell.classList.remove('selected');
-            });
-            // Add selection to clicked date
-            cell.classList.add('selected');
-        });
-        row.appendChild(cell);
-
-        // Start new row every 7 days
-        if ((adjustedFirstDayOfWeek + day) % 7 === 0) {
-            tableBody.appendChild(row);
-            row = document.createElement('tr');
-        }
-    }
-
-    // Add next month days if needed
-    if (row.children.length > 0) {
-        let nextMonthDay = 1;
-        while (row.children.length < 7) {
-            const cell = document.createElement('td');
-            cell.textContent = nextMonthDay++;
-            cell.classList.add('next-month', 'month-dates');
-            row.appendChild(cell);
-        }
-        tableBody.appendChild(row);
-    }
-
-    table.appendChild(tableBody);
-    calendar.appendChild(table);
-}
-
-function getCurrentDate() {
-    return customDate || new Date();
-}
-
-// Modify existing functions to use getCurrentDate()
-function generateCalendar() {
-    const currentRealDate = getCurrentDate();
-    const calendar = document.getElementById('timetable-calendar');
-    const calendarTitle = document.getElementById('timetable-calendar-title');
-
-    calendarTitle.textContent = `${translations[currentLanguage].months[currentMonth]} ${currentYear}`;
-
-    const now = new Date(currentYear, currentMonth);
-    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-    const firstDayOfWeek = new Date(currentYear, currentMonth, 1).getDay();
-    const daysInPrevMonth = new Date(currentYear, currentMonth, 0).getDate();
-
-    const table = document.createElement('table');
-    table.className = 'calendar-table';
-    const tableBody = document.createElement('tbody');
-
-    // Add weekday headers
-    const headerRow = document.createElement('tr');
-    translations[currentLanguage].weekdays.forEach(weekday => {
-        const headerCell = document.createElement('th');
-        headerCell.textContent = weekday;
-        headerRow.appendChild(headerCell);
-    });
-    tableBody.appendChild(headerRow);
-
-    // Adjust first day of week to start on Monday
-    const adjustedFirstDayOfWeek = (firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1);
-
-    let row = document.createElement('tr');
-
-    // Add previous month days
-    for (let i = adjustedFirstDayOfWeek; i > 0; i--) {
-        const prevMonthDay = daysInPrevMonth - i + 1;
-        const cell = document.createElement('td');
-        cell.textContent = prevMonthDay;
-        cell.classList.add('prev-month', 'month-dates');
-        row.appendChild(cell);
-    }
-
-    // Add current month days
-    for (let day = 1; day <= daysInMonth; day++) {
-        const cell = document.createElement('td');
-        cell.textContent = day;
-        cell.classList.add('hoverable');
-        
-        // Check if current day
-        if (day === currentRealDate.getDate() && 
-            currentMonth === currentRealDate.getMonth() && 
-            currentYear === currentRealDate.getFullYear()) {
-            cell.classList.add('current-day');
-        }
-
-        cell.addEventListener('click', () => selectDate(day));
-        row.appendChild(cell);
-
-        // Start new row every 7 days
-        if ((adjustedFirstDayOfWeek + day) % 7 === 0) {
-            tableBody.appendChild(row);
-            row = document.createElement('tr');
-        }
-    }
-
-    // Add next month days if needed
-    if (row.children.length > 0) {
-        let nextMonthDay = 1;
-        while (row.children.length < 7) {
-            const cell = document.createElement('td');
-            cell.textContent = nextMonthDay++;
-            cell.classList.add('next-month', 'month-dates');
-            row.appendChild(cell);
-        }
-        tableBody.appendChild(row);
-    }
-
-    table.appendChild(tableBody);
-    calendar.innerHTML = '';
-    calendar.appendChild(table);
-}
-
-function updateTimetableForWeek(selectedDate) {
-    const currentRealDate = getCurrentDate();
-    // Get Monday of selected week
-    const monday = new Date(selectedDate);
-    const dayOfWeek = selectedDate.getDay();
-    monday.setDate(selectedDate.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
-
-    // Clear all existing content and styles first
-    const cells = document.querySelectorAll('.week-table tbody td:not(:first-child)');
-    cells.forEach(cell => {
-        // Reset the cell completely
-        cell.textContent = '';
-        cell.className = '';
-        cell.removeAttribute('data-permanent');
-        cell.style.cssText = ''; // Clear all inline styles
-        cell.style.removeProperty('border');
-        cell.style.removeProperty('outline');
-        cell.style.removeProperty('background-color');
-    });
-
-    // Update each row with correct date
-    const dayRows = document.querySelectorAll('.week-table tbody tr');
-    const days = ['Pondělí', 'Úterý', 'Středa', 'Čtvrtek', 'Pátek'];
-    
-    dayRows.forEach((row, index) => {
-        const dateForDay = new Date(monday);
-        dateForDay.setDate(monday.getDate() + index);
-        const dateString = dateForDay.toISOString().split('T')[0];
-        
-        // Update first cell with day name and date
-        const firstCell = row.querySelector('td:first-child');
-        firstCell.textContent = `${days[index]} (${dateForDay.getDate()}.${dateForDay.getMonth() + 1}.)`;
-        firstCell.dataset.date = dateString;
-        
-        // Process cells for this row
-        const cells = row.querySelectorAll('td:not(:first-child)');
-        cells.forEach((cell, hourIndex) => {
-            // Reset cell styling completely
-            cell.className = '';
-            cell.dataset.date = dateString;
-            cell.dataset.hour = hourIndex + 1;
-            
-            // Check only permanent hours first
-            const permanentHours = timetables[currentTimetableName]?.permanentHours?.[index] || {};
-            if (permanentHours[hourIndex + 1]) {
-                cell.textContent = permanentHours[hourIndex + 1];
-                cell.classList.add('permanent-hour');
-                cell.dataset.permanent = 'true';
-                return; // Skip further processing for this cell
-            }            // If not permanent, check for regular content from saved data
-            if (timetables[currentTimetableName]?.data?.[dateString]?.[index]?.[hourIndex]) {
-                const cellData = timetables[currentTimetableName].data[dateString][index][hourIndex];
-                if (typeof cellData === 'object' && cellData !== null) {
-                    // Handle legacy data format (objects with content property)
-                    cell.textContent = cellData.content || '';
-                } else {
-                    // Handle string data - ensuring proper text display with line breaks
-                    cell.textContent = cellData || '';
-                }
-            } else {
-                cell.textContent = '';
-            }
-        });
-
-        // Highlight current day
-        if (dateForDay.toDateString() === new Date().toDateString()) {
-            firstCell.classList.add('current-day');
-        } else {
-            firstCell.classList.remove('current-day');
-        }
-    });
-
-    // Store selected week start date
-    if (timetables[currentTimetableName]) {
-        timetables[currentTimetableName].currentWeek = monday.toISOString();
-        saveTimetable(currentTimetableName, timetables[currentTimetableName]);
-    }
-}
-
-function findPermanentHoursForDay(dayIndex) {
-    const permanentHours = {};
-    
-    // Search through all saved weeks for permanent hours
-    if (timetables[currentTimetableName]?.permanentHours?.[dayIndex]) {
-        return timetables[currentTimetableName].permanentHours[dayIndex];
-    }
-    
-    return permanentHours;
-}
-
-function toggleAdminEditMode() {
-    const cells = document.querySelectorAll('.week-table tbody td:not(:first-child)');
-    cells.forEach(cell => {
-        // Make all cells editable in admin mode
-        cell.setAttribute('contenteditable', 'true');
-        cell.classList.add('editable');
-        
-        // Add input event listener for making cells permanent only when toggle is enabled
-        cell.addEventListener('input', function() {
-            if (isAdminMode && permanentHourModeEnabled && this.textContent.trim() !== '') {
-                this.classList.add('permanent-hour');
-                this.dataset.permanent = 'true';
-            }
-        });
-    });    // Change edit button to show admin mode
-    const editButton = document.querySelector('.edit-button');
-    editButton.textContent = 'Admin Mode';
-    editButton.style.backgroundColor = '#ff9800';
-    
-    // Show the save button when in admin mode
-    const saveButton = document.querySelector('.save-button');
-    if (saveButton) {
-        saveButton.style.display = 'block';
-    }
-      // Add permanent hour toggle button if it doesn't exist
-    let toggleButton = document.getElementById('toggle-permanent-btn');
-    if (!toggleButton) {
-        toggleButton = document.createElement('button');
-        toggleButton.id = 'toggle-permanent-btn';
-        toggleButton.className = 'toggle-permanent-btn';
-        toggleButton.textContent = 'Permanent Hours: OFF';
-        toggleButton.onclick = togglePermanentHourMode;
-        toggleButton.style.display = 'inline-block'; // Ensure it's visible
-        
-        // Insert the button next to the save button
-        const timeTableButtons = document.querySelector('.time-table-buttons');
-        if (timeTableButtons) {
-            timeTableButtons.appendChild(toggleButton);
-        } else {
-            // If time-table-buttons doesn't exist, create it and append to time-table
-            const timeTable = document.querySelector('.time-table');
-            if (timeTable) {
-                const newButtonContainer = document.createElement('div');
-                newButtonContainer.className = 'time-table-buttons';
-                newButtonContainer.appendChild(toggleButton);
-                
-                // Insert after the title
-                const title = timeTable.querySelector('h2');
-                if (title && title.nextSibling) {
-                    timeTable.insertBefore(newButtonContainer, title.nextSibling);
-                } else {
-                    timeTable.appendChild(newButtonContainer);
-                }
-            }
-        }
-    } else {
-        toggleButton.style.display = 'inline-block'; // Ensure it's visible
-    }
-
-    // Add admin-active class to all button groups
-    document.querySelectorAll('.button-group').forEach(group => {
-        group.classList.toggle('admin-active', isAdminMode);
-    });
-
-    // Show gear icons for all classes
-    document.querySelectorAll('.gear-icon').forEach(icon => {
-        icon.classList.toggle('visible', isAdminMode);
-    });
-
-    // Add admin-active class to all button groups
-    document.querySelectorAll('.button-group').forEach(group => {
-        group.classList.toggle('admin-active', isAdminMode);
-    });
-
-    // Show/hide create-new button and accounts button
-    const createNewBtn = document.getElementById('create-new');
-    const accountsBtn = document.getElementById('accounts-button');
-    
-    if (createNewBtn) createNewBtn.classList.toggle('admin-visible', isAdminMode);
-    if (accountsBtn) {
-        accountsBtn.classList.toggle('admin-visible', isAdminMode);
-        accountsBtn.style.display = isAdminMode ? 'block' : 'none';
-    }
-
-    // Show/hide gear icons
-    document.querySelectorAll('.gear-icon').forEach(icon => {
-        icon.classList.toggle('visible', isAdminMode);
-    });
-
-    // Close accounts menu when exiting admin mode
-    if (!isAdminMode) {
-        accountsMenu.classList.remove('active');
-        accountsOverlay.classList.remove('active');
-    }
-}
-
-// Add this new event listener for the Edit button
-document.addEventListener('DOMContentLoaded', () => {
-    // ...existing code...
-
-    // Add Edit button functionality
-    const editButton = document.querySelector('.edit-button');
-    if (editButton) {
-        editButton.addEventListener('click', () => {
-            if (!isAdminMode) {
-                isEditMode = !isEditMode;
-                editButton.textContent = isEditMode ? 'Cancel' : 'Edit';
-                
-                const cells = document.querySelectorAll('.week-table tbody td:not(:first-child)');
-                cells.forEach(cell => {                if (!cell.classList.contains('permanent-hour')) {
-                    cell.setAttribute('contenteditable', isEditMode);
-                    cell.classList.toggle('editable', isEditMode);
-                }
-            });
-            
-            // Apply cell editing with abbreviation support when in edit mode
-            if (isEditMode) {
-                setupCellEditing();
-            }
-            
-            // Show/hide save button based on edit mode
-            const saveButton = document.querySelector('.save-button');
-            if (saveButton) {
-                saveButton.style.display = isEditMode ? 'block' : 'none';
-            }
-            }
-        });
-    }    // Add Save button handler
-    const saveButton = document.querySelector('.save-button');
-    if (saveButton) {
-        saveButton.addEventListener('click', () => {
-            saveTimeTable();
-            isEditMode = false;
-            const editButton = document.querySelector('.edit-button');
-            if (editButton) {
-                editButton.textContent = 'Edit';
-            }
-            saveButton.style.display = 'none';
-            
-            // Make cells non-editable and remove edited-cell class
-            const cells = document.querySelectorAll('.week-table tbody td:not(:first-child)');
-            cells.forEach(cell => {
-                cell.setAttribute('contenteditable', 'false');
-                cell.classList.remove('editable');
-                cell.classList.remove('edited-cell');
-            });
-        });
-    }
-
-    // ...existing code...
-});
 
 // Fix the enableDebugMode function
 function enableDebugMode() {
@@ -1603,7 +1463,7 @@ async function loadTimetables() {
             try {
                 const timetableResponse = await fetch(`${API_URL}/timetables/${encodeURIComponent(name)}`);
                 if (!timetableResponse.ok) {
-                    console.error(`Failed to load timetable ${name}`);
+                    console.error('Failed to load timetable', name);
                     continue;
                 }
 
@@ -1638,7 +1498,7 @@ async function loadTimetables() {
             
             const dynamicButton = createDynamicButton(name);
             
-            // Set data-name attribute for identification
+            // Set data attribute for identification
             const buttonElement = dynamicButton.querySelector('.dynamic-button');
             if (buttonElement) {
                 buttonElement.setAttribute('data-name', name);
@@ -1654,6 +1514,37 @@ async function loadTimetables() {
         console.error('Failed to load timetables:', error);
         showCustomAlert('Error', 'Failed to load timetables', 'error');
     }
+}
+
+function createDynamicButton(name) {
+    const container = document.createElement('div');
+    container.className = 'button-group';
+    
+    const button = document.createElement('button');
+    button.className = 'dynamic-button';
+    button.textContent = name;
+    button.addEventListener('click', () => showTimetable(name));
+    
+    const editButton = document.createElement('button');
+    editButton.className = 'gear-icon';
+    editButton.innerHTML = '✎';
+    editButton.title = 'Edit class';
+    editButton.addEventListener('click', (e) => {
+        e.stopPropagation(); // Prevent triggering the timetable show
+        console.log('Edit button clicked for class:', name, 'Admin mode:', isAdminMode);
+        if (isAdminMode) {
+            showClassEditMenu(name);
+        }
+    });
+    
+    // Make sure the edit button is visible in admin mode
+    if (isAdminMode) {
+        editButton.classList.add('visible');
+    }
+    
+    container.appendChild(button);
+    container.appendChild(editButton);
+    return container;
 }
 
 async function saveTimetable(name, data) {
@@ -1994,51 +1885,6 @@ function setupDebugMenuHandlers() {
         });
     }
     
-    // Add date picker functionality
-    const datePickerBtn = document.getElementById('debug-set-date');
-    const datePickerOverlay = document.getElementById('datePickerOverlay');
-    if (datePickerBtn && datePickerOverlay) {
-        datePickerBtn.addEventListener('click', () => {
-            datePickerOverlay.style.display = 'block';
-            generateDatePickerCalendar();
-            if (debugMenu && debugOverlay) {
-                debugMenu.classList.remove('active');
-                debugOverlay.classList.remove('active');
-            }
-        });
-    }
-    
-    const saveCustomDateBtn = document.getElementById('save-custom-date');
-    if (saveCustomDateBtn) {
-        saveCustomDateBtn.addEventListener('click', () => {
-            const selectedDate = new Date(currentYear, currentMonth, parseInt(document.querySelector('#date-picker-calendar .selected')?.textContent) || 1);
-            if (selectedDate) {
-                customDate = selectedDate;
-                document.getElementById('customDateText').textContent = selectedDate.toLocaleDateString();
-                document.getElementById('customDateNotice').classList.add('active');
-                generateCalendar();
-                updateTimetableForWeek(customDate);
-            }
-            document.getElementById('datePickerOverlay').style.display = 'none';
-        });
-    }
-    
-    const cancelCustomDateBtn = document.getElementById('cancel-custom-date');
-    if (cancelCustomDateBtn) {
-        cancelCustomDateBtn.addEventListener('click', () => {
-            document.getElementById('datePickerOverlay').style.display = 'none';
-        });
-    }
-    
-    const resetDateBtn = document.getElementById('resetDateBtn');
-    if (resetDateBtn) {
-        resetDateBtn.addEventListener('click', () => {
-            customDate = null;
-            document.getElementById('customDateNotice').classList.remove('active');
-            generateCalendar();
-            updateTimetableForWeek(new Date());
-        });
-    }
 }
 
 // Setup general UI handlers
