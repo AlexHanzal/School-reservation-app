@@ -1,9 +1,5 @@
 | CHANGES |
-fixed most of bugs
-added when NOT logged into any user, hide all classes
-Added user abbreviation to edited cells
-Added logout button
-permanent hour toggle in admin
+Fixed the callendar 
 ------------------------------------------------
 
 | TO DO |
@@ -13,7 +9,5 @@ permanent hour toggle in admin
 ------------------------------------------------
 
 | NEEDS FIXING |
-- just writte something in a class and change the date to another week then back you will see
--fix callendar
-	only loads 1 month and it doesnt fuck with the timetable :)
-	i would say it beacouse of the custom date in debug get rid of it
+when you click on a timetable it opens a different timetable
+ than when you then click on any date in the timetable
