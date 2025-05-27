@@ -612,7 +612,8 @@
   .calendar-table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 10px;  /* Reduced top margin */
+    margin-top: 10px;
+    table-layout: fixed; /* Ensure consistent cell sizes */
 }
 
 .calendar-table th,
@@ -620,8 +621,9 @@
     padding: 5px;
     text-align: center;
     border: 1px solid var(--primary-color);
-    width: 30px;       /* Fixed width for cells */
-    height: 25px;      /* Fixed height for cells */
+    width: 30px;
+    height: 25px;
+    font-size: 0.9em; /* Make font slightly smaller to fit better */
 }
 
 .calendar-table th {
@@ -633,9 +635,10 @@
 .calendar-table td {
     cursor: pointer;
     color: black;
+    transition: background-color 0.2s ease; /* Smooth transition for hover effects */
 }
 
-.calendar-table td:hover {
+.calendar-table td.hoverable:hover {
     background-color: var(--highlight-color);
 }
 
@@ -648,6 +651,12 @@
 .calendar-table td.selected {
     background-color: var(--highlight-cell-color);
     font-weight: bold;
+    box-shadow: inset 0 0 0 2px var(--primary-color); /* Add inner border to selected date */
+}
+
+.calendar-table td.prev-month,
+.calendar-table td.next-month {
+    color: #aaa; /* Make non-current month dates lighter */
 }
 
 .timetable-calendar {
@@ -655,11 +664,14 @@
     max-height: 250px;
     font-size: 0.85em;
     margin: 0;
-    padding: 5px 15px; /* Match padding with buttons */
+    padding: 5px 15px; 
     height: auto;
     overflow: visible;
     order: 2;
     justify-self: start;
+    border: 1px solid var(--secondary-color);
+    border-radius: 5px;
+    background-color: #fafafa;
 }
 
 .timetable-calendar .calendar-header {
@@ -1907,3 +1919,28 @@ body.debug-mode {
     padding: 5px;
     align-items: center;
 }
+
+/* Add or update styles for today's highlighting in the timetable */
+.today-cell {
+  background-color: var(--highlight-cell-color) !important; /* Bright yellow */
+  font-weight: bold !important;
+  border-left: 4px solid var(--highlight-color) !important; /* Orange border */
+  position: relative;
+}
+
+.today-cell::after {
+  content: "• today";
+  position: absolute;
+  bottom: 2px;
+  right: 5px;
+  font-size: 9px;
+  font-style: italic;
+  color: var(--highlight-cell-color);
+}
+
+.today-row {
+  background-color: var(--highlight-color) !important; /* Light yellow background */
+  position: relative;
+}
+
+/* Add highlighting for all cells in current day row */
