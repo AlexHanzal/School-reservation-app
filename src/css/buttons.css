@@ -266,15 +266,17 @@
 }
 
 #admin-button.admin-active {
-    background-color: #cccccc;
-    border-color: #999999;
-    color: #666666;
-    cursor: not-allowed;
+    background-color: var(--bakalar-color-basic);
+    border-color: var(--primary-color);
+    color: black;
+    cursor: pointer;
+    opacity: 1;
+    pointer-events: auto;
 }
 
-#admin-button.admin-active:hover {
-    background-color: #cccccc;
-    color: #666666;
+#admin-button:hover {
+    background-color: var(--bakalar-color-hover);
+    color: var(--primary-color);
 }
 
 .reset-all {
@@ -456,6 +458,15 @@ body.debug-mode .reset-all {
 
 #accounts-button.admin-visible {
     display: block;
+}
+
+#accounts-button.admin-active {
+    background-color: var(--bakalar-color-basic);
+    border-color: var(--primary-color);
+    color: black;
+    cursor: pointer;
+    opacity: 1;
+    pointer-events: auto;
 }
 
 #accounts-button:hover {
