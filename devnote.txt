@@ -1,5 +1,5 @@
 | CHANGES |
-Fixed the callendar 
+Shit ton of things
 ------------------------------------------------
 
 | TO DO |
@@ -11,3 +11,4 @@ Fixed the callendar
 | NEEDS FIXING |
 when you click on a timetable it opens a different timetable
  than when you then click on any date in the timetable
+ account create button aint showing the popup
