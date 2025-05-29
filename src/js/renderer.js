@@ -443,9 +443,12 @@ function displayTimetableDataForWeek(startOfWeek) {
     cells.forEach(cell => {
         cell.textContent = '';
         cell.classList.remove('has-data');
+        cell.classList.remove('permanent-hour');
+        delete cell.dataset.permanent;
     });
     
     // Apply permanent hours first - limit to first 5 days (Mon-Fri)
+    // These are always displayed regardless of the selected week
     if (timetableData.permanentHours) {
         for (const dayIndex in timetableData.permanentHours) {
             // Skip weekend days
@@ -493,8 +496,8 @@ function displayTimetableDataForWeek(startOfWeek) {
                 const cellData = dayData[hourIndex];
                 
                 if (cellData) {
-                    // Only apply if not a permanent hour or if the cell is empty
-                    if (!cell.classList.contains('permanent-hour') || cell.textContent.trim() === '') {
+                    // Only apply if not a permanent hour
+                    if (!cell.classList.contains('permanent-hour')) {
                         cell.textContent = cellData;
                         cell.classList.add('has-data');
                     }
@@ -773,20 +776,64 @@ async function handleLogin() {
             })
         });
 
-        const data = await response.json();        if (response.ok) {
+        const data = await response.json();
+        if (response.ok) {
             const loginButton = document.getElementById('login-button');
             loginButton.textContent = data.name; // Show user name
             loginButton.title = "Click to logout"; // Add tooltip text
             loginButton.setAttribute('aria-label', `${data.name} (Click to logout)`); // Accessibility
             loginButton.classList.add('logged-in');
             
-            // Store user information in our global object
+            // Store user information in our global object including admin status
             currentUser = {
                 name: data.name,
                 abbreviation: userSelect.value,
-                isLoggedIn: true
+                isLoggedIn: true,
+                isAdmin: !!data.isAdmin
             };
             console.log('User logged in:', currentUser);
+            
+            // Check if user is an admin and enable admin mode if true
+            if (data.isAdmin === true) {
+                console.log("Admin user detected - enabling admin mode");
+                isAdminMode = true;
+                enableDebugMode(); // This function activates all admin UI elements
+                
+                // Ensure admin button is updated
+                const adminButton = document.getElementById('admin-button');
+                if (adminButton) {
+                    adminButton.innerHTML = 'Admin Mode <span class="admin-check">✓</span>';
+                    adminButton.disabled = true;
+                    adminButton.classList.add('admin-active');
+                }
+                
+                // Make accounts button visible immediately
+                const accountsButton = document.getElementById('accounts-button');
+                if (accountsButton) {
+                    accountsButton.style.display = 'block';
+                    accountsButton.classList.add('admin-visible');
+                    // Remove or comment out this line if present:
+                    // accountsButton.disabled = true;
+                }
+                
+                // Create permanent hours toggle button if it doesn't exist
+                let toggleButton = document.getElementById('toggle-permanent-btn');
+                if (!toggleButton) {
+                    toggleButton = document.createElement('button');
+                    toggleButton.id = 'toggle-permanent-btn';
+                    toggleButton.className = 'toggle-permanent-btn';
+                    toggleButton.textContent = 'Permanent Hours: OFF';
+                    toggleButton.addEventListener('click', togglePermanentHourMode);
+                    
+                    const timeTableButtons = document.querySelector('.time-table-buttons');
+                    if (timeTableButtons) {
+                        timeTableButtons.appendChild(toggleButton);
+                    }
+                }
+                toggleButton.style.display = 'block';
+                
+                showCustomAlert('Admin Mode', 'Administrator privileges activated', 'success');
+            }
             
             // Close login menu immediately after successful login
             const loginMenu = document.getElementById('login-menu');
@@ -816,7 +863,7 @@ async function handleLogin() {
             });
             
             showCustomAlert('Success', 'Logged in successfully', 'success');
-        }else {
+        } else {
             loginError.textContent = data.error || 'Invalid password';
             loginError.style.display = 'block';
         }
@@ -833,10 +880,6 @@ function closeLoginMenu() {
     
     if (loginMenu) loginMenu.classList.remove('active');
     if (loginOverlay) loginOverlay.classList.remove('active');
-    
-    // Clear password field
-    const passwordInput = document.getElementById('password-input');
-    if (passwordInput) passwordInput.value = '';
 }
 
 function setupLoginHandlers() {
@@ -964,6 +1007,54 @@ function enableDebugMode() {
     if (accountsBtn) accountsBtn.classList.add('admin-visible');
 }
 
+// Add this function to handle admin edit mode toggles
+function toggleAdminEditMode() {
+    // Make cells editable if in admin mode
+    const cells = document.querySelectorAll('.week-table tbody td:not(:first-child)');
+    cells.forEach(cell => {
+        cell.setAttribute('contenteditable', isAdminMode ? 'true' : 'false');
+        cell.classList.toggle('editable', isAdminMode);
+    });
+    
+    // Show/hide save button based on admin mode
+    const saveButton = document.querySelector('.save-button');
+    if (saveButton) {
+        saveButton.style.display = isAdminMode ? 'block' : 'none';
+    }
+    
+    // Update edit button text
+    const editButton = document.querySelector('.edit-button');
+    if (editButton) {
+        editButton.textContent = isAdminMode ? 'Admin Edit' : 'Edit';
+        editButton.style.backgroundColor = isAdminMode ? '#ff9800' : '';
+    }
+    
+    // Create permanent hours toggle button if it doesn't exist and admin mode is active
+    if (isAdminMode) {
+        let toggleButton = document.getElementById('toggle-permanent-btn');
+        if (!toggleButton) {
+            toggleButton = document.createElement('button');
+            toggleButton.id = 'toggle-permanent-btn';
+            toggleButton.className = 'toggle-permanent-btn';
+            toggleButton.textContent = 'Permanent Hours: OFF';
+            toggleButton.addEventListener('click', togglePermanentHourMode);
+            
+            const timeTableButtons = document.querySelector('.time-table-buttons');
+            if (timeTableButtons) {
+                timeTableButtons.appendChild(toggleButton);
+            }
+        }
+        toggleButton.style.display = 'block';
+    }
+    
+    // Setup specialized cell editing for admin mode with permanent hour support
+    if (isAdminMode) {
+        setupCellEditing();
+    }
+    
+    console.log('Admin edit mode toggled:', isAdminMode);
+}
+
 function disableDebugMode() {
     // Disable admin mode first
     isAdminMode = false;
@@ -1081,15 +1172,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // ...existing code...
 });
 
-// Add this new function to handle the account creation popup
+// Fix: Ensure showAccountCreatePopup always creates and shows the popup and overlay
 function showAccountCreatePopup() {
-    // Create the popup if it doesn't exist
     let popup = document.getElementById('account-create-popup');
     if (!popup) {
         popup = document.createElement('div');
         popup.id = 'account-create-popup';
         popup.className = 'account-create-popup';
-        
+
         popup.innerHTML = `
             <h2>Create New Account</h2>
             <div class="input-group">
@@ -1110,14 +1200,12 @@ function showAccountCreatePopup() {
                 <button id="cancel-account-btn">Cancel</button>
             </div>
         `;
-        
+
         document.body.appendChild(popup);
-        
-        // Add event listeners for buttons
+
         document.getElementById('create-account-btn').addEventListener('click', createNewAccount);
         document.getElementById('cancel-account-btn').addEventListener('click', hideAccountCreatePopup);
-        
-        // Add keyboard event handlers
+
         popup.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 hideAccountCreatePopup();
@@ -1126,16 +1214,12 @@ function showAccountCreatePopup() {
             }
         });
     }
-    
-    // Clear any previous values and errors
-    document.getElementById('account-name').value = '';
-    document.getElementById('account-abbreviation').value = '';
-    document.getElementById('account-password').value = '';
-    document.getElementById('account-create-error').style.display = 'none';
-    
-    // Show the popup
+
+    // Always show the popup and overlay
     popup.style.display = 'block';
-    
+    popup.style.visibility = 'visible';
+    popup.style.zIndex = 3000;
+
     // Add overlay if it doesn't exist
     let overlay = document.getElementById('account-create-overlay');
     if (!overlay) {
@@ -1145,10 +1229,16 @@ function showAccountCreatePopup() {
         overlay.addEventListener('click', hideAccountCreatePopup);
         document.body.appendChild(overlay);
     }
-    
-    // Show the overlay
     overlay.style.display = 'block';
-    
+    overlay.style.visibility = 'visible';
+    overlay.style.zIndex = 2999;
+
+    // Clear any previous values and errors
+    document.getElementById('account-name').value = '';
+    document.getElementById('account-abbreviation').value = '';
+    document.getElementById('account-password').value = '';
+    document.getElementById('account-create-error').style.display = 'none';
+
     // Focus on the first input field
     document.getElementById('account-name').focus();
 }
@@ -1156,9 +1246,14 @@ function showAccountCreatePopup() {
 function hideAccountCreatePopup() {
     const popup = document.getElementById('account-create-popup');
     const overlay = document.getElementById('account-create-overlay');
-    
-    if (popup) popup.style.display = 'none';
-    if (overlay) overlay.style.display = 'none';
+    if (popup) {
+        popup.style.display = 'none';
+        popup.style.visibility = 'hidden';
+    }
+    if (overlay) {
+        overlay.style.display = 'none';
+        overlay.style.visibility = 'hidden';
+    }
 }
 
 function createNewAccount() {
@@ -1588,9 +1683,12 @@ async function saveTimeTable() {
     }
     if (!timetables[currentTimetableName].data[dateString]) {
         timetables[currentTimetableName].data[dateString] = [];
-    }    // Process edited cells and add abbreviations 
+    }    
+    
+    // Process edited cells and add abbreviations
     document.querySelectorAll('.week-table tbody td.edited-cell').forEach(cell => {
-        if (currentUser.isLoggedIn && cell.textContent.trim() !== '') {
+        // Only add abbreviation if it's NOT a permanent hour
+        if (currentUser.isLoggedIn && cell.textContent.trim() !== '' && !cell.classList.contains('permanent-hour')) {
             const text = cell.textContent.trim();
             
             // Only add the abbreviation if it's not already there
@@ -1603,7 +1701,8 @@ async function saveTimeTable() {
         // Remove the edited-cell class since we've processed it
         cell.classList.remove('edited-cell');
     });
-      // Collect data from the table
+    
+    // Collect data from the table
     rows.forEach((row, dayIndex) => {
         const cells = row.querySelectorAll('td:not(:first-child)');
         const dayData = Array.from(cells).map(cell => {
@@ -1977,7 +2076,8 @@ function setupUIHandlers() {
                 const cells = document.querySelectorAll('.week-table tbody td:not(:first-child)');
                 cells.forEach(cell => {                
                     if (!cell.classList.contains('permanent-hour')) {
-                        cell.setAttribute('contenteditable', isEditMode ? 'true' : 'false');
+                                               cell.setAttribute('contenteditable', isEditMode ? 'true' : 'false');
+
                         cell.classList.toggle('editable', isEditMode);
                         console.log('Cell editable set to:', cell.getAttribute('contenteditable'));
                     }
@@ -2538,14 +2638,21 @@ function performLogout() {
     currentUser = {
         name: null,
         abbreviation: null,
-        isLoggedIn: false
+        isLoggedIn: false,
+        isAdmin: false // Make sure to reset admin status too
     };
+    
+    // Disable admin mode when logging out
+    if (isAdminMode) {
+        isAdminMode = false;
+        disableDebugMode(); // Clean up any admin UI
+    }
     
     // Update UI
     const loginButton = document.getElementById('login-button');
     loginButton.textContent = 'Login';
     loginButton.classList.remove('logged-in');
-    
+
     // Hide the timetable view
     const timeTable = document.querySelector('.time-table');
     if (timeTable) {
