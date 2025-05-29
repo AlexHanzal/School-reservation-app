@@ -3,5 +3,6 @@
   "name": "Alex Hanzal",
   "abbreviation": "AH",
   "password": "Heslo",
+  "isAdmin": true,
   "createdAt": "2025-05-19T16:11:26.672Z"
 }
