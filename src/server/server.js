@@ -274,7 +274,7 @@ async function initializeUsersDirectory() {
 // Update the user creation endpoint
 app.post('/api/users', async (req, res) => {
     try {
-        const { name, abbreviation, password } = req.body;
+        const { name, abbreviation, password, isAdmin } = req.body;
         
         // Input validation
         if (!name?.trim() || !abbreviation?.trim() || !password?.trim()) {
@@ -312,6 +312,7 @@ app.post('/api/users', async (req, res) => {
             name: name.trim(),
             abbreviation: abbreviation.trim(),
             password: password.trim(),
+            isAdmin: isAdmin === true, // Ensure it's a boolean, default to false
             createdAt: new Date().toISOString()
         };
 
