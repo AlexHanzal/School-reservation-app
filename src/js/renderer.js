@@ -287,16 +287,28 @@ function showTimetable(name) {
     document.querySelectorAll('.week-table tbody td').forEach(cell => {
         cell.classList.remove('permanent-hour');
         delete cell.dataset.permanent;
-    });
-
-    const savedData = timetables[name];
+    });    const savedData = timetables[name];
     if (savedData) {
-        // If no currentWeek is set for this timetable, set it to today
-        if (!savedData.currentWeek) {
-            savedData.currentWeek = new Date().toISOString();
-        }
+        // Always ensure we have a current week - default to today if not set or invalid
+        const today = new Date();
+        let selectedDate;
         
-        const selectedDate = new Date(savedData.currentWeek);
+        if (!savedData.currentWeek) {
+            // No week saved - use today
+            selectedDate = today;
+            savedData.currentWeek = today.toISOString();
+        } else {
+            // Check if saved week is valid
+            const savedDate = new Date(savedData.currentWeek);
+            if (isNaN(savedDate.getTime())) {
+                // Invalid date - use today
+                selectedDate = today;
+                savedData.currentWeek = today.toISOString();
+            } else {
+                // Valid saved date - use it
+                selectedDate = savedDate;
+            }
+        }
         
         // Update the calendar to show the month containing the selected date
         currentMonth = selectedDate.getMonth();
@@ -308,11 +320,23 @@ function showTimetable(name) {
         // Select the date in the calendar (without an event object)
         selectDate(selectedDate.getDate());
         
-        // Update week view with the stored date
+        // Update week view with the selected date
         updateTimetableForWeek(selectedDate);
         
         // Update the week view title
         updateWeekViewTitle(selectedDate);
+    } else {
+        // No saved data at all - initialize with current week
+        const today = new Date();
+        timetables[name].currentWeek = today.toISOString();
+        
+        // Update calendar and week view to current week
+        currentMonth = today.getMonth();
+        currentYear = today.getFullYear();
+        generateCalendar();
+        selectDate(today.getDate());
+        updateTimetableForWeek(today);
+        updateWeekViewTitle(today);
     }
     
     localStorage.setItem('currentTimetable', name);
@@ -447,62 +471,129 @@ function displayTimetableDataForWeek(startOfWeek) {
         delete cell.dataset.permanent;
     });
     
-    // Apply permanent hours first - limit to first 5 days (Mon-Fri)
-    // These are always displayed regardless of the selected week
-    if (timetableData.permanentHours) {
-        for (const dayIndex in timetableData.permanentHours) {
-            // Skip weekend days
-            if (parseInt(dayIndex) >= 5) continue;
+    // Apply permanent hours from ALL weeks - these appear everywhere
+    if (timetableData.data) {
+        for (const weekDate in timetableData.data) {
+            const weekData = timetableData.data[weekDate];
             
-            for (const hourIndex in timetableData.permanentHours[dayIndex]) {
-                const rowIndex = parseInt(dayIndex); // Now day is the row
-                const colIndex = parseInt(hourIndex) - 1; // Hour is the column
-                
-                if (rowIndex >= 0 && colIndex >= 0 && colIndex < 9) { // 9 hours
-                    const rows = document.querySelectorAll('.week-table tbody tr');
-                    if (rows[rowIndex]) {
-                        const cells = rows[rowIndex].querySelectorAll('td:not(:first-child)');
-                        if (cells[colIndex]) {
-                            cells[colIndex].textContent = timetableData.permanentHours[dayIndex][hourIndex];
-                            cells[colIndex].classList.add('permanent-hour');
-                            cells[colIndex].dataset.permanent = 'true';
+            // Handle both array and object formats for finding permanent hours
+            if (Array.isArray(weekData)) {
+                for (let dayIndex = 0; dayIndex < Math.min(weekData.length, 5); dayIndex++) {
+                    const dayData = weekData[dayIndex];
+                    if (!dayData) continue;
+                    
+                    Object.entries(dayData).forEach(([hourIndex, hourObj]) => {
+                        if (hourObj && hourObj.isPermanent) {
+                            const rowIndex = dayIndex;
+                            const colIndex = parseInt(hourIndex) - 1;
+                            
+                            if (rowIndex >= 0 && colIndex >= 0 && colIndex < 9) {
+                                const rows = document.querySelectorAll('.week-table tbody tr');
+                                if (rows[rowIndex]) {
+                                    const cells = rows[rowIndex].querySelectorAll('td:not(:first-child)');
+                                    if (cells[colIndex]) {
+                                        cells[colIndex].textContent = hourObj.content;
+                                        cells[colIndex].classList.add('permanent-hour');
+                                        cells[colIndex].dataset.permanent = 'true';
+                                    }
+                                }
+                            }
                         }
-                    }
+                    });
                 }
+            } else {
+                // Handle object format for days
+                Object.entries(weekData).forEach(([dayIndex, dayData]) => {
+                    const dayIdx = parseInt(dayIndex);
+                    if (dayIdx >= 5 || !dayData) return;
+                    
+                    Object.entries(dayData).forEach(([hourIndex, hourObj]) => {
+                        if (hourObj && hourObj.isPermanent) {
+                            const rowIndex = dayIdx;
+                            const colIndex = parseInt(hourIndex) - 1;
+                            
+                            if (rowIndex >= 0 && colIndex >= 0 && colIndex < 9) {
+                                const rows = document.querySelectorAll('.week-table tbody tr');
+                                if (rows[rowIndex]) {
+                                    const cells = rows[rowIndex].querySelectorAll('td:not(:first-child)');
+                                    if (cells[colIndex]) {
+                                        cells[colIndex].textContent = hourObj.content;
+                                        cells[colIndex].classList.add('permanent-hour');
+                                        cells[colIndex].dataset.permanent = 'true';
+                                    }
+                                }
+                            }
+                        }
+                    });
+                });
             }
         }
-    }
-    
-    // Then apply data for the specific week if it exists - limit to first 5 days (Mon-Fri)
+    }// Then apply data for the specific week if it exists - limit to first 5 days (Mon-Fri)
     if (timetableData.data && timetableData.data[dateString]) {
         const weekData = timetableData.data[dateString];
         
-        // Process only Monday through Friday
-        const daysToProcess = Math.min(weekData.length, 5);
-        
-        for (let dayIndex = 0; dayIndex < daysToProcess; dayIndex++) {
-            const dayData = weekData[dayIndex];
-            if (!dayData) continue;
+        // Handle both array and object formats
+        if (Array.isArray(weekData)) {
+            // Process only Monday through Friday
+            const daysToProcess = Math.min(weekData.length, 5);
             
-            const row = document.querySelectorAll('.week-table tbody tr')[dayIndex];
-            if (!row) continue;
-            
-            const cells = row.querySelectorAll('td:not(:first-child)');
-            
-            for (let hourIndex = 0; hourIndex < Math.min(dayData.length, 9); hourIndex++) {
-                const cell = cells[hourIndex];
-                if (!cell) continue;
+            for (let dayIndex = 0; dayIndex < daysToProcess; dayIndex++) {
+                const dayData = weekData[dayIndex];
+                if (!dayData) continue;
                 
-                const cellData = dayData[hourIndex];
+                const row = document.querySelectorAll('.week-table tbody tr')[dayIndex];
+                if (!row) continue;
                 
-                if (cellData) {
-                    // Only apply if not a permanent hour
-                    if (!cell.classList.contains('permanent-hour')) {
-                        cell.textContent = cellData;
-                        cell.classList.add('has-data');
+                const cells = row.querySelectorAll('td:not(:first-child)');
+                
+                // Handle object format with hour indices as keys
+                Object.entries(dayData).forEach(([hourIndex, hourObj]) => {
+                    const colIndex = parseInt(hourIndex) - 1; // Convert to 0-based index
+                    const cell = cells[colIndex];
+                    if (!cell) return;
+                    
+                    if (hourObj && typeof hourObj === 'object' && hourObj.content) {
+                        // Only apply if not a permanent hour (unless this IS a permanent hour)
+                        if (!cell.classList.contains('permanent-hour') || hourObj.isPermanent) {
+                            cell.textContent = hourObj.content;
+                            cell.classList.add('has-data');
+                            if (hourObj.isPermanent) {
+                                cell.classList.add('permanent-hour');
+                                cell.dataset.permanent = 'true';
+                            }
+                        }
                     }
-                }
+                });
             }
+        } else {
+            // Handle object format for days
+            Object.entries(weekData).forEach(([dayIndex, dayData]) => {
+                const dayIdx = parseInt(dayIndex);
+                if (dayIdx >= 5) return; // Skip weekend days
+                
+                const row = document.querySelectorAll('.week-table tbody tr')[dayIdx];
+                if (!row || !dayData) return;
+                
+                const cells = row.querySelectorAll('td:not(:first-child)');
+                
+                Object.entries(dayData).forEach(([hourIndex, hourObj]) => {
+                    const colIndex = parseInt(hourIndex) - 1; // Convert to 0-based index
+                    const cell = cells[colIndex];
+                    if (!cell) return;
+                    
+                    if (hourObj && typeof hourObj === 'object' && hourObj.content) {
+                        // Only apply if not a permanent hour (unless this IS a permanent hour)
+                        if (!cell.classList.contains('permanent-hour') || hourObj.isPermanent) {
+                            cell.textContent = hourObj.content;
+                            cell.classList.add('has-data');
+                            if (hourObj.isPermanent) {
+                                cell.classList.add('permanent-hour');
+                                cell.dataset.permanent = 'true';
+                            }
+                        }
+                    }
+                });
+            });
         }
     }
 }
@@ -1178,9 +1269,7 @@ function showAccountCreatePopup() {
     if (!popup) {
         popup = document.createElement('div');
         popup.id = 'account-create-popup';
-        popup.className = 'account-create-popup';
-
-        popup.innerHTML = `
+        popup.className = 'account-create-popup';        popup.innerHTML = `
             <h2>Create New Account</h2>
             <div class="input-group">
                 <label for="account-name">Full Name</label>
@@ -1193,6 +1282,13 @@ function showAccountCreatePopup() {
             <div class="input-group">
                 <label for="account-password">Password</label>
                 <input type="password" id="account-password" placeholder="Enter password">
+            </div>
+            <div class="input-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="account-is-admin">
+                    <span class="checkmark"></span>
+                    Admin Account
+                </label>
             </div>
             <div class="account-create-error" id="account-create-error">Error message will appear here</div>
             <div class="account-create-actions">
@@ -1231,12 +1327,11 @@ function showAccountCreatePopup() {
     }
     overlay.style.display = 'block';
     overlay.style.visibility = 'visible';
-    overlay.style.zIndex = 2999;
-
-    // Clear any previous values and errors
+    overlay.style.zIndex = 2999;    // Clear any previous values and errors
     document.getElementById('account-name').value = '';
     document.getElementById('account-abbreviation').value = '';
     document.getElementById('account-password').value = '';
+    document.getElementById('account-is-admin').checked = false;
     document.getElementById('account-create-error').style.display = 'none';
 
     // Focus on the first input field
@@ -1260,11 +1355,15 @@ function createNewAccount() {
     const nameInput = document.getElementById('account-name');
     const abbreviationInput = document.getElementById('account-abbreviation');
     const passwordInput = document.getElementById('account-password');
+    const isAdminCheckbox = document.getElementById('account-is-admin');
     const errorElement = document.getElementById('account-create-error');
     
     const name = nameInput.value.trim();
     const abbreviation = abbreviationInput.value.trim();
     const password = passwordInput.value.trim();
+    const isAdmin = isAdminCheckbox.checked;
+    
+    console.log('Creating account with isAdmin:', isAdmin); // Debug log
     
     // Clear previous error
     errorElement.style.display = 'none';
@@ -1291,14 +1390,12 @@ function createNewAccount() {
 
     function attemptRequest() {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-        return fetch(`${API_URL}/users`, {
+        const timeoutId = setTimeout(() => controller.abort(), 5000);        return fetch(`${API_URL}/users`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ name, abbreviation, password }),
+            body: JSON.stringify({ name, abbreviation, password, isAdmin }),
             signal: controller.signal
         })
         .then(async response => {
@@ -1667,6 +1764,7 @@ async function saveTimetable(name, data) {
     }
 }
 
+// Function to save the timetable, including permanent hours as objects in the data field
 async function saveTimeTable() {
     if (!currentTimetableName || !timetables[currentTimetableName]) {
         showCustomAlert('Error', 'No timetable selected', 'error');
@@ -1682,37 +1780,86 @@ async function saveTimeTable() {
         timetables[currentTimetableName].data = {};
     }
     if (!timetables[currentTimetableName].data[dateString]) {
-        timetables[currentTimetableName].data[dateString] = [];
-    }    
-    
-    // Process edited cells and add abbreviations
-    document.querySelectorAll('.week-table tbody td.edited-cell').forEach(cell => {
-        // Only add abbreviation if it's NOT a permanent hour
-        if (currentUser.isLoggedIn && cell.textContent.trim() !== '' && !cell.classList.contains('permanent-hour')) {
-            const text = cell.textContent.trim();
-            
-            // Only add the abbreviation if it's not already there
-            if (!text.includes(`(${currentUser.abbreviation})`)) {
-                // Format without using HTML tags to avoid rendering issues on reload
-                cell.textContent = `${text}\n(${currentUser.abbreviation})`;
-            }
-        }
-        
-        // Remove the edited-cell class since we've processed it
-        cell.classList.remove('edited-cell');
-    });
-    
-    // Collect data from the table
+        timetables[currentTimetableName].data[dateString] = {};
+    }
+
+    // Collect permanent hours that need to be propagated to all weeks
+    const permanentHours = {};
+
+    // Save each cell as an object with content and isPermanent
     rows.forEach((row, dayIndex) => {
         const cells = row.querySelectorAll('td:not(:first-child)');
-        const dayData = Array.from(cells).map(cell => {
-            // Store the content as plain text
-            return cell.textContent.trim();
+        timetables[currentTimetableName].data[dateString][dayIndex] = {};
+        cells.forEach((cell, hourIndex) => {
+            const content = cell.textContent.trim();
+            if (content !== '') {
+                const isPermanent = cell.classList.contains('permanent-hour');
+                timetables[currentTimetableName].data[dateString][dayIndex][hourIndex + 1] = {
+                    content: content,
+                    isPermanent: isPermanent
+                };
+
+                // If this is a permanent hour, collect it for propagation
+                if (isPermanent) {
+                    if (!permanentHours[dayIndex]) {
+                        permanentHours[dayIndex] = {};
+                    }
+                    permanentHours[dayIndex][hourIndex + 1] = {
+                        content: content,
+                        isPermanent: true
+                    };
+                }
+            }
         });
-        timetables[currentTimetableName].data[dateString][dayIndex] = dayData;
     });
 
-    // Save permanent hours
+    // Propagate permanent hours to ALL existing weeks
+    if (Object.keys(permanentHours).length > 0) {
+        for (const weekDate in timetables[currentTimetableName].data) {
+            if (weekDate === dateString) continue; // Skip current week as it's already saved above
+
+            // Ensure the week data structure exists
+            if (!timetables[currentTimetableName].data[weekDate]) {
+                timetables[currentTimetableName].data[weekDate] = {};
+            }
+
+            // Apply permanent hours to this week
+            for (const dayIndex in permanentHours) {
+                if (!timetables[currentTimetableName].data[weekDate][dayIndex]) {
+                    timetables[currentTimetableName].data[weekDate][dayIndex] = {};
+                }
+
+                for (const hourIndex in permanentHours[dayIndex]) {
+                    timetables[currentTimetableName].data[weekDate][dayIndex][hourIndex] = permanentHours[dayIndex][hourIndex];
+                }
+            }
+        }
+    }
+
+    // Also remove permanent hours from other weeks if they were removed from current week
+    // Check all weeks for permanent hours that no longer exist in current week
+    for (const weekDate in timetables[currentTimetableName].data) {
+        if (weekDate === dateString) continue;
+
+        const weekData = timetables[currentTimetableName].data[weekDate];
+        for (const dayIndex in weekData) {
+            if (!weekData[dayIndex]) continue;
+            
+            for (const hourIndex in weekData[dayIndex]) {
+                const cellData = weekData[dayIndex][hourIndex];
+                if (cellData && cellData.isPermanent) {
+                    // Check if this permanent hour still exists in current week
+                    const currentWeekCell = timetables[currentTimetableName].data[dateString][dayIndex]?.[hourIndex];
+                    if (!currentWeekCell || !currentWeekCell.isPermanent) {
+                        // This permanent hour was removed, delete it from all weeks
+                        delete weekData[dayIndex][hourIndex];
+                    }
+                }
+            }
+        }
+    }
+
+    // Update permanentHours for backward compatibility
     timetables[currentTimetableName].permanentHours = {};
     rows.forEach((row, dayIndex) => {
         const cells = row.querySelectorAll('td:not(:first-child)');
@@ -1775,21 +1922,36 @@ function setupCellEditing() {
     cells.forEach(cell => {
         // Remove any existing input event listeners
         const newCell = cell.cloneNode(true);
-        cell.parentNode.replaceChild(newCell, cell);
-        
-        // Add new event listener - but don't add abbreviation yet
+        cell.parentNode.replaceChild(newCell, cell);        // Add new event listener - with user abbreviation support
         newCell.addEventListener('input', function() {
-            // Just mark the cell as edited
+            // Mark the cell as edited
             this.classList.add('edited-cell');
             
-            // In admin mode, also handle permanent hours if toggle is on
+            // In admin mode, handle permanent hours if toggle is on
             if (isAdminMode && permanentHourModeEnabled && this.textContent.trim() !== '') {
+                // Remove any existing abbreviations when making permanent
+                let content = this.textContent.trim();
+                if (currentUser.abbreviation && content.includes(' - ' + currentUser.abbreviation)) {
+                    content = content.replace(' - ' + currentUser.abbreviation, '');
+                    this.textContent = content;
+                }
                 this.classList.add('permanent-hour');
                 this.dataset.permanent = 'true';
             }
+            // Only add abbreviation if NOT in permanent hour mode and NOT already a permanent hour
+            else if (currentUser.isLoggedIn && currentUser.abbreviation && this.textContent.trim() && 
+                !this.classList.contains('permanent-hour') && 
+                !(isAdminMode && permanentHourModeEnabled)) {
+                const content = this.textContent.trim();
+                const abbrev = currentUser.abbreviation;
+                
+                // Only add abbreviation if it's not already there and content is not just the abbreviation
+                if (!content.includes(abbrev) && content !== abbrev) {
+                    this.textContent = content + ' - ' + abbrev;
+                }
+            }
         });
-        
-        // Add click handler for toggling permanent status in admin mode
+          // Add click handler for toggling permanent status in admin mode
         if (isAdminMode) {
             newCell.addEventListener('click', function(e) {
                 // If in admin mode with permanent hours toggle on, ctrl+click toggles permanent status
@@ -1799,6 +1961,12 @@ function setupCellEditing() {
                         this.classList.remove('permanent-hour');
                         delete this.dataset.permanent;
                     } else if (this.textContent.trim() !== '') {
+                        // When making a cell permanent, remove any abbreviations
+                        let content = this.textContent.trim();
+                        if (currentUser.abbreviation && content.includes(' - ' + currentUser.abbreviation)) {
+                            content = content.replace(' - ' + currentUser.abbreviation, '');
+                            this.textContent = content;
+                        }
                         this.classList.add('permanent-hour');
                         this.dataset.permanent = 'true';
                     }
@@ -2008,28 +2176,26 @@ function setupUIHandlers() {
             }
         });
     }
-    
-    // Update accounts button functionality
+      // Update accounts button functionality
     const accountsButton = document.getElementById('accounts-button');
     if (accountsButton) {
-        accountsButton.addEventListener('click', () => {
+        // Remove any existing event listeners
+        const newAccountsButton = accountsButton.cloneNode(true);
+        accountsButton.parentNode.replaceChild(newAccountsButton, accountsButton);
+        
+        newAccountsButton.addEventListener('click', () => {
             // Allow if in admin mode OR debug mode
             if (isAdminMode || document.body.classList.contains('debug-mode')) {
                 const accountsMenu = document.getElementById('accounts-menu');
                 const accountsOverlay = document.getElementById('accounts-overlay');
                 
                 if (accountsMenu && accountsOverlay) {
-                    if (accountsMenu.style.display !== 'block') {
-                        accountsMenu.style.display = 'block';
-                        accountsMenu.style.visibility = 'visible';
-                        accountsOverlay.style.display = 'block';
-                        accountsOverlay.style.visibility = 'visible';
-                    } else {
-                        accountsMenu.style.display = 'none';
-                        accountsMenu.style.visibility = 'hidden';
-                        accountsOverlay.style.display = 'none';
-                        accountsOverlay.style.visibility = 'hidden';
-                    }
+                    accountsMenu.classList.add('active');
+                    accountsOverlay.classList.add('active');
+                    accountsMenu.style.display = 'block';
+                    accountsMenu.style.visibility = 'visible';
+                    accountsOverlay.style.display = 'block';
+                    accountsOverlay.style.visibility = 'visible';
                 }
             }
         });
@@ -2116,35 +2282,9 @@ function setupUIHandlers() {
                 cell.classList.remove('editable');
                 cell.classList.remove('edited-cell');
             });
-        });
-    }
-    
-    // Accounts menu button event listeners
-    const modifyAccountsBtn = document.getElementById('modify-accounts');
-    const removeAccountsBtn = document.getElementById('remove-accounts');
-    const createAccountsBtn = document.getElementById('create-accounts');
-
-    if (modifyAccountsBtn) {
-        modifyAccountsBtn.addEventListener('click', () => {
-            console.log('Modify Accounts button clicked');
-            closeAccountsMenu(); // Close the menu after clicking
-        });
-    }
-
-    if (removeAccountsBtn) {
-        removeAccountsBtn.addEventListener('click', () => {
-            console.log('Remove Accounts button clicked');
-            closeAccountsMenu(); // Close the menu after clicking
-        });
-    }
-
-    if (createAccountsBtn) {
-        createAccountsBtn.addEventListener('click', () => {
-            console.log('Create Accounts button clicked');
-            showAccountCreatePopup();
-            closeAccountsMenu(); // Close the menu after clicking
-        });
-    }
+        });    }
+      // Accounts menu button event listeners - moved to main DOMContentLoaded handler to avoid duplicates
+    // The accounts button and menu handlers are now set up in the main DOMContentLoaded event listener
 }
 
 // Function to enable editing after login
@@ -2713,4 +2853,26 @@ function togglePermanentHourMode() {
         'Permanent hours mode is now ON. Edited cells will become permanent.' : 
         'Permanent hours mode is now OFF. Edited cells will be regular entries.', 
         'info');
+}
+
+// Render the timetable for the given date string
+function renderTimetableForDate(dateString) {
+    const timetable = timetables[currentTimetableName];
+    if (!timetable || !timetable.data || !timetable.data[dateString]) return;
+    const weekData = timetable.data[dateString];
+    const rows = document.querySelectorAll('.week-table tbody tr');
+    weekData.forEach((dayData, dayIndex) => {
+        const cells = rows[dayIndex]?.querySelectorAll('td:not(:first-child)');
+        if (!cells) return;
+        Object.entries(dayData).forEach(([hourIndex, hourObj]) => {
+            const cell = cells[parseInt(hourIndex) - 1];
+            if (!cell) return;
+            cell.textContent = hourObj.content;
+            if (hourObj.isPermanent) {
+                cell.classList.add('permanent-hour');
+            } else {
+                cell.classList.remove('permanent-hour');
+            }
+        });
+    });
 }
