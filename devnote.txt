@@ -1,14 +1,13 @@
 | CHANGES |
-Shit ton of things
+fixed the account button bug
+fixed made pernament hours work as a pernament hours
 ------------------------------------------------
 
 | TO DO |
-- When creating an account an option for an admin account should be selectable
-- Copy the permanent hours into all weeks
+setting a pernament hour from date to date
 
 ------------------------------------------------
 
 | NEEDS FIXING |
 when you click on a timetable it opens a different timetable
  than when you then click on any date in the timetable
- account create button aint showing the popup
