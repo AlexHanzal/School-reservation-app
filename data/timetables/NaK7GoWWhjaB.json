@@ -10,30 +10,14 @@
           "isPermanent": false
         },
         "3": {
-          "content": "Pernament",
+          "content": "rnamenhgbnj - Vald",
           "isPermanent": false
-        },
-        "4": {
-          "content": "please",
-          "isPermanent": true
         }
       },
       {
         "1": {
           "content": "fwafad - Čer",
           "isPermanent": false
-        },
-        "2": {
-          "content": "wfafa",
-          "isPermanent": false
-        },
-        "3": {
-          "content": "Hehe",
-          "isPermanent": true
-        },
-        "5": {
-          "content": "wag - Čer",
-          "isPermanent": true
         }
       },
       {
@@ -51,14 +35,6 @@
         }
       },
       {
-        "3": {
-          "content": "fafwaw - Čer",
-          "isPermanent": true
-        },
-        "4": {
-          "content": "dwafwa",
-          "isPermanent": true
-        },
         "5": {
           "content": "gwa",
           "isPermanent": false
@@ -67,41 +43,69 @@
     ],
     "2025-05-25": {
       "0": {},
-      "1": {
-        "4": {
-          "content": "please",
-          "isPermanent": true
-        }
-      },
+      "1": {},
+      "2": {},
+      "3": {},
+      "4": {}
+    },
+    "2025-06-02": {
+      "0": {},
+      "1": {},
       "2": {
-        "2": {
-          "content": "waad - Čer",
+        "1": {
+          "content": "ss - Vald",
           "isPermanent": false
-        },
-        "3": {
-          "content": "Hehe",
-          "isPermanent": true
-        },
-        "5": {
-          "content": "wag - Čer",
-          "isPermanent": true
         }
       },
       "3": {},
+      "4": {}
+    },
+    "2025-06-01": {
+      "0": {},
+      "1": {},
+      "2": {},
+      "3": {},
       "4": {
-        "3": {
-          "content": "fafwaw - Čer",
-          "isPermanent": true
-        },
-        "4": {
-          "content": "dwafwa",
-          "isPermanent": true
+        "2": {
+          "content": "dsdsddds - Vald",
+          "isPermanent": false
         }
       }
+    },
+    "2025-06-03": {
+      "0": {},
+      "1": {},
+      "2": {},
+      "3": {},
+      "4": {}
+    },
+    "2025-06-08": {
+      "0": {},
+      "1": {
+        "1": {
+          "content": "aaaaaa - Vald",
+          "isPermanent": false
+        }
+      },
+      "2": {},
+      "3": {},
+      "4": {}
+    },
+    "2025-07-13": {
+      "0": {},
+      "1": {
+        "1": {
+          "content": "aaa",
+          "isPermanent": false
+        }
+      },
+      "2": {},
+      "3": {},
+      "4": {}
     }
   },
   "calendar": "",
-  "currentWeek": "2025-05-31T20:17:36.900Z",
+  "currentWeek": "2025-06-03T21:37:43.045Z",
   "permanentHours": {
     "0": {},
     "1": {},

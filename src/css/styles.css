@@ -7,12 +7,18 @@
     --header-bg: rgb(224, 224, 224);
     --sidebar-bg: #e6e6e6;
     --font-family: Arial, Helvetica, sans-serif;
-    --sidebar-width: 15%; /* Increased from 12% */
+    --sidebar-width: 15%; /* Will be overridden by responsive.css */
     --header-height: 10%;
     --highlight-color: #afafaf;
     --highlight-cell-color: #a7a7a7;
     --bakalar-color-basic: #ffffff;
     --bakalar-color-hover: #ffffff;
+    
+    /* New responsive variables */
+    --base-scale: 1;
+    --responsive-padding: calc(0.5rem * var(--base-scale));
+    --responsive-margin: calc(0.5rem * var(--base-scale));
+    --responsive-border-radius: calc(5px * var(--base-scale));
   }
   
   :root[data-theme="light"] {
@@ -36,35 +42,50 @@
   }
   
   html, body {
-    height: 100%;
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-  }
-  
-  .sidebar {
-    width: var(--sidebar-width);
-    height: 90%; /* Adjust height to fit below the header */
-    background-color:var(--sidebar-bg);
-    padding: 15px; /* Reduced from 20px */
-    position: fixed;
-    top: 10%; /* Start below the header */
-    left: 0;
-    color: var(--primary-color);
-    z-index: 500; /* Ensure it stays below the header */
-    border-right: var(--fifth-color) solid 1px; /* Change from full border to right-only */
-  }
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  font-size: var(--base-font-size, 16px);
+  box-sizing: border-box;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+.sidebar {
+  width: var(--sidebar-width);
+  height: calc(100% - var(--header-height));
+  background-color: var(--sidebar-bg);
+  padding: var(--responsive-padding, 15px);
+  position: fixed;
+  top: var(--header-height);
+  left: 0;
+  color: var(--primary-color);
+  z-index: 500;
+  border-right: var(--fifth-color) solid 1px;
+  overflow-x: hidden; /* Prevent horizontal scroll */
+  overflow-y: auto; /* Allow vertical scroll if needed */
+  box-sizing: border-box;
+}
   
   .sidebar ul {
     list-style: none;
     padding: 0;
     margin: 0;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
   }
   
   .sidebar li {
     margin: 0;
     padding: 0;
     text-align: center;
+    width: 100%;
+    box-sizing: border-box;
   }
   
   body {
@@ -74,30 +95,57 @@
   }
   
   .title {
-    color: var(--primary-color)   ;
-    font-size: 2em;
+    color: var(--primary-color);
+    font-size: var(--title-font-size, 2em);
     text-align: center;
-    padding: auto;
+    padding: 0.5rem;
     font-weight: bold;
-    text-shadow: 2px 2px 4px #000000;
+    text-shadow: 0.125rem 0.125rem 0.25rem #000000;
+    margin: 0; /* Remove default margin */
+    flex: 1; /* Take up available space for centering */
   }
   
   header {
     background-color: var(--third-color);
     text-align: center;
     color: #455459;
-    font-size: 1.5em;
+    font-size: var(--header-font-size, 1.5em);
     font-weight: bold;
-    height: 10%;
-    display: flex; /* Use flexbox */
-    align-items: center; /* Vertically center content */
-    justify-content: center; /* Horizontally center content */
+    height: var(--header-height);
+    display: flex;
+    align-items: center;
+    justify-content: center; /* Center the title */
+    padding: 0 1rem;
     border-bottom: #d9d9d9 solid 1px;
-    position: fixed; /* Fix the header at the top */
+    position: fixed;
     top: 0;
     left: 0;
-    width: 100%; /* Ensure it spans the full width */
-    z-index: 1000; /* Ensure it stays above the sidebars */
+    width: 100%;
+    z-index: 1000;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+  
+  .header-buttons {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  
+  #logout-button {
+    background-color: #ff4444;
+    color: white;
+    border: 2px solid #ff4444;
+    padding: 8px 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s ease;
+  }
+  
+  #logout-button:hover {
+    background-color: #cc0000;
+    border-color: #cc0000;
   }
   
   ul {
@@ -106,12 +154,11 @@
     margin: 0;
   }
   
-  td {
+  td, th {
     padding: 0; /* Remove padding from all cells */
-    text-align: center; /* Center align the numbers */
-    border-radius: 5px; /* Add rounded corners to all table cells */
-    width: 14.28%; /* Ensure cells take equal width (100% / 7 days) */
-    height: 40px; /* Set a consistent height for cells */
+    text-align: center; /* Center align the text */
+    width: 14.28%; /* Ensure each cell takes up an equal width (100% / 7 days) */
+    height: var(--table-cell-size, 40px); /* Use responsive variable */
     vertical-align: middle; /* Center align text vertically */
     border: 1px solid var(--secondary-color); /* Optional: Add a border for clarity */
   }
@@ -126,7 +173,7 @@
     padding: 0; /* Remove padding from all cells */
     text-align: center; /* Center align the text */
     width: 14.28%; /* Ensure each cell takes up an equal width (100% / 7 days) */
-    height: 40px; /* Set a consistent height for cells */
+    height: var(--table-cell-size, 40px); /* Use responsive variable */
     vertical-align: middle; /* Center align text vertically */
     border: 1px solid var(--secondary-color); /* Optional: Add a border for clarity */
   }
@@ -236,591 +283,222 @@
     display: none;
     background-color: #FEFEFE;
     color: var(--primary-color);
-    padding: 18px;
-    border-radius: 10px;
-    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3);
+    padding: 10px 10px 2px 10px; /* Reduced bottom padding */
+    border-radius: var(--responsive-border-radius, 10px);
+    box-shadow: 0 0.25rem 0.375rem rgba(0, 0, 0, 0.3);
     position: fixed;
-    top: var(--header-height); /* Start below the header */
-    left: var(--sidebar-width); /* Start next to the left sidebar */
-    width: calc(99% - var(--sidebar-width)); /* Adjust for wider sidebar */
-    height: calc(100% - var(--header-height)); /* Fill the remaining height below the header */
-    overflow: hidden; /* Change from auto to hidden */
+    top: var(--header-height);
+    left: var(--sidebar-width);
+    width: calc(100% - var(--sidebar-width));
+    height: calc(100% - var(--header-height));
+    overflow: hidden; /* Changed from auto to hidden */
     text-align: center;
-    font-size: 0.9em; /* Make all text 10% smaller */
+    font-size: 0.9em;
     box-sizing: border-box;
-    margin-left: 0; /* Remove left margin */
-  }
-  
-  .week-table {
-    border-collapse: collapse;
-    width: 95%; /* Adjust table width to fit nicely */
-    margin: 0 auto; /* Center the table within the time-table container */
-    background-color: var(--secondary-color);
-    position: relative; /* Add this */
-  }
-  
-  .week-table th, .week-table td {
-    border: 1px solid var(--primary-color);
-    padding: 7px; /* Reduced from 8px */
-    text-align: center;
-    color: black;
-    min-width: 72px; /* Reduced from 80px */
-    height: 36px; /* Increased from 27px by 20% */
-  }
-  
-  .week-table th {
-    background-color: var(--secondary-color);
-    font-weight: bold;
-  }
-  
-  .week-table td:first-child {
-    font-weight: bold;
-    background-color: var(--secondary-color);
-    color: black;
-    text-align: left; /* Align text to the left for better readability */
-    padding-left: 10px; /* Add padding for spacing */
-  }
-  
-  .week-table td[contenteditable="true"] {
-    cursor: text;
-    user-select: text;
-    -webkit-user-select: text;
-    -moz-user-select: text;
-    -ms-user-select: text;
-    outline: 2px dashed var(--primary-color);
-    background-color: var(--secondary-color);
-  }
-  
-  .week-table td[contenteditable="true"]:focus {
-    background-color: white !important;
-    outline: 2px solid var(--primary-color);
-  }
-  
-  .week-table td[contenteditable="true"] {
-    cursor: text;
-    outline: 1px solid var(--primary-color);
-  }
-  
-  .week-table td[contenteditable="true"]:focus {
-    background-color: #666 !important;
-    outline: 2px solid var(--primary-color);
-  }
-  
-  .week-table td.current-day {
-    background-color: var(--highlight-color);
-    font-weight: bold;
-    border: 2px solid var(--primary-color);
-  }
-  
-  /* Add highlighting for all cells in current day row */
-  .week-table tr:has(td.current-day) td:not(:first-child) {
-    background-color: var(--highlight-cell-color);
-    border: 1px solid var(--primary-color);
-  }
-  
-  .permanent-hour {
-    background-color: #ffebcc !important;
-    font-weight: bold;
-    color: #ff0000 !important;
-    position: relative;
-    box-sizing: border-box;
-    transition: all 0.2s ease;
-    border-radius: 0 !important;
-    /* Replace outline with inset border */
-    border: 2px solid #ff9800 !important;
-    margin: -1px !important;
-  }
-  
-  .permanent-hour::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    border: none;
-    border-radius: 0;
+    margin-left: 0;
   }
   
   .timetable-content {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    height: calc(100% - 20px);
-    padding: 10px;
-    align-items: center;
-  }
-  
-  .table-container {
-    width: 95%;
-    height: auto;
-    min-height: 0;
-    margin-bottom: 5px;  /* Reduced from 10px */
-  }
-  
-  .bottom-content {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    align-items: start;
-    width: 95%;
-    gap: 15px; /* Set consistent gap */
-    margin-top: 2px;
-  }
-  
-  .time-table-buttons {
-    display: flex;
-    gap: 15px; /* Match the grid gap */
-    justify-content: flex-end;
-    padding: 5px 15px;
-    height: auto;
-    width: auto;
-    margin: 0;
-    align-self: flex-start;
-  }
-  
-  .date-cell {
-    font-size: 0.9em;
-    color: black;
-    font-weight: normal;
-    text-align: center;
-    background-color: var(--secondary-color);
-  }
-  
-  .window-controls {
-    position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    display: flex;
-    gap: 10px;
-  }
-  
-  .class-button-container {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-    max-width: 200px; /* Increased to accommodate both buttons */
-    margin: 10px auto;
-  }
-  
-  .edit-menu {
-    display: none;
-    position: absolute;
-    right: -120px;
-    top: 0;
-    background-color: var(--secondary-color);
-    border: 2px solid var(--primary-color);
-    border-radius: 5px;
-    padding: 10px;
-    z-index: 1000;
-  }
-  
-  .edit-menu.active {
-    display: block;
-  }
-  
-  .confirmation-dialog {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.7);
-    z-index: 3000;
-    justify-content: center;
-    align-items: center;
-  }
-  
-  .confirmation-content {
-    background-color: var(--secondary-color);
-    color: var(--primary-color);
-    padding: 20px;
-    border-radius: 10px;
-    text-align: center;
-    width: 300px;
-  }
-  
-  .confirmation-buttons {
-    display: flex;
-    justify-content: space-around;
-    margin-top: 20px;
-  }
-  
-  .class-name-edit {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.7);
-    z-index: 3000;
-    justify-content: center;
-    align-items: center;
-  }
-  
-  .edit-content {
-    background-color: var(--secondary-color);
-    color: var(--primary-color);
-    padding: 20px;
-    border-radius: 10px;
-    text-align: center;
-    width: 300px;
-  }
-  
-  .edit-content input {
-    width: 100%;
-    padding: 8px;
-    margin: 10px 0;
-    border: 2px solid var(--primary-color);
-    border-radius: 5px;
-    background-color: var(--third-color);
-    color: var(--primary-color);
-    box-sizing: border-box;
-  }
-  
-  .customization-menu {
-    display: none;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background-color: var(--secondary-color);
-    border: 2px solid var(--primary-color);
-    border-radius: 10px;
-    padding: 20px;
-    z-index: 3000;
-    min-width: 300px;
-  }
-  
-  .customization-menu h2 {
-    margin-top: 20px;
-    margin-bottom: 20px;
-    text-align: center;
-  }
-  
-  .customization-menu.active {
-    display: block;
-  }
-  
-  .customization-overlay {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    z-index: 2999;
-    opacity: 0;
-    animation: fadeOut 0.3s ease-out;
-  }
-  
-  .customization-overlay.active {
-    display: block;
-    opacity: 1;
-    animation: fadeIn 0.3s ease-out;
-  }
-  
-  .admin-controls {
-    margin-top: 10px;
-    text-align: center;
-  }
-  
-  .sidebar-bottom {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    position: absolute;
-    bottom: 65%; /* Moved up slightly more */
-    left: 0;
-    width: 100%;
-    text-align: center;
-    padding: 0 15px;
-    margin: 15px 0; /* Added margin for extra spacing */
-    box-sizing: border-box;
-  }
-  
-  .customization-menu h2,
-  .current-directory p {
-    color: var(--primary-color);
-  }
-  
-  .language-window {
-    display: none;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background-color: var(--secondary-color);
-    border: 2px solid var(--primary-color);
-    border-radius: 10px;
-    padding: 20px;
-    z-index: 3000;
-    min-width: 300px;
-  }
-  
-  .language-content {
-    position: relative;
-  }
-  
-  .language-content h2 {
-    color: var(--primary-color);
-    margin-bottom: 20px;
-    text-align: center;
-  }
-  
-  .language-buttons {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-  
-  .appearance-window {
-    display: none;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background-color: var(--secondary-color);
-    border: 2px solid var(--primary-color);
-    border-radius: 10px;
-    padding: 20px;
-    z-index: 3000;
-    min-width: 300px;
-  }
-  
-  .appearance-content {
-    position: relative;
-  }
-  
-  .appearance-content h2 {
-    color: var(--primary-color);
-    margin-bottom: 20px;
-    text-align: center;
-  }
-  
-  .appearance-buttons {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .calendar-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-    table-layout: fixed; /* Ensure consistent cell sizes */
+  display: flex;
+  flex-direction: column;
+  gap: 5px; /* Reduced from 10px */
+  height: calc(100% - 10px); /* Reduced from 20px */
+  padding: 5px; /* Reduced from 10px */
+  align-items: center;
 }
 
-.calendar-table th,
-.calendar-table td {
-    padding: 5px;
-    text-align: center;
-    border: 1px solid var(--primary-color);
-    width: 30px;
-    height: 25px;
-    font-size: 0.9em; /* Make font slightly smaller to fit better */
+.table-container {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+  box-sizing: border-box;
+  margin-bottom: 5px; /* Reduced from 10px */
+  flex: 1; /* Take available space */
+  min-height: 0; /* Allow flexbox to shrink */
 }
 
-.calendar-table th {
-    background-color: var(--secondary-color);
-    color: black;
-    font-weight: bold;
+.week-table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 800px;
+  margin: 0 auto;
+  background-color: var(--secondary-color);
+  position: relative;
+  box-sizing: border-box;
+  height: auto; /* Let content determine height */
 }
 
-.calendar-table td {
-    cursor: pointer;
-    color: black;
-    transition: background-color 0.2s ease; /* Smooth transition for hover effects */
+.week-table th, .week-table td {
+  border: 1px solid var(--primary-color);
+  padding: 4px; /* Reduced from 7px */
+  text-align: center;
+  color: black;
+  min-width: 72px;
+  height: 32px; /* Reduced from 36px */
+  font-size: 0.9em; /* Slightly smaller font */
 }
 
-.calendar-table td.hoverable:hover {
-    background-color: var(--highlight-color);
+.bottom-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 100%;
+  gap: 10px;
+  margin-top: 5px;
+  box-sizing: border-box;
+  overflow: visible;
+  flex-shrink: 0;
 }
 
-.calendar-table td.current-day {
-    background-color: var(--primary-color);
-    color: white;
-    font-weight: bold;
+.time-table-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  padding: 0;
+  height: auto;
+  width: auto;
+  margin: 0;
+  align-self: center;
 }
 
-.calendar-table td.selected {
-    background-color: var(--highlight-cell-color);
-    font-weight: bold;
-    box-shadow: inset 0 0 0 2px var(--primary-color); /* Add inner border to selected date */
+/* Calendar popup styles - fix z-index and positioning */
+.calendar-popup-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: -1; /* Hidden by default */
+  justify-content: center;
+  align-items: center;
+  pointer-events: none; /* Prevent blocking when hidden */
 }
 
-.calendar-table td.prev-month,
-.calendar-table td.next-month {
-    color: #aaa; /* Make non-current month dates lighter */
+.calendar-popup-overlay.active {
+  display: flex;
+  z-index: 9999; /* Only high z-index when active */
+  pointer-events: auto; /* Allow interactions when active */
 }
 
-.timetable-calendar {
-    max-width: 250px;
-    max-height: 250px;
-    font-size: 0.85em;
-    margin: 0;
-    padding: 5px 15px; 
-    height: auto;
-    overflow: visible;
-    order: 2;
-    justify-self: start;
-    border: 1px solid var(--secondary-color);
-    border-radius: 5px;
-    background-color: #fafafa;
+.calendar-popup {
+  background-color: var(--secondary-color);
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  max-width: 400px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  transform: scale(0.8);
+  opacity: 0;
+  transition: all 0.3s ease;
+  z-index: 10000;
+  position: relative;
 }
 
-.timetable-calendar .calendar-header {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    margin-bottom: 9px;  /* Reduced bottom margin */
+.calendar-popup.active {
+  transform: scale(1);
+  opacity: 1;
 }
 
-.timetable-calendar .calendar-header button {
-    border: none;
-    background: none;
-    color: var(--primary-color);
-    cursor: pointer;
-    font-size: 1.2em;
-    padding: 0 5px;
+.calendar-popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid var(--primary-color);
 }
 
-.timetable-calendar .calendar-header button:hover {
-    color: var(--highlight-color);
+.calendar-popup-header h3 {
+  margin: 0;
+  color: var(--primary-color);
+  font-size: 1.5em;
 }
 
-.timetable-calendar .calendar-title {
-    margin: 0;
-    font-size: 1.1em;
-    min-width: 120px;
-    text-align: center;
+.close-calendar-popup {
+  background: none;
+  border: none;
+  font-size: 1.5em;
+  color: var(--primary-color);
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 3px;
 }
 
-.timetable-calendar .calendar-table td,
-.timetable-calendar .calendar-table th {
-    padding: 4px; /* Reduced from 8px */
-    height: 28px; /* Reduced from 35px */
+.close-calendar-popup:hover {
+  background-color: var(--bakalar-color-hover);
+  color: var(--secondary-color);
 }
 
-.timetable-calendar .prev-button,
-.timetable-calendar .next-button {
-    padding: 2px 8px;
-    font-size: 0.9em;
+.calendar-popup-content {
+  padding: 20px;
 }
 
-.edit-button,
-.save-button {
-    margin-left: auto;  /* Push to the right */
-    margin-right: 15px;
+.calendar-navigation {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 15px;
 }
 
-.save-button {
-    display: none; /* Initially hidden */
+.popup-calendar-header {
+  text-align: center;
+  margin-bottom: 15px;
 }
 
-.editable {
-    background-color: rgba(255, 255, 255, 0.1);
-    cursor: text;
+.popup-calendar-header h4 {
+  margin: 0;
+  color: var(--primary-color);
+  font-size: 1.2em;
 }
 
-.editable:hover {
-    background-color: rgba(255, 255, 255, 0.2);
+.popup-calendar {
+  width: 100%;
 }
 
-.editable:focus {
-    background-color: rgba(255, 255, 255, 0.3);
-    outline: none;
+.popup-calendar .calendar-table {
+  width: 100%;
+  border-collapse: collapse;
 }
 
-.verification-window {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.7);
-    z-index: 3000;
-    justify-content: center;
-    align-items: center;
-    opacity: 0;
-    transition: opacity 0.3s ease-out;
+.popup-calendar .calendar-table th,
+.popup-calendar .calendar-table td {
+  border: 1px solid var(--primary-color);
+  padding: 8px 4px;
+  text-align: center;
+  cursor: pointer;
+  min-width: 35px;
+  height: 35px;
 }
 
-.verification-window.active {
-    display: flex !important; /* Force display when active */
-    opacity: 1;
-    transition: opacity 0.3s ease-in;
+.popup-calendar .calendar-table th {
+  background-color: var(--primary-color);
+  color: var(--secondary-color);
+  font-weight: bold;
 }
 
-.verification-content {
-    background-color: var(--secondary-color);
-    padding: 20px;
-    border-radius: 10px;
-    text-align: center;
-    max-width: 300px;
-    width: 90%;
-    position: relative; /* Add this */
+.popup-calendar .calendar-table td:hover {
+  background-color: var(--bakalar-color-hover);
 }
 
-.verification-content h2 {
-    color: var(--primary-color);
-    margin-bottom: 15px;
+.popup-calendar .calendar-table td.selected {
+  background-color: var(--primary-color);
+  color: var(--secondary-color);
+  font-weight: bold;
 }
 
-.verification-content input {
-    width: 100%;
-    padding: 8px;
-    margin: 10px 0;
-    border: 2px solid var(--primary-color);
-    border-radius: 5px;
-    background-color: var(--third-color);
-    color: var(--primary-color);
-    box-sizing: border-box;
+.popup-calendar .calendar-table td.current-day {
+  background-color: #ffeb3b;
+  font-weight: bold;
 }
 
-.verification-buttons {
-    display: flex;
-    justify-content: space-around;
-    margin-top: 20px;
-}
-
-.verification-buttons .confirm-verification {
-    padding: 10px 20px;
-    font-size: 1.2em;
-    background-color: var(--bakalar-color-basic);
-    color: black;
-    border: 2px solid var(--primary-color);
-    border-radius: 5px;
-    cursor: pointer;
-    font-weight: bold;
-    text-align: center;
-}
-
-.verification-buttons .confirm-verification:hover {
-    background-color: var(--bakalar-color-hover);
-    color: var(--primary-color);
-}
-
-.close-verification-button {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background: none;
-    border: none;
-    color: var (--primary-color);
-    font-size: 1.2em;
-    cursor: pointer;
-}
-
-.close-verification-button:hover {
-    color: var(--highlight-color);
+.popup-calendar .calendar-table td.prev-month,
+.popup-calendar .calendar-table td.next-month {
+  color: #999;
+  background-color: #f5f5f5;
 }
 
 .custom-alert {
@@ -1742,205 +1420,101 @@ body.debug-mode {
     display: none;
 }
 
-/* Logout confirmation styles */
+/* Logout confirmation styles - fix z-index and positioning */
+.logout-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: -1; /* Hidden by default */
+  justify-content: center;
+  align-items: center;
+  pointer-events: none; /* Prevent blocking when hidden */
+}
+
+.logout-overlay.active {
+  display: flex;
+  z-index: 9999; /* Only high z-index when active */
+  pointer-events: auto; /* Allow interactions when active */
+}
+
 .logout-confirm {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    display: none;
-    justify-content: center;
-    align-items: center;
-    z-index: 3000;
+  background-color: var(--secondary-color);
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  transform: scale(0.8);
+  opacity: 0;
+  transition: all 0.3s ease;
+  z-index: 10000;
+  position: relative;
+  max-width: 400px;
+  width: 90%;
+  margin: auto;
+}
+
+.logout-confirm.active {
+  transform: scale(1);
+  opacity: 1;
 }
 
 .logout-confirm-content {
-    background-color: var(--secondary-color);
-    border: 2px solid var(--primary-color);
-    border-radius: 10px;
-    padding: 20px;
-    width: 300px;
-    max-width: 90%;
-    text-align: center;
+  padding: 30px;
+  text-align: center;
 }
 
 .logout-confirm h3 {
-    margin-top: 0;
-    color: var(--primary-color);
-    font-size: 1.2em;
+  margin: 0 0 15px 0;
+  color: var(--primary-color);
+  font-size: 1.5em;
 }
 
 .logout-confirm p {
-    margin-bottom: 20px;
-    color: #333;
+  margin: 0 0 25px 0;
+  color: var(--primary-color);
+  font-size: 1.1em;
 }
 
 .logout-buttons {
-    display: flex;
-    justify-content: space-around;
+  display: flex;
+  gap: 15px;
+  justify-content: center;
 }
 
 .logout-buttons button {
-    padding: 8px 16px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-weight: bold;
-    transition: all 0.2s ease;
+  padding: 12px 24px;
+  border: 2px solid var(--primary-color);
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 1em;
+  transition: all 0.2s ease;
 }
 
 .logout-buttons #confirm-logout {
-    background-color: #f44336;
-    color: white;
-    border: none;
+  background-color: #ff4444;
+  color: white;
+  border-color: #ff4444;
 }
 
 .logout-buttons #confirm-logout:hover {
-    background-color: #d32f2f;
+  background-color: #cc0000;
+  border-color: #cc0000;
 }
 
 .logout-buttons #cancel-logout {
-    background-color: #e0e0e0;
-    color: #333;
-    border: none;
+  background-color: var(--bakalar-color-basic);
+  color: var(--primary-color);
 }
 
 .logout-buttons #cancel-logout:hover {
-    background-color: #bdbdbd;
+  background-color: var(--bakalar-color-hover);
+  color: var(--secondary-color);
 }
 
-.logout-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    z-index: 2999;
-    display: none;
+/* Hide the default timetable calendar */
+.timetable-calendar {
+  display: none !important;
 }
-
-/* Style for login required message */
-.login-required-message {
-    margin-top: 20px;
-    font-style: italic;
-}
-
-/* Update login button style when logged in */
-#login-button.logged-in {
-    background-color: var(--primary-color);
-    color: white;
-    position: relative;
-    padding-right: 60px; /* More room for the logout icon */
-    padding-left: 15px; /* More padding on the left */
-    margin: 10px; /* Add margin all around */
-    font-size: 1.1em; /* Slightly larger text */
-    border: 2px solid var(--bakalar-color-basic); /* Black border */
-    display: flex;
-    align-items: center; /* Vertically center content */
-}
-
-#login-button.logged-in::after {
-    content: "⏻";  /* Power/logout symbol */
-    position: absolute;
-    right: 15px;
-    font-size: 1.1em; /* Same size as the text */
-    margin-left: 10px; /* More space between text and icon */
-    line-height: 1; /* Ensure proper vertical alignment */
-    display: flex;
-    align-items: center;
-    height: 100%;
-}
-
-#login-button.logged-in:hover {
-    background-color: #ff5252;
-    color: white;
-    box-shadow: 0 0 8px rgba(0,0,0,0.3); /* Add shadow on hover */
-    border-color: #000; /* Keep the border black on hover */
-}
-
-#login-button.logged-in:hover::before {
-    content: "Click to logout";
-    position: absolute;
-    bottom: -35px; /* More space below */
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: rgba(0, 0, 0, 0.7);
-    color: white;
-    padding: 6px 12px; /* Larger padding */
-    border-radius: 4px;
-    font-size: 0.9em; /* Slightly larger tooltip */
-    white-space: nowrap;
-    z-index: 1000;
-    box-shadow: 0 3px 5px rgba(0,0,0,0.2); /* Add shadow to tooltip */
-}
-
-.toggle-permanent-btn {
-    padding: 8px 16px;
-    background-color: #e0e0e0;
-    color: #333;
-    border: 2px solid #999;
-    border-radius: 5px;
-    cursor: pointer;
-    font-weight: bold;
-    transition: all 0.2s ease;
-    margin-left: 10px;
-    position: relative;
-    display: none; /* Hidden by default, shown in admin mode by JS */
-    z-index: 100; /* Ensure it's above other elements */
-}
-
-.toggle-permanent-btn:hover {
-    background-color: #d0d0d0;
-}
-
-.toggle-permanent-btn.active {
-    background-color: #ff9800;
-    color: white;
-    border-color: #e68a00;
-}
-
-.toggle-permanent-btn.active:hover {
-    background-color: #e68a00;
-}
-
-/* Add a highlight effect for cells that would be marked permanent */
-.toggle-permanent-btn.active + .week-table td[contenteditable="true"]:focus {
-    box-shadow: 0 0 0 2px #ff9800;
-    background-color: #fff3e0 !important;
-}
-
-/* Container for time table buttons */
-.time-table-buttons {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin: 10px 0;
-    padding: 5px;
-    align-items: center;
-}
-
-/* Add or update styles for today's highlighting in the timetable */
-.today-cell {
-  background-color: var(--highlight-cell-color) !important; /* Bright yellow */
-  font-weight: bold !important;
-  border-left: 4px solid var(--highlight-color) !important; /* Orange border */
-  position: relative;
-}
-
-.today-cell::after {
-  content: "• today";
-  position: absolute;
-  bottom: 2px;
-  right: 5px;
-  font-size: 9px;
-  font-style: italic;
-  color: var(--highlight-cell-color);
-}
-
-.today-row {
-  background-color: var(--highlight-color) !important; /* Light yellow background */
-  position: relative;
-}
-
-/* Add highlighting for all cells in current day row */

@@ -1,0 +1,267 @@
+/* Responsive design styles - Desktop focused */
+
+:root {
+  /* Desktop optimized values */
+  --base-font-size: 16px;
+  --sidebar-width: 15%;
+  --header-height: 10%;
+  --calendar-size: 280px;
+  --table-cell-size: 36px;
+  --button-font-size: 1em;
+  --title-font-size: 2em;
+  --header-font-size: 1.5em;
+}
+
+/* Apply base font size to html element */
+html {
+  font-size: var(--base-font-size);
+}
+
+/* Large screens (primary target) */
+@media screen and (min-width: 1025px) {
+  :root {
+    --base-font-size: 16px;
+    --calendar-size: 280px;
+    --table-cell-size: 38px;
+  }
+}
+
+/* Extra large screens */
+@media screen and (min-width: 1441px) {
+  :root {
+    --base-font-size: 18px;
+    --calendar-size: 300px;
+    --table-cell-size: 42px;
+  }
+}
+
+/* Calendar navigation improvements */
+.calendar-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px; /* Reduced from 15px */
+  margin-bottom: 5px; /* Reduced from 10px */
+  height: 28px; /* Reduced from 32px */
+}
+
+.calendar-nav-btn {
+  height: 24px !important; /* Reduced from 28px */
+  min-height: 24px !important;
+  max-height: 24px !important;
+  padding: 2px 6px !important; /* Reduced padding */
+  font-size: 12px !important; /* Reduced from 14px */
+  line-height: 1 !important;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.calendar-nav-btn.prev,
+.calendar-nav-btn.next {
+  width: 24px; /* Reduced from 28px */
+  min-width: 24px;
+  padding: 2px !important;
+}
+
+.calendar-nav-btn.today {
+  width: auto;
+  min-width: 45px; /* Reduced from 50px */
+  padding: 2px 6px !important;
+}
+
+/* Timetable calendar header improvements */
+.timetable-calendar .calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 8px;
+  height: 32px; /* Fixed height */
+}
+
+.timetable-calendar .calendar-header button {
+  height: 28px !important;
+  min-height: 28px !important;
+  max-height: 28px !important;
+  width: 28px;
+  min-width: 28px;
+  padding: 4px !important;
+  font-size: 14px !important;
+  line-height: 1 !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--primary-color);
+  background: var(--secondary-color);
+  color: var(--primary-color);
+  border-radius: 4px;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.timetable-calendar .calendar-header button:hover {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.timetable-calendar .calendar-title {
+  margin: 0;
+  font-size: 16px !important;
+  font-weight: bold;
+  min-width: 140px;
+  text-align: center;
+  color: var(--primary-color);
+  line-height: 1.2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+}
+
+/* Remove scrolling and fix layout */
+.sidebar {
+  overflow-x: hidden; /* Remove horizontal scroll */
+  overflow-y: auto; /* Keep vertical scroll only if needed */
+  box-sizing: border-box;
+}
+
+.time-table {
+  overflow-x: hidden; /* Remove horizontal scroll */
+  overflow-y: auto; /* Keep vertical scroll only if needed */
+  box-sizing: border-box;
+}
+
+/* Ensure calendar container doesn't cause overflow */
+.timetable-calendar {
+  max-width: var(--calendar-size);
+  width: var(--calendar-size);
+  min-width: var(--calendar-size);
+  overflow: visible;
+  box-sizing: border-box;
+  flex-shrink: 0; /* Don't allow shrinking */
+}
+
+/* Fix bottom content layout to prevent overflow */
+.bottom-content {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  width: 100%;
+  max-width: 100%;
+  gap: 10px; /* Reduced from 20px */
+  margin-top: 5px; /* Reduced from 10px */
+  box-sizing: border-box;
+  overflow: visible;
+  min-height: 0; /* Allow shrinking */
+}
+
+.time-table-buttons {
+  display: flex;
+  gap: 10px; /* Reduced from 15px */
+  justify-content: flex-end;
+  padding: 0; /* Removed padding */
+  height: auto;
+  width: auto;
+  margin: 0;
+  align-self: flex-start;
+  flex-wrap: wrap;
+}
+
+/* Ensure table container doesn't overflow */
+.table-container {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto; /* Allow horizontal scroll only for table if needed */
+  overflow-y: visible;
+  box-sizing: border-box;
+}
+
+.week-table {
+  width: 100%;
+  min-width: 800px; /* Ensure minimum width for readability */
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* High-density screens (retina/high DPI) */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Fluid typography using clamp for smoother scaling */
+.title {
+  font-size: clamp(1.8em, 2vw + 1em, 2.5em);
+}
+
+h2 {
+  font-size: clamp(1.2em, 1.5vw + 0.5em, 2em);
+}
+
+/* Make tables more compact but prevent unnecessary scrolling */
+.week-table {
+  font-size: clamp(0.8rem, 1vw + 0.3rem, 0.95rem); /* Slightly smaller */
+}
+
+.week-table th, .week-table td {
+  height: clamp(28px, 3.5vh, 36px); /* Reduced max height */
+  min-width: clamp(65px, 5.5vw, 85px); /* Slightly smaller min width */
+  padding: 2px 4px; /* Reduced padding */
+}
+
+.calendar-table {
+  font-size: clamp(0.75rem, 0.9vw, 0.9rem); /* Smaller calendar font */
+}
+
+.calendar-table th, 
+.calendar-table td {
+  padding: clamp(2px, 0.4vw, 4px); /* Reduced padding */
+  height: clamp(20px, 2.5vh, 28px); /* Reduced height */
+}
+
+/* Responsive modal positioning - desktop optimized */
+.custom-alert,
+.verification-window .verification-content,
+.account-create-popup,
+.login-menu,
+.accounts-menu,
+.class-edit-popup {
+  max-width: 80vw; /* Increased for desktop */
+  min-width: 400px; /* Ensure minimum readable size */
+}
+
+/* Fix header to prevent horizontal overflow */
+header {
+  width: calc(100% - 2rem); /* Account for padding */
+  max-width: calc(100% - 2rem);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* Ensure sidebar content doesn't overflow */
+.sidebar ul {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.button-group {
+  width: 100%;
+  max-width: 200px;
+  box-sizing: border-box;
+}
+
+.dynamic-button {
+  width: 100%;
+  max-width: 180px;
+  min-width: 120px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+  box-sizing: border-box;
+}

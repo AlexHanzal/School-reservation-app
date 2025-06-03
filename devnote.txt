@@ -1,13 +1,20 @@
 | CHANGES |
-fixed the account button bug
-fixed made pernament hours work as a pernament hours
+separated out some code from renderer
+updated responsive sizing
+moved timetable into own menu/window - Set Week button
+added tooltips
+
+
 ------------------------------------------------
 
 | TO DO |
 setting a pernament hour from date to date
+replace Admin button with login with admin priviledges toggle in account creation
 
 ------------------------------------------------
 
 | NEEDS FIXING |
-when you click on a timetable it opens a different timetable
- than when you then click on any date in the timetable
+logout
+calendar window popup for selecting weeks' padding still exists
+	just invisible
+timetable buttons not working after initial edit via admin

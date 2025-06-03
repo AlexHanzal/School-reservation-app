@@ -1,5 +1,179 @@
 const API_URL = `http://${window.location.hostname}:3000/api`;
 
+// Desktop-focused responsive design functionality
+function setupResponsiveDesign() {
+    // Set CSS variables based on screen size
+    function updateResponsiveVars() {
+        const root = document.documentElement;
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        
+        // Calculate base scale factor for desktop
+        let scale = 1;
+        if (width > 1440) {
+            scale = 1.1;
+        } else if (width < 1200) {
+            scale = 0.95;
+        }
+        
+        // Set CSS variables
+        root.style.setProperty('--base-scale', scale);
+        
+        // Update layout for desktop optimization
+        updateDesktopLayout();
+    }
+    
+    // Desktop layout optimization
+    function updateDesktopLayout() {
+        // Ensure no horizontal scrolling
+        document.body.style.overflowX = 'hidden';
+        document.documentElement.style.overflowX = 'hidden';
+        
+        // Fix calendar layout
+        const calendar = document.getElementById('timetable-calendar');
+        if (calendar) {
+            // Reset any transforms
+            calendar.style.transform = '';
+            calendar.style.transformOrigin = '';
+        }
+    }
+    
+    // Run on page load
+    updateResponsiveVars();
+    
+    // Update on window resize
+    window.addEventListener('resize', updateResponsiveVars);
+}
+
+// Call the setup function on document load
+document.addEventListener('DOMContentLoaded', function() {
+    setupResponsiveDesign();
+});
+
+// Function to adjust table font size based on content width
+function adjustTableFontSizes() {
+    const tableCells = document.querySelectorAll('.week-table td:not(:first-child)');
+    tableCells.forEach(cell => {
+        const content = cell.textContent;
+        if (content.length > 20) {
+            cell.style.fontSize = '0.8em';
+        } else if (content.length > 15) {
+            cell.style.fontSize = '0.85em';
+        } else if (content.length > 10) {
+            cell.style.fontSize = '0.9em';
+        } else {
+            cell.style.fontSize = '1em';
+        }
+    });
+}
+
+// Call when timetables are loaded or saved
+function updateResponsiveLayout() {
+    adjustTableFontSizes();
+    
+    // Ensure no horizontal scrolling
+    document.body.style.overflowX = 'hidden';
+    document.documentElement.style.overflowX = 'hidden';
+    
+    // Ensure no vertical scrolling on main content
+    const timeTable = document.querySelector('.time-table');
+    if (timeTable) {
+        timeTable.style.overflowY = 'hidden';
+    }
+    
+    // Fix calendar layout
+    const calendar = document.getElementById('timetable-calendar');
+    if (calendar) {
+        calendar.style.transform = '';
+        calendar.style.transformOrigin = '';
+    }
+    
+    // Adjust buttons for available space
+    const timeTableButtons = document.querySelector('.time-table-buttons');
+    if (timeTableButtons) {
+        const containerWidth = timeTableButtons.offsetWidth;
+        const buttons = timeTableButtons.querySelectorAll('button');
+        
+        if (containerWidth < 400 && buttons.length > 1) {
+            buttons.forEach(button => {
+                button.style.padding = '6px 12px'; /* Reduced padding */
+                button.style.fontSize = '0.9em'; /* Smaller font */
+            });
+        }
+    }
+    
+    // Optimize table height to fit viewport
+    optimizeTableHeight();
+}
+
+// New function to ensure table fits in viewport
+function optimizeTableHeight() {
+    const timeTable = document.querySelector('.time-table');
+    const tableContainer = document.querySelector('.table-container');
+    const bottomContent = document.querySelector('.bottom-content');
+    
+    if (!timeTable || !tableContainer || !bottomContent) return;
+    
+    const timeTableHeight = timeTable.clientHeight;
+    const bottomContentHeight = bottomContent.offsetHeight;
+    const headerHeight = document.querySelector('h2').offsetHeight || 40;
+    const padding = 20; // Account for padding
+    
+    // Calculate available space for table
+    const availableHeight = timeTableHeight - bottomContentHeight - headerHeight - padding;
+    
+    // Set max height for table container
+    tableContainer.style.maxHeight = `${availableHeight}px`;
+    tableContainer.style.overflow = 'hidden'; // Prevent scrolling
+    
+    // Adjust table cell heights if needed
+    const cells = document.querySelectorAll('.week-table td, .week-table th');
+    const rowCount = document.querySelectorAll('.week-table tbody tr').length + 1; // +1 for header
+    const maxCellHeight = Math.floor((availableHeight - 10) / rowCount); // -10 for borders
+    
+    if (maxCellHeight > 20 && maxCellHeight < 40) {
+        cells.forEach(cell => {
+            cell.style.height = `${maxCellHeight}px`;
+            cell.style.maxHeight = `${maxCellHeight}px`;
+        });
+    }
+}
+
+// Add event listener for window resize
+window.addEventListener('resize', updateResponsiveLayout);
+
+// Add mutation observer to watch for table content changes
+const observeTableChanges = () => {
+    const targetNode = document.querySelector('.week-table tbody');
+    if (targetNode) {
+        const config = { childList: true, subtree: true, characterData: true };
+        const observer = new MutationObserver(adjustTableFontSizes);
+        observer.observe(targetNode, config);
+    }
+};
+
+// Hook into existing functions to update responsive layout
+const originalShowTimetable = showTimetable;
+showTimetable = function(name) {
+    originalShowTimetable(name);
+    setTimeout(() => {
+        updateResponsiveLayout();
+        optimizeTableHeight(); // Ensure proper sizing after showing timetable
+    }, 100);
+    observeTableChanges();
+};
+
+const originalSaveTimeTable = saveTimeTable;
+saveTimeTable = async function() {
+    await originalSaveTimeTable();
+    updateResponsiveLayout();
+};
+
+// Listen for fullscreen changes to adapt layout
+document.addEventListener('fullscreenchange', updateResponsiveLayout);
+
+// Remove mobile-specific media query listeners since mobile support is not needed
+
 const translations = {
     cs: {
         weekdays: ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'],
@@ -280,6 +454,12 @@ function showTimetable(name) {
     
     currentTimetableName = name;
     
+    // Make sure the default calendar stays hidden
+    const timetableCalendar = document.getElementById('timetable-calendar');
+    if (timetableCalendar) {
+        timetableCalendar.style.display = 'none';
+    }
+    
     // Display the calendar for this timetable
     generateCalendar();
     
@@ -458,142 +638,106 @@ function updateDayCells(startOfWeek) {
 // Function to display timetable data for the selected week - modified for flipped structure
 function displayTimetableDataForWeek(startOfWeek) {
     if (!currentTimetableName || !timetables[currentTimetableName]) return;
-    
     const timetableData = timetables[currentTimetableName];
     const dateString = startOfWeek.toISOString().split('T')[0];
-    
+
     // Clear previous data - only in cells that aren't in the first column
     const cells = document.querySelectorAll('.week-table tbody td:not(:first-child)');
     cells.forEach(cell => {
         cell.textContent = '';
-        cell.classList.remove('has-data');
-        cell.classList.remove('permanent-hour');
+        cell.classList.remove('has-data', 'permanent-hour');
         delete cell.dataset.permanent;
     });
-    
-    // Apply permanent hours from ALL weeks - these appear everywhere
+
+    // --- First pass: Render ALL permanent hours from ALL weeks ---
     if (timetableData.data) {
         for (const weekDate in timetableData.data) {
             const weekData = timetableData.data[weekDate];
             
-            // Handle both array and object formats for finding permanent hours
+            // Handle both array format and object format
             if (Array.isArray(weekData)) {
-                for (let dayIndex = 0; dayIndex < Math.min(weekData.length, 5); dayIndex++) {
-                    const dayData = weekData[dayIndex];
-                    if (!dayData) continue;
-                    
-                    Object.entries(dayData).forEach(([hourIndex, hourObj]) => {
-                        if (hourObj && hourObj.isPermanent) {
-                            const rowIndex = dayIndex;
-                            const colIndex = parseInt(hourIndex) - 1;
-                            
-                            if (rowIndex >= 0 && colIndex >= 0 && colIndex < 9) {
-                                const rows = document.querySelectorAll('.week-table tbody tr');
-                                if (rows[rowIndex]) {
-                                    const cells = rows[rowIndex].querySelectorAll('td:not(:first-child)');
-                                    if (cells[colIndex]) {
-                                        cells[colIndex].textContent = hourObj.content;
-                                        cells[colIndex].classList.add('permanent-hour');
-                                        cells[colIndex].dataset.permanent = 'true';
-                                    }
-                                }
+                // Array format: weekData[dayIndex][hourIndex] = hourObj
+                weekData.forEach((dayData, dayIndex) => {
+                    if (dayData && typeof dayData === 'object') {
+                        Object.entries(dayData).forEach(([hourIndex, hourObj]) => {
+                            if (hourObj && hourObj.isPermanent === true) {
+                                renderPermanentHour(dayIndex, parseInt(hourIndex), hourObj.content);
                             }
-                        }
-                    });
-                }
-            } else {
-                // Handle object format for days
+                        });
+                    }
+                });
+            } else if (typeof weekData === 'object') {
+                // Object format: weekData[dayIndex][hourIndex] = hourObj
                 Object.entries(weekData).forEach(([dayIndex, dayData]) => {
-                    const dayIdx = parseInt(dayIndex);
-                    if (dayIdx >= 5 || !dayData) return;
-                    
-                    Object.entries(dayData).forEach(([hourIndex, hourObj]) => {
-                        if (hourObj && hourObj.isPermanent) {
-                            const rowIndex = dayIdx;
-                            const colIndex = parseInt(hourIndex) - 1;
-                            
-                            if (rowIndex >= 0 && colIndex >= 0 && colIndex < 9) {
-                                const rows = document.querySelectorAll('.week-table tbody tr');
-                                if (rows[rowIndex]) {
-                                    const cells = rows[rowIndex].querySelectorAll('td:not(:first-child)');
-                                    if (cells[colIndex]) {
-                                        cells[colIndex].textContent = hourObj.content;
-                                        cells[colIndex].classList.add('permanent-hour');
-                                        cells[colIndex].dataset.permanent = 'true';
-                                    }
-                                }
+                    if (dayData && typeof dayData === 'object') {
+                        Object.entries(dayData).forEach(([hourIndex, hourObj]) => {
+                            if (hourObj && hourObj.isPermanent === true) {
+                                renderPermanentHour(parseInt(dayIndex), parseInt(hourIndex), hourObj.content);
                             }
-                        }
-                    });
+                        });
+                    }
                 });
             }
         }
-    }// Then apply data for the specific week if it exists - limit to first 5 days (Mon-Fri)
+    }
+
+    // --- Second pass: Render week-specific data, but NEVER overwrite permanent hours ---
     if (timetableData.data && timetableData.data[dateString]) {
         const weekData = timetableData.data[dateString];
         
-        // Handle both array and object formats
         if (Array.isArray(weekData)) {
-            // Process only Monday through Friday
-            const daysToProcess = Math.min(weekData.length, 5);
-            
-            for (let dayIndex = 0; dayIndex < daysToProcess; dayIndex++) {
-                const dayData = weekData[dayIndex];
-                if (!dayData) continue;
-                
-                const row = document.querySelectorAll('.week-table tbody tr')[dayIndex];
-                if (!row) continue;
-                
-                const cells = row.querySelectorAll('td:not(:first-child)');
-                
-                // Handle object format with hour indices as keys
-                Object.entries(dayData).forEach(([hourIndex, hourObj]) => {
-                    const colIndex = parseInt(hourIndex) - 1; // Convert to 0-based index
-                    const cell = cells[colIndex];
-                    if (!cell) return;
-                    
-                    if (hourObj && typeof hourObj === 'object' && hourObj.content) {
-                        // Only apply if not a permanent hour (unless this IS a permanent hour)
-                        if (!cell.classList.contains('permanent-hour') || hourObj.isPermanent) {
-                            cell.textContent = hourObj.content;
-                            cell.classList.add('has-data');
-                            if (hourObj.isPermanent) {
-                                cell.classList.add('permanent-hour');
-                                cell.dataset.permanent = 'true';
-                            }
+            // Array format
+            weekData.forEach((dayData, dayIndex) => {
+                if (dayData && typeof dayData === 'object') {
+                    Object.entries(dayData).forEach(([hourIndex, hourObj]) => {
+                        if (hourObj && !hourObj.isPermanent && hourObj.content) {
+                            renderRegularHour(dayIndex, parseInt(hourIndex), hourObj.content);
                         }
-                    }
-                });
-            }
-        } else {
-            // Handle object format for days
-            Object.entries(weekData).forEach(([dayIndex, dayData]) => {
-                const dayIdx = parseInt(dayIndex);
-                if (dayIdx >= 5) return; // Skip weekend days
-                
-                const row = document.querySelectorAll('.week-table tbody tr')[dayIdx];
-                if (!row || !dayData) return;
-                
-                const cells = row.querySelectorAll('td:not(:first-child)');
-                
-                Object.entries(dayData).forEach(([hourIndex, hourObj]) => {
-                    const colIndex = parseInt(hourIndex) - 1; // Convert to 0-based index
-                    const cell = cells[colIndex];
-                    if (!cell) return;
-                    
-                    if (hourObj && typeof hourObj === 'object' && hourObj.content) {
-                        // Only apply if not a permanent hour (unless this IS a permanent hour)
-                        if (!cell.classList.contains('permanent-hour') || hourObj.isPermanent) {
-                            cell.textContent = hourObj.content;
-                            cell.classList.add('has-data');
-                            if (hourObj.isPermanent) {
-                                cell.classList.add('permanent-hour');
-                                cell.dataset.permanent = 'true';
-                            }
-                        }
-                    }
-                });
+                    });
+                }
             });
+        } else if (typeof weekData === 'object') {
+            // Object format
+            Object.entries(weekData).forEach(([dayIndex, dayData]) => {
+                if (dayData && typeof dayData === 'object') {
+                    Object.entries(dayData).forEach(([hourIndex, hourObj]) => {
+                        if (hourObj && !hourObj.isPermanent && hourObj.content) {
+                            renderRegularHour(parseInt(dayIndex), parseInt(hourIndex), hourObj.content);
+                        }
+                    });
+                }
+            });
+        }
+    }
+}
+
+// Helper function to render permanent hours
+function renderPermanentHour(dayIndex, hourIndex, content) {
+    const colIndex = hourIndex - 1;
+    if (dayIndex >= 0 && dayIndex < 5 && colIndex >= 0 && colIndex < 9) {
+        const rows = document.querySelectorAll('.week-table tbody tr');
+        if (rows[dayIndex]) {
+            const cells = rows[dayIndex].querySelectorAll('td:not(:first-child)');
+            if (cells[colIndex]) {
+                cells[colIndex].textContent = content || '';
+                cells[colIndex].classList.add('permanent-hour', 'has-data');
+                cells[colIndex].dataset.permanent = 'true';
+            }
+        }
+    }
+}
+
+// Helper function to render regular hours (only if cell is not permanent)
+function renderRegularHour(dayIndex, hourIndex, content) {
+    const colIndex = hourIndex - 1;
+    if (dayIndex >= 0 && dayIndex < 5 && colIndex >= 0 && colIndex < 9) {
+        const rows = document.querySelectorAll('.week-table tbody tr');
+        if (rows[dayIndex]) {
+            const cells = rows[dayIndex].querySelectorAll('td:not(:first-child)');
+            if (cells[colIndex] && !cells[colIndex].classList.contains('permanent-hour')) {
+                cells[colIndex].textContent = content;
+                cells[colIndex].classList.add('has-data');
+            }
         }
     }
 }
@@ -870,10 +1014,17 @@ async function handleLogin() {
         const data = await response.json();
         if (response.ok) {
             const loginButton = document.getElementById('login-button');
+            const logoutButton = document.getElementById('logout-button');
+            
             loginButton.textContent = data.name; // Show user name
-            loginButton.title = "Click to logout"; // Add tooltip text
-            loginButton.setAttribute('aria-label', `${data.name} (Click to logout)`); // Accessibility
+            loginButton.setAttribute('data-tooltip', `Logged in as ${data.name}`);
             loginButton.classList.add('logged-in');
+            
+            // Show logout button and hide login button
+            if (logoutButton) {
+                logoutButton.style.display = 'block';
+                loginButton.style.display = 'none';
+            }
             
             // Store user information in our global object including admin status
             currentUser = {
@@ -975,11 +1126,13 @@ function closeLoginMenu() {
 
 function setupLoginHandlers() {
     const loginButton = document.getElementById('login-button');
+    const logoutButton = document.getElementById('logout-button');
     const loginMenu = document.getElementById('login-menu');
     const loginOverlay = document.getElementById('login-overlay');
     const closeLoginButton = document.getElementById('close-login');
     
-    if (loginButton && loginMenu && loginOverlay) {        loginButton.addEventListener('click', () => {
+    if (loginButton && loginMenu && loginOverlay) {
+        loginButton.addEventListener('click', () => {
             if (!loginButton.classList.contains('logged-in')) {
                 loginMenu.style.display = 'block';
                 loginOverlay.style.display = 'block';
@@ -992,6 +1145,13 @@ function setupLoginHandlers() {
                 showLogoutConfirmation();
             }
         });
+        
+        // Add logout button handler
+        if (logoutButton) {
+            logoutButton.addEventListener('click', () => {
+                showLogoutConfirmation();
+            });
+        }
         
         // Fix close button
         if (closeLoginButton) {
@@ -1113,10 +1273,11 @@ function toggleAdminEditMode() {
         saveButton.style.display = isAdminMode ? 'block' : 'none';
     }
     
-    // Update edit button text
+    // Update edit button text and tooltip
     const editButton = document.querySelector('.edit-button');
     if (editButton) {
         editButton.textContent = isAdminMode ? 'Admin Edit' : 'Edit';
+        editButton.setAttribute('data-tooltip', isAdminMode ? 'Admin editing mode active' : 'Edit timetable entries');
         editButton.style.backgroundColor = isAdminMode ? '#ff9800' : '';
     }
     
@@ -1128,6 +1289,7 @@ function toggleAdminEditMode() {
             toggleButton.id = 'toggle-permanent-btn';
             toggleButton.className = 'toggle-permanent-btn';
             toggleButton.textContent = 'Permanent Hours: OFF';
+            toggleButton.setAttribute('data-tooltip', 'Enable permanent hours mode - edited cells will become permanent across all weeks');
             toggleButton.addEventListener('click', togglePermanentHourMode);
             
             const timeTableButtons = document.querySelector('.time-table-buttons');
@@ -1715,12 +1877,13 @@ function createDynamicButton(name) {
     const button = document.createElement('button');
     button.className = 'dynamic-button';
     button.textContent = name;
+    button.setAttribute('data-tooltip', `Open timetable for ${name}`);
     button.addEventListener('click', () => showTimetable(name));
     
     const editButton = document.createElement('button');
     editButton.className = 'gear-icon';
     editButton.innerHTML = '✎';
-    editButton.title = 'Edit class';
+    editButton.setAttribute('data-tooltip', `Edit class settings for ${name} (Admin only)`);
     editButton.addEventListener('click', (e) => {
         e.stopPropagation(); // Prevent triggering the timetable show
         console.log('Edit button clicked for class:', name, 'Admin mode:', isAdminMode);
@@ -1767,7 +1930,7 @@ async function saveTimetable(name, data) {
 // Function to save the timetable, including permanent hours as objects in the data field
 async function saveTimeTable() {
     if (!currentTimetableName || !timetables[currentTimetableName]) {
-        showCustomAlert('Error', 'No timetable selected', 'error');
+        showCustomAlert('Error', 'No timetable selected to save', 'error');
         return;
     }
 
@@ -1783,32 +1946,41 @@ async function saveTimeTable() {
         timetables[currentTimetableName].data[dateString] = {};
     }
 
-    // Collect permanent hours that need to be propagated to all weeks
+    // Collect all permanent hours that need to be propagated
     const permanentHours = {};
 
-    // Save each cell as an object with content and isPermanent
+    // Save each cell as an object with content and isPermanent flag
     rows.forEach((row, dayIndex) => {
         const cells = row.querySelectorAll('td:not(:first-child)');
-        timetables[currentTimetableName].data[dateString][dayIndex] = {};
         cells.forEach((cell, hourIndex) => {
             const content = cell.textContent.trim();
-            if (content !== '') {
-                const isPermanent = cell.classList.contains('permanent-hour');
-                timetables[currentTimetableName].data[dateString][dayIndex][hourIndex + 1] = {
+            const isPermanent = cell.classList.contains('permanent-hour') || cell.dataset.permanent === 'true';
+            
+            // Initialize day data if it doesn't exist
+            if (!timetables[currentTimetableName].data[dateString][dayIndex]) {
+                timetables[currentTimetableName].data[dateString][dayIndex] = {};
+            }
+
+            const hourKey = (hourIndex + 1).toString();
+            
+            if (content || isPermanent) {
+                // Save as object with isPermanent flag
+                timetables[currentTimetableName].data[dateString][dayIndex][hourKey] = {
                     content: content,
                     isPermanent: isPermanent
                 };
-
-                // If this is a permanent hour, collect it for propagation
+                
+                // Collect permanent hours for propagation
                 if (isPermanent) {
-                    if (!permanentHours[dayIndex]) {
-                        permanentHours[dayIndex] = {};
-                    }
-                    permanentHours[dayIndex][hourIndex + 1] = {
+                    if (!permanentHours[dayIndex]) permanentHours[dayIndex] = {};
+                    permanentHours[dayIndex][hourKey] = {
                         content: content,
                         isPermanent: true
                     };
                 }
+            } else {
+                // Remove empty entries
+                delete timetables[currentTimetableName].data[dateString][dayIndex][hourKey];
             }
         });
     });
@@ -1816,62 +1988,46 @@ async function saveTimeTable() {
     // Propagate permanent hours to ALL existing weeks
     if (Object.keys(permanentHours).length > 0) {
         for (const weekDate in timetables[currentTimetableName].data) {
-            if (weekDate === dateString) continue; // Skip current week as it's already saved above
-
-            // Ensure the week data structure exists
-            if (!timetables[currentTimetableName].data[weekDate]) {
-                timetables[currentTimetableName].data[weekDate] = {};
-            }
-
-            // Apply permanent hours to this week
-            for (const dayIndex in permanentHours) {
-                if (!timetables[currentTimetableName].data[weekDate][dayIndex]) {
-                    timetables[currentTimetableName].data[weekDate][dayIndex] = {};
-                }
-
-                for (const hourIndex in permanentHours[dayIndex]) {
-                    timetables[currentTimetableName].data[weekDate][dayIndex][hourIndex] = permanentHours[dayIndex][hourIndex];
-                }
-            }
-        }
-    }
-
-    // Also remove permanent hours from other weeks if they were removed from current week
-    // Check all weeks for permanent hours that no longer exist in current week
-    for (const weekDate in timetables[currentTimetableName].data) {
-        if (weekDate === dateString) continue;
-
-        const weekData = timetables[currentTimetableName].data[weekDate];
-        for (const dayIndex in weekData) {
-            if (!weekData[dayIndex]) continue;
-            
-            for (const hourIndex in weekData[dayIndex]) {
-                const cellData = weekData[dayIndex][hourIndex];
-                if (cellData && cellData.isPermanent) {
-                    // Check if this permanent hour still exists in current week
-                    const currentWeekCell = timetables[currentTimetableName].data[dateString][dayIndex]?.[hourIndex];
-                    if (!currentWeekCell || !currentWeekCell.isPermanent) {
-                        // This permanent hour was removed, delete it from all weeks
-                        delete weekData[dayIndex][hourIndex];
+            if (weekDate !== dateString) {
+                for (const dayIndex in permanentHours) {
+                    if (!timetables[currentTimetableName].data[weekDate][dayIndex]) {
+                        timetables[currentTimetableName].data[weekDate][dayIndex] = {};
+                    }
+                    for (const hourKey in permanentHours[dayIndex]) {
+                        timetables[currentTimetableName].data[weekDate][dayIndex][hourKey] = {
+                            content: permanentHours[dayIndex][hourKey].content,
+                            isPermanent: true
+                        };
                     }
                 }
             }
         }
     }
 
-    // Update permanentHours for backward compatibility
-    timetables[currentTimetableName].permanentHours = {};
-    rows.forEach((row, dayIndex) => {
-        const cells = row.querySelectorAll('td:not(:first-child)');
-        timetables[currentTimetableName].permanentHours[dayIndex] = {};
-        cells.forEach((cell, hourIndex) => {
-            if (cell.classList.contains('permanent-hour')) {
-                timetables[currentTimetableName].permanentHours[dayIndex][hourIndex + 1] = cell.textContent.trim();
+    // Clean up permanent hours that were removed from current week
+    for (const weekDate in timetables[currentTimetableName].data) {
+        if (weekDate !== dateString) {
+            for (let dayIndex = 0; dayIndex < 5; dayIndex++) {
+                const dayData = timetables[currentTimetableName].data[weekDate][dayIndex];
+                if (dayData) {
+                    for (const hourKey in dayData) {
+                        const hourObj = dayData[hourKey];
+                        if (hourObj && hourObj.isPermanent) {
+                            // Check if this permanent hour still exists in current week
+                            const currentWeekHour = timetables[currentTimetableName].data[dateString][dayIndex]?.[hourKey];
+                            if (!currentWeekHour || !currentWeekHour.isPermanent) {
+                                // Remove the permanent hour from this week
+                                delete dayData[hourKey];
+                            }
+                        }
+                    }
+                }
             }
-        });
-    });
+        }
+    }
 
     await saveTimetable(currentTimetableName, timetables[currentTimetableName]);
+    showCustomAlert('Success', 'Timetable saved successfully', 'success');
 }
 
 // Function to show and initialize the select screen
@@ -1899,7 +2055,7 @@ function showSelectScreen() {
     selectScreen.style.height = '100%';
     selectScreen.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
     selectScreen.style.justifyContent = 'center';
-    selectScreen.style.alignItems = 'center';
+          selectScreen.style.alignItems = 'center';
     
     // Style the select window
     const selectWindow = selectScreen.querySelector('.select-window');
@@ -2164,6 +2320,9 @@ function setupUIHandlers() {
         });
     }
     
+    // Setup calendar popup handlers
+    setupCalendarPopupHandlers();
+    
     // Fix accounts menu close button
     const closeAccountsBtn = document.getElementById('close-accounts');
     if (closeAccountsBtn) {
@@ -2176,30 +2335,27 @@ function setupUIHandlers() {
             }
         });
     }
-      // Update accounts button functionality
-    const accountsButton = document.getElementById('accounts-button');
-    if (accountsButton) {
-        // Remove any existing event listeners
-        const newAccountsButton = accountsButton.cloneNode(true);
-        accountsButton.parentNode.replaceChild(newAccountsButton, accountsButton);
-        
-        newAccountsButton.addEventListener('click', () => {
-            // Allow if in admin mode OR debug mode
-            if (isAdminMode || document.body.classList.contains('debug-mode')) {
-                const accountsMenu = document.getElementById('accounts-menu');
-                const accountsOverlay = document.getElementById('accounts-overlay');
-                
-                if (accountsMenu && accountsOverlay) {
-                    accountsMenu.classList.add('active');
-                    accountsOverlay.classList.add('active');
-                    accountsMenu.style.display = 'block';
-                    accountsMenu.style.visibility = 'visible';
-                    accountsOverlay.style.display = 'block';
-                    accountsOverlay.style.visibility = 'visible';
-                }
+
+    // Update accounts button functionality
+    document.getElementById('accounts-button').addEventListener('click', () => {
+        // Allow if in admin mode OR debug mode
+        if (isAdminMode || document.body.classList.contains('debug-mode')) {
+            const accountsMenu = document.getElementById('accounts-menu');
+            const accountsOverlay = document.getElementById('accounts-overlay');
+
+            if (accountsMenu.style.display !== 'block') {
+                accountsMenu.style.display = 'block';
+                accountsMenu.style.visibility = 'visible';
+                accountsOverlay.style.display = 'block';
+                accountsOverlay.style.visibility = 'visible';
+            } else {
+                accountsMenu.style.display = 'none';
+                accountsMenu.style.visibility = 'hidden';
+                accountsOverlay.style.display = 'none';
+                accountsOverlay.style.visibility = 'hidden';
             }
-        });
-    }
+        }
+    });
     
     // Ensure consistent overlay click handling
     const accountsOverlay = document.getElementById('accounts-overlay');
@@ -2238,12 +2394,12 @@ function setupUIHandlers() {
                 isEditMode = !isEditMode;
                 console.log('Edit mode toggled:', isEditMode);
                 this.textContent = isEditMode ? 'Cancel' : 'Edit';
+                this.setAttribute('data-tooltip', isEditMode ? 'Cancel editing and discard changes' : 'Edit timetable entries');
                 
                 const cells = document.querySelectorAll('.week-table tbody td:not(:first-child)');
                 cells.forEach(cell => {                
                     if (!cell.classList.contains('permanent-hour')) {
-                                               cell.setAttribute('contenteditable', isEditMode ? 'true' : 'false');
-
+                        cell.setAttribute('contenteditable', isEditMode ? 'true' : 'false');
                         cell.classList.toggle('editable', isEditMode);
                         console.log('Cell editable set to:', cell.getAttribute('contenteditable'));
                     }
@@ -2272,6 +2428,7 @@ function setupUIHandlers() {
             const editButton = document.querySelector('.edit-button');
             if (editButton) {
                 editButton.textContent = 'Edit';
+                editButton.setAttribute('data-tooltip', 'Edit timetable entries');
             }
             saveButton.style.display = 'none';
             
@@ -2282,597 +2439,463 @@ function setupUIHandlers() {
                 cell.classList.remove('editable');
                 cell.classList.remove('edited-cell');
             });
-        });    }
-      // Accounts menu button event listeners - moved to main DOMContentLoaded handler to avoid duplicates
-    // The accounts button and menu handlers are now set up in the main DOMContentLoaded event listener
+        });
+    }
 }
 
-// Function to enable editing after login
-function enableCellEditingAfterLogin() {
-    console.log('Enabling cell editing after login');
+// Add calendar popup functionality
+function showCalendarPopup() {
+    const overlay = document.getElementById('calendarPopupOverlay');
+    const popup = document.getElementById('calendarPopup');
     
-    // Fix the edit button functionality first
-    const editButton = document.querySelector('.edit-button');
-    if (!editButton) {
-        console.error('Edit button not found');
+    if (!overlay || !popup) {
+        console.error('Calendar popup elements not found');
         return;
     }
     
-    // First, remove any existing event listeners to avoid duplicates
-    const newEditButton = editButton.cloneNode(true);
-    if (editButton.parentNode) {
-        editButton.parentNode.replaceChild(newEditButton, editButton);
+    // Generate calendar for popup
+    generatePopupCalendar();
+    
+    // Ensure proper z-index and positioning
+    overlay.style.zIndex = '9999';
+    popup.style.zIndex = '10000';
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
+    
+    overlay.classList.add('active');
+    popup.classList.add('active');
+}
+
+function hideCalendarPopup() {
+    const overlay = document.getElementById('calendarPopupOverlay');
+    const popup = document.getElementById('calendarPopup');
+    
+    overlay.classList.remove('active');
+    popup.classList.remove('active');
+}
+
+// Generate calendar specifically for popup
+function generatePopupCalendar() {
+    const currentRealDate = getCurrentDate();
+    const calendar = document.getElementById('popupCalendar');
+    const calendarTitle = document.getElementById('popupCalendarTitle');
+
+    calendarTitle.textContent = `${translations[currentLanguage].months[currentMonth]} ${currentYear}`;
+
+    const now = new Date(currentYear, currentMonth);
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    const firstDayOfWeek = new Date(currentYear, currentMonth, 1).getDay();
+    const daysInPrevMonth = new Date(currentYear, currentMonth, 0).getDate();
+
+    const table = document.createElement('table');
+    table.className = 'calendar-table';
+    const tableBody = document.createElement('tbody');
+
+    // Add weekday headers
+    const headerRow = document.createElement('tr');
+    translations[currentLanguage].weekdays.forEach(weekday => {
+        const headerCell = document.createElement('th');
+        headerCell.textContent = weekday;
+        headerRow.appendChild(headerCell);
+    });
+    tableBody.appendChild(headerRow);
+
+    // Adjust first day of week to start on Monday
+    const adjustedFirstDayOfWeek = (firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1);
+
+    let row = document.createElement('tr');
+
+    // Add previous month days
+    for (let i = adjustedFirstDayOfWeek; i > 0; i--) {
+        const prevMonthDay = daysInPrevMonth - i + 1;
+        const cell = document.createElement('td');
+        cell.textContent = prevMonthDay;
+        cell.classList.add('prev-month', 'month-dates');
+        row.appendChild(cell);
+    }
+
+    // Add current month days
+    for (let day = 1; day <= daysInMonth; day++) {
+        const cell = document.createElement('td');
+        cell.textContent = day;
+        cell.classList.add('hoverable');
+        
+        // Check if current day
+        if (day === currentRealDate.getDate() && 
+            currentMonth === currentRealDate.getMonth() && 
+            currentYear === currentRealDate.getFullYear()) {
+            cell.classList.add('current-day');
+        }
+
+        // Find if this day is the selected day for the current timetable
+        if (currentTimetableName && timetables[currentTimetableName]) {
+            const timetableDate = new Date(timetables[currentTimetableName].currentWeek);
+            if (day === timetableDate.getDate() && 
+                currentMonth === timetableDate.getMonth() && 
+                currentYear === timetableDate.getFullYear()) {
+                cell.classList.add('selected');
+            }
+        }
+
+        cell.addEventListener('click', (e) => {
+            selectDateFromPopup(day, e);
+        });
+        row.appendChild(cell);
+
+        // Start new row every 7 days
+        if ((adjustedFirstDayOfWeek + day) % 7 === 0) {
+            tableBody.appendChild(row);
+            row = document.createElement('tr');
+        }
+    }
+
+    // Add next month days if needed
+    if (row.children.length > 0) {
+        let nextMonthDay = 1;
+        while (row.children.length < 7) {
+            const cell = document.createElement('td');
+            cell.textContent = nextMonthDay++;
+            cell.classList.add('next-month', 'month-dates');
+            row.appendChild(cell);
+        }
+        tableBody.appendChild(row);
+    }
+
+    table.appendChild(tableBody);
+    calendar.innerHTML = '';
+    calendar.appendChild(table);
+}
+
+// Updated selectDate function for popup calendar
+function selectDateFromPopup(day = currentDate.getDate(), event) {
+    if (!currentTimetableName) {
+        showCustomAlert('Error', 'Please select a timetable first', 'error');
+        return;
     }
     
-    // Make sure the edit button properly toggles edit mode
-    newEditButton.addEventListener('click', function() {
-        console.log('Edit button clicked after login');
-        if (!isAdminMode) {
-            // Toggle edit mode
-            isEditMode = !isEditMode;
-            console.log('Edit mode toggled to:', isEditMode);
-            
-            // Update button text
-            this.textContent = isEditMode ? 'Cancel' : 'Edit';
-            
-            // Make cells editable or non-editable
-            const cells = document.querySelectorAll('.week-table tbody td:not(:first-child)');
-            cells.forEach(cell => {
-                if (!cell.classList.contains('permanent-hour')) {
-                    cell.setAttribute('contenteditable', isEditMode ? 'true' : 'false');
-                    cell.classList.toggle('editable', isEditMode);
-                    console.log('Cell editable set to:', cell.getAttribute('contenteditable'));
-                }
-            });
-            
-            // Set up cell editing with proper event handlers
-            if (isEditMode) {
-                setupCellEditing();
+    const selectedDate = new Date(currentYear, currentMonth, day);
+    
+    // Clear previous selections in popup calendar
+    document.querySelectorAll('.popup-calendar .calendar-table td.selected').forEach(cell => {
+        cell.classList.remove('selected');
+    });
+    
+    // Add selection to clicked date
+    if (event && event.target) {
+        event.target.classList.add('selected');
+    } else {
+        // Find and select the correct day cell
+        const dayCells = document.querySelectorAll('.popup-calendar .calendar-table td');
+        dayCells.forEach(cell => {
+            if (cell.textContent == day && !cell.classList.contains('prev-month') && !cell.classList.contains('next-month')) {
+                cell.classList.add('selected');
             }
-            
-            // Show/hide save button based on edit mode
-            const saveButton = document.querySelector('.save-button');
-            if (saveButton) {
-                saveButton.style.display = isEditMode ? 'block' : 'none';
+        });
+    }
+    
+    // Store the selected date for the current timetable
+    if (timetables[currentTimetableName]) {
+        timetables[currentTimetableName].currentWeek = selectedDate.toISOString();
+    }
+    
+    // Update timetable week view
+    updateTimetableForWeek(selectedDate);
+    
+    // Update week view title to show the selected date range
+    updateWeekViewTitle(selectedDate);
+    
+    // Close the calendar popup
+    hideCalendarPopup();
+    
+    showCustomAlert('Success', 'Week set successfully', 'success');
+}
+
+// Update the setupCalendarPopupHandlers function
+function setupCalendarPopupHandlers() {
+    // Set Week button handler
+    const setWeekButton = document.querySelector('.set-week-button');
+    if (setWeekButton) {
+        setWeekButton.addEventListener('click', () => {
+            if (!currentTimetableName) {
+                showCustomAlert('Error', 'Please select a timetable first', 'error');
+                return;
             }
+            showCalendarPopup();
+        });
+    }
+    
+    // Close button handler
+    const closeButton = document.getElementById('closeCalendarPopup');
+    if (closeButton) {
+        closeButton.addEventListener('click', hideCalendarPopup);
+    }
+    
+    // Overlay click handler
+    const overlay = document.getElementById('calendarPopupOverlay');
+    if (overlay) {
+        overlay.addEventListener('click', hideCalendarPopup);
+    }
+    
+    // Navigation button handlers
+    const prevBtn = document.getElementById('calendarPrevBtn');
+    const nextBtn = document.getElementById('calendarNextBtn');
+    const todayBtn = document.getElementById('calendarTodayBtn');
+    
+    if (prevBtn) {
+        prevBtn.addEventListener('click', () => {
+            navigateMonth(-1);
+            generatePopupCalendar();
+        });
+    }
+    
+    if (nextBtn) {
+        nextBtn.addEventListener('click', () => {
+            navigateMonth(1);
+            generatePopupCalendar();
+        });
+    }
+    
+    if (todayBtn) {
+        todayBtn.addEventListener('click', () => {
+            const today = new Date();
+            currentMonth = today.getMonth();
+            currentYear = today.getFullYear();
+            generatePopupCalendar();
+        });
+    }
+    
+    // Escape key handler
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && document.getElementById('calendarPopup').classList.contains('active')) {
+            hideCalendarPopup();
         }
     });
 }
 
-// Function to show class edit menu for admin operations
-function showClassEditMenu(name) {
-    console.log('Opening class edit menu for:', name);
-    
-    // Create popup if it doesn't exist
-    let popup = document.getElementById('class-edit-popup');
-    if (!popup) {
-        popup = document.createElement('div');
-        popup.id = 'class-edit-popup';
-        popup.className = 'class-edit-popup';
-        
-        popup.innerHTML = `
-            <h2>Edit Class</h2>
-            <div class="input-group">
-                <label for="class-name-edit">Class Name</label>
-                <input type="text" id="class-name-edit" placeholder="Enter new class name">
-            </div>
-            <div class="class-edit-error" id="class-edit-error"></div>
-            <div class="class-edit-actions">
-                <button id="rename-class-btn" class="primary-btn">Rename Class</button>
-                <button id="delete-class-btn" class="danger-btn">Delete Class</button>
-                <button id="cancel-class-edit-btn">Cancel</button>
-            </div>
-        `;
-        
-        document.body.appendChild(popup);
-        
-        // Add event listener for the cancel button
-        document.getElementById('cancel-class-edit-btn').addEventListener('click', hideClassEditMenu);
-        
-        // Add overlay if it doesn't exist
-        let overlay = document.getElementById('class-edit-overlay');
-        if (!overlay) {
-            overlay = document.createElement('div');
-            overlay.id = 'class-edit-overlay';
-            overlay.className = 'accounts-overlay';
-            overlay.addEventListener('click', hideClassEditMenu);
-            document.body.appendChild(overlay);
-        }
-    }
-    
-    // Set current class name
-    const nameInput = document.getElementById('class-name-edit');
-    nameInput.value = name;
-    
-    // Clear any previous errors
-    const errorElement = document.getElementById('class-edit-error');
-    errorElement.style.display = 'none';
-    errorElement.textContent = '';
-    
-    // Set data attribute to keep track of which class we're editing
-    popup.dataset.className = name;
-    
-    // Set up event handlers for rename and delete buttons
-    const renameBtn = document.getElementById('rename-class-btn');
-    renameBtn.onclick = () => renameClass(name);
-    
-    const deleteBtn = document.getElementById('delete-class-btn');
-    deleteBtn.onclick = () => deleteClass(name);
-    
-    // Show the popup and overlay
-    popup.style.display = 'block';
-    document.getElementById('class-edit-overlay').style.display = 'block';
-}
-
-// Function to hide the class edit menu
-function hideClassEditMenu() {
-    const popup = document.getElementById('class-edit-popup');
-    const overlay = document.getElementById('class-edit-overlay');
-    
-    if (popup) popup.style.display = 'none';
-    if (overlay) overlay.style.display = 'none';
-}
-
-// Function to rename a class
-async function renameClass(oldName) {
-    const nameInput = document.getElementById('class-name-edit');
-    const errorElement = document.getElementById('class-edit-error');
-    const newName = nameInput.value.trim();
-    
-    // Clear previous error
-    errorElement.style.display = 'none';
-    errorElement.textContent = '';
-    
-    // Validate new name
-    if (!newName) {
-        errorElement.textContent = 'Please enter a class name';
-        errorElement.style.display = 'block';
-        return;
-    }
-    
-    if (newName === oldName) {
-        hideClassEditMenu();
-        return; // No change needed
-    }
-    
-    // Check if the new name already exists
-    if (timetables[newName]) {
-        errorElement.textContent = 'A class with this name already exists';
-        errorElement.style.display = 'block';
-        return;
-    }
-    
-    // Show loading overlay
-    const loadingOverlay = document.getElementById('loadingOverlay');
-    if (loadingOverlay) {
-        loadingOverlay.classList.add('active');
-        loadingOverlay.style.display = 'flex';
-    }
-    
-    try {
-        // Clone the timetable data with the new name
-        const timetableData = { ...timetables[oldName] };
-        
-        // Create new timetable with the new name
-        const response = await fetch(`${API_URL}/timetables`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ name: newName })
-        });
-        
-        if (!response.ok) {
-            throw new Error('Failed to create new class');
-        }
-        
-        const result = await response.json();
-          // Update the data for the new class
-        const updateResponse = await fetch(`${API_URL}/timetables/${encodeURIComponent(newName)}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                fileId: result.fileId,
-                data: timetableData.data || {}, // Ensure we have at least an empty object
-                permanentHours: timetableData.permanentHours || {},
-                currentWeek: timetableData.currentWeek || new Date().toISOString()
-            })
-        });
-        
-        if (!updateResponse.ok) {
-            throw new Error('Failed to update class data');
-        }
-          // Delete the old class - using the correct API format
-        const deleteResponse = await fetch(`${API_URL}/timetables`, {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ name: oldName })
-        });
-        
-        if (!deleteResponse.ok) {
-            throw new Error(`Failed to delete old class: ${deleteResponse.status}`);
-        }
-        
-        // Update local data
-        timetables[newName] = {
-            ...timetableData,
-            className: newName,
-            fileId: result.fileId
-        };
-        delete timetables[oldName];
-        
-        // Update UI
-        const existingButton = document.querySelector(`.dynamic-button[data-name="${oldName}"]`);
-        if (existingButton) {
-            const container = existingButton.closest('.button-group');
-            if (container) {
-                container.remove();
-            }
-        }
-        
-        // Create new button
-        const dynamicButton = createDynamicButton(newName);
-        const container = document.getElementById('dynamic-links-container');
-        
-        // Set data attribute
-        const buttonElement = dynamicButton.querySelector('.dynamic-button');
-        if (buttonElement) {
-            buttonElement.setAttribute('data-name', newName);
-        }
-        
-        container.appendChild(dynamicButton);
-        
-        // Update current timetable name if we're renaming the active timetable
-        if (currentTimetableName === oldName) {
-            currentTimetableName = newName;
-            localStorage.setItem('currentTimetable', newName);
-            
-            // Update title
-            const timeTableTitle = document.querySelector('.time-table h2');
-            if (timeTableTitle) {
-                timeTableTitle.textContent = newName;
-            }
-        }
-        
-        // Hide loading overlay and edit menu
-        if (loadingOverlay) {
-            loadingOverlay.classList.remove('active');
-            loadingOverlay.style.display = 'none';
-        }
-        
-        hideClassEditMenu();
-        showCustomAlert('Success', 'Class renamed successfully', 'success');
-          } catch (error) {
-        console.error('Failed to rename class:', error);
-        
-        // Hide loading overlay
-        if (loadingOverlay) {
-            loadingOverlay.classList.remove('active');
-            loadingOverlay.style.display = 'none';
-        }
-        
-        // Show detailed error in UI
-        errorElement.textContent = `Failed to rename class: ${error.message}`;
-        errorElement.style.display = 'block';
-        
-        // Show alert with error details
-        showCustomAlert('Error', `Unable to rename the class. Please try again. (${error.message})`, 'error');
+// Function to enable cell editing after login
+function enableCellEditingAfterLogin() {
+    if (isEditMode) {
+        setupCellEditing();
     }
 }
 
-// Function to delete a class
-async function deleteClass(name) {
-    // Ask for confirmation
-    const confirmDelete = confirm(`Are you sure you want to delete the class "${name}"? This cannot be undone.`);
-    if (!confirmDelete) return;
-    
-    // Show loading overlay
-    const loadingOverlay = document.getElementById('loadingOverlay');
-    if (loadingOverlay) {
-        loadingOverlay.classList.add('active');
-        loadingOverlay.style.display = 'flex';
-    }
-    
-    try {
-        console.log(`Attempting to delete class: ${name}`);
-        
-        // We'll focus only on local deletion as server deletion is problematic
-        console.log(`Performing local deletion and tracking in localStorage`);
-        
-        // Make a best-effort background request to delete on server but don't wait for it
-        const fileId = timetables[name]?.fileId;
-        if (fileId) {
-            try {
-                console.log(`Sending background delete request for fileId: ${fileId}`);
-                fetch(`${API_URL}/timetables/file/${fileId}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                }).then(response => {
-                    console.log(`Background delete request completed with status: ${response.status}`);
-                }).catch(error => {
-                    console.log(`Error in background delete request: ${error}`);
-                });
-            } catch (fetchError) {
-                console.log(`Error initiating background delete request: ${fetchError}`);
-                // Ignore fetch errors - we'll still proceed with local deletion
-            }
-        }
-        
-        // Remove from local data
-        delete timetables[name];
-        
-        // Add an entry to localStorage to track deleted classes
-        let deletedClasses = JSON.parse(localStorage.getItem('deletedClasses') || '[]');
-        deletedClasses.push(name);
-        localStorage.setItem('deletedClasses', JSON.stringify(deletedClasses));
-        console.log(`Added ${name} to deleted classes list in localStorage`);
-        
-        // Remove button from UI
-        const existingButton = document.querySelector(`.dynamic-button[data-name="${name}"]`);
-        if (existingButton) {
-            const container = existingButton.closest('.button-group');
-            if (container) {
-                container.remove();
-            }
-        }
-        
-        // If this was the current timetable, hide it
-        if (currentTimetableName === name) {
-            const timeTable = document.querySelector('.time-table');
-            if (timeTable) {
-                timeTable.style.display = 'none';
-            }
-            currentTimetableName = '';
-            localStorage.removeItem('currentTimetable');
-        }
-        
-        // Hide loading overlay and edit menu
-        if (loadingOverlay) {
-            loadingOverlay.classList.remove('active');
-            loadingOverlay.style.display = 'none';
-        }
-        
-        hideClassEditMenu();
-        showCustomAlert('Success', 'Class deleted successfully', 'success');
-    } catch (error) {
-        console.error('Failed to delete class:', error);
-        
-        // Hide loading overlay
-        if (loadingOverlay) {
-            loadingOverlay.classList.remove('active');
-            loadingOverlay.style.display = 'none';
-        }
-        
-        // Show detailed error in UI
-        const errorElement = document.getElementById('class-edit-error');
-        errorElement.textContent = `Failed to delete class: ${error.message}`;
-        errorElement.style.display = 'block';
-        
-        // Show alert with error details
-        showCustomAlert('Error', `Unable to delete the class. Please try again. (${error.message})`, 'error');
-    }
-}
-
-// Function to show custom alerts
+// Add the missing showCustomAlert function
 function showCustomAlert(title, message, type = 'info') {
-    // Create the alert element if it doesn't exist
-    let customAlert = document.getElementById('custom-alert');
-    if (!customAlert) {
-        customAlert = document.createElement('div');
-        customAlert.id = 'custom-alert';
-        customAlert.className = 'custom-alert';
-        
-        customAlert.innerHTML = `
-            <h2></h2>
-            <p></p>
-            <button>OK</button>
-        `;
-        
-        document.body.appendChild(customAlert);
-        
-        // Add event listener to close button
-        customAlert.querySelector('button').addEventListener('click', () => {
-            customAlert.classList.remove('active');
-            const overlay = document.getElementById('custom-alert-overlay');
-            if (overlay) overlay.classList.remove('active');
-        });
-        
-        // Create overlay if it doesn't exist
-        let overlay = document.getElementById('custom-alert-overlay');
-        if (!overlay) {
-            overlay = document.createElement('div');
-            overlay.id = 'custom-alert-overlay';
-            overlay.className = 'custom-alert-overlay';
-            document.body.appendChild(overlay);
-        }
-    }
+    // Remove any existing alert
+    const existingAlert = document.getElementById('customAlert');
+    const existingOverlay = document.getElementById('alertOverlay');
     
-    // Set the content and type
-    customAlert.querySelector('h2').textContent = title;
-    customAlert.querySelector('p').textContent = message;
+    if (existingAlert) existingAlert.remove();
+    if (existingOverlay) existingOverlay.remove();
     
-    // Remove any existing type classes
-    customAlert.classList.remove('info', 'error', 'success', 'warning');
+    // Create overlay
+    const overlay = document.createElement('div');
+    overlay.id = 'alertOverlay';
+    overlay.className = 'custom-alert-overlay';
     
-    // Add the appropriate type class
-    customAlert.classList.add(type);
+    // Create alert
+    const alert = document.createElement('div');
+    alert.id = 'customAlert';
+    alert.className = `custom-alert ${type}`;
     
-    // Make the alert visible
-    customAlert.classList.add('active');
+    alert.innerHTML = `
+        <h2>${title}</h2>
+        <p>${message}</p>
+        <button onclick="hideCustomAlert()">OK</button>
+    `;
     
-    // Make the overlay visible
-    const overlay = document.getElementById('custom-alert-overlay');
-    if (overlay) overlay.classList.add('active');
+    document.body.appendChild(overlay);
+    document.body.appendChild(alert);
+    
+    // Show with animation
+    setTimeout(() => {
+        overlay.classList.add('active');
+        alert.classList.add('active');
+    }, 10);
     
     // Auto-hide after 3 seconds for success messages
     if (type === 'success') {
-        setTimeout(() => {
-            customAlert.classList.remove('active');
-            if (overlay) overlay.classList.remove('active');
-        }, 3000);
+        setTimeout(hideCustomAlert, 3000);
     }
 }
 
-// Function to show logout confirmation
+function hideCustomAlert() {
+    const alert = document.getElementById('customAlert');
+    const overlay = document.getElementById('alertOverlay');
+    
+    if (alert) alert.classList.remove('active');
+    if (overlay) overlay.classList.remove('active');
+    
+    setTimeout(() => {
+        if (alert) alert.remove();
+        if (overlay) overlay.remove();
+    }, 300);
+}
+
+// Add logout confirmation functionality
 function showLogoutConfirmation() {
-    // Create the confirmation popup if it doesn't exist
-    let confirmPopup = document.getElementById('logout-confirm');
-    if (!confirmPopup) {
-        confirmPopup = document.createElement('div');
-        confirmPopup.id = 'logout-confirm';
-        confirmPopup.className = 'logout-confirm';
-        
-        confirmPopup.innerHTML = `
-            <div class="logout-confirm-content">
-                <h3>Confirm Logout</h3>
-                <p>Are you sure you want to log out?</p>
-                <div class="logout-buttons">
-                    <button id="confirm-logout">Yes, Log Out</button>
-                    <button id="cancel-logout">Cancel</button>
-                </div>
-            </div>
-        `;
-        
-        document.body.appendChild(confirmPopup);
-        
-        // Add overlay if it doesn't exist
-        let overlay = document.getElementById('logout-overlay');
-        if (!overlay) {
-            overlay = document.createElement('div');
-            overlay.id = 'logout-overlay';
-            overlay.className = 'logout-overlay';
-            document.body.appendChild(overlay);
-        }
-        
-        // Add event listeners for buttons
-        document.getElementById('confirm-logout').addEventListener('click', performLogout);
-        document.getElementById('cancel-logout').addEventListener('click', hideLogoutConfirmation);
-        
-        // Add event listener to overlay for dismissal
-        overlay.addEventListener('click', hideLogoutConfirmation);
+    const overlay = document.getElementById('logoutOverlay');
+    const dialog = document.getElementById('logoutConfirmDialog');
+    
+    if (!overlay || !dialog) {
+        console.error('Logout confirmation elements not found');
+        return;
     }
     
-    // Show the popup and overlay
-    confirmPopup.style.display = 'flex';
-    document.getElementById('logout-overlay').style.display = 'block';
-}
-
-// Function to hide logout confirmation
-function hideLogoutConfirmation() {
-    const confirmPopup = document.getElementById('logout-confirm');
-    const overlay = document.getElementById('logout-overlay');
+    // Ensure proper positioning and z-index
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
+    overlay.style.zIndex = '9999';
+    overlay.style.display = 'flex';
+    overlay.style.justifyContent = 'center';
+    overlay.style.alignItems = 'center';
     
-    if (confirmPopup) confirmPopup.style.display = 'none';
-    if (overlay) overlay.style.display = 'none';
+    dialog.style.zIndex = '10000';
+    dialog.style.position = 'relative';
+    
+    // Show with animation
+    setTimeout(() => {
+        overlay.classList.add('active');
+        dialog.classList.add('active');
+    }, 10);
+    
+    // Set up event listeners (remove any existing ones first)
+    const confirmBtn = document.getElementById('confirm-logout');
+    const cancelBtn = document.getElementById('cancel-logout');
+    
+    if (confirmBtn) {
+        confirmBtn.onclick = performLogout;
+    }
+    
+    if (cancelBtn) {
+        cancelBtn.onclick = hideLogoutConfirmation;
+    }
+    
+    overlay.onclick = (e) => {
+        if (e.target === overlay) {
+            hideLogoutConfirmation();
+        }
+    };
 }
 
-// Function to perform the logout
+function hideLogoutConfirmation() {
+    const overlay = document.getElementById('logoutOverlay');
+    const dialog = document.getElementById('logoutConfirmDialog');
+    
+    if (overlay) overlay.classList.remove('active');
+    if (dialog) dialog.classList.remove('active');
+    
+    setTimeout(() => {
+        if (overlay) {
+            overlay.style.display = 'none';
+        }
+    }, 300);
+}
+
 function performLogout() {
-    // Reset user information
+    // Reset user state
     currentUser = {
         name: null,
         abbreviation: null,
         isLoggedIn: false,
-        isAdmin: false // Make sure to reset admin status too
+        isAdmin: false
     };
     
-    // Disable admin mode when logging out
-    if (isAdminMode) {
-        isAdminMode = false;
-        disableDebugMode(); // Clean up any admin UI
+    // Reset admin mode
+    isAdminMode = false;
+    isEditMode = false;
+    
+    // Update login and logout buttons
+    const loginButton = document.getElementById('login-button');
+    const logoutButton = document.getElementById('logout-button');
+    
+    if (loginButton) {
+        loginButton.textContent = 'Login';
+        loginButton.classList.remove('logged-in');
+        loginButton.setAttribute('data-tooltip', 'Click to login');
+        loginButton.style.display = 'block';
     }
     
-    // Update UI
-    const loginButton = document.getElementById('login-button');
-    loginButton.textContent = 'Login';
-    loginButton.classList.remove('logged-in');
-
-    // Hide the timetable view
+    if (logoutButton) {
+        logoutButton.style.display = 'none';
+    }
+    
+    // Hide admin features
+    const adminButton = document.getElementById('admin-button');
+    if (adminButton) {
+        adminButton.innerHTML = 'Admin Mode';
+        adminButton.classList.remove('admin-active');
+        adminButton.disabled = false;
+    }
+    
+    const accountsButton = document.getElementById('accounts-button');
+    if (accountsButton) {
+        accountsButton.style.display = 'none';
+        accountsButton.classList.remove('admin-visible');
+    }
+    
+    const toggleButton = document.getElementById('toggle-permanent-btn');
+    if (toggleButton) {
+        toggleButton.style.display = 'none';
+    }
+    
+    // Hide gear icons
+    document.querySelectorAll('.gear-icon').forEach(icon => {
+        icon.classList.remove('visible');
+    });
+    
+    const createNewBtn = document.getElementById('create-new');
+    if (createNewBtn) {
+        createNewBtn.classList.remove('admin-visible');
+    }
+    
+    // Reset cells to non-editable
+    const cells = document.querySelectorAll('.week-table tbody td:not(:first-child)');
+    cells.forEach(cell => {
+        cell.setAttribute('contenteditable', 'false');
+        cell.classList.remove('editable', 'edited-cell');
+    });
+    
+    // Hide save button
+    const saveButton = document.querySelector('.save-button');
+    if (saveButton) {
+        saveButton.style.display = 'none';
+    }
+    
+    // Reset edit button
+    const editButton = document.querySelector('.edit-button');
+    if (editButton) {
+        editButton.textContent = 'Edit';
+        editButton.setAttribute('data-tooltip', 'Edit timetable entries');
+    }
+    
+    // Hide timetable view
     const timeTable = document.querySelector('.time-table');
     if (timeTable) {
         timeTable.style.display = 'none';
     }
     
-    // Hide logout confirmation
+    // Clear timetables and reload
+    loadTimetables();
+    
+    // Hide logout dialog
     hideLogoutConfirmation();
     
-    // Clear timetable data from memory
-    timetables = {};
-    currentTimetableName = '';
-    
-    // Remove all timetable buttons
-    document.querySelectorAll('.button-group').forEach(group => {
-        group.remove();
-    });
-    
-    // Clear timetable container
-    const container = document.getElementById('dynamic-links-container');
-    if (container) {
-        container.innerHTML = '';
-        
-        // Show login required message
-        const loginMessage = document.createElement('div');
-        loginMessage.className = 'login-required-message';
-        loginMessage.textContent = 'Please log in to view classes';
-        loginMessage.style.textAlign = 'center';
-        loginMessage.style.padding = '20px';
-        loginMessage.style.color = '#777';
-        container.appendChild(loginMessage);
-    }
-    
-    // Show success message
-    showCustomAlert('Success', 'You have been logged out', 'success');
+    showCustomAlert('Success', 'You have been logged out successfully', 'success');
 }
 
-// Function to toggle permanent hour mode
-let permanentHourModeEnabled = false;
+// Add missing timetables object initialization
+let timetables = {};
 
-function togglePermanentHourMode() {
-    permanentHourModeEnabled = !permanentHourModeEnabled;
-    const toggleButton = document.getElementById('toggle-permanent-btn');
-    
-    if (toggleButton) {
-        if (permanentHourModeEnabled) {
-            toggleButton.classList.add('active');
-            toggleButton.textContent = 'Permanent Hours: ON';
-        } else {
-            toggleButton.classList.remove('active');
-            toggleButton.textContent = 'Permanent Hours: OFF';
-        }
-    }
-    
-    // Show feedback to user
-    showCustomAlert('Admin Mode', 
-        permanentHourModeEnabled ? 
-        'Permanent hours mode is now ON. Edited cells will become permanent.' : 
-        'Permanent hours mode is now OFF. Edited cells will be regular entries.', 
-        'info');
-}
-
-// Render the timetable for the given date string
-function renderTimetableForDate(dateString) {
-    const timetable = timetables[currentTimetableName];
-    if (!timetable || !timetable.data || !timetable.data[dateString]) return;
-    const weekData = timetable.data[dateString];
-    const rows = document.querySelectorAll('.week-table tbody tr');
-    weekData.forEach((dayData, dayIndex) => {
-        const cells = rows[dayIndex]?.querySelectorAll('td:not(:first-child)');
-        if (!cells) return;
-        Object.entries(dayData).forEach(([hourIndex, hourObj]) => {
-            const cell = cells[parseInt(hourIndex) - 1];
-            if (!cell) return;
-            cell.textContent = hourObj.content;
-            if (hourObj.isPermanent) {
-                cell.classList.add('permanent-hour');
-            } else {
-                cell.classList.remove('permanent-hour');
-            }
-        });
-    });
+// Add missing showClassEditMenu function
+function showClassEditMenu(className) {
+    console.log('Opening class edit menu for:', className);
+    // This function can be implemented later for class editing functionality
+    showCustomAlert('Info', 'Class editing functionality coming soon', 'info');
 }

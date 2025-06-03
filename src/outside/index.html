@@ -2,46 +2,51 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Day App</title>
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/buttons.css">
+    <link rel="stylesheet" href="/css/responsive.css">
 </head>
 <body>
   <header class="header" id="header">
+    <div id="mobile-menu-container">
+      <!-- Mobile sidebar toggle will be added here by JS -->
+    </div>
     <h1 class="title">Zaber si</h1>
     <div class="window-controls">
-        <button id="login-button">Login</button>
+        <button id="login-button" class="login-button" data-tooltip="Click to login or logout">Login</button>
+        <button id="logout-button" style="display: none;" data-tooltip="Click to logout">Log out</button>
     </div>
   </header>
 
   <!-- Add login overlay and menu after header -->
   <div class="login-overlay" id="login-overlay"></div>
   <div class="login-menu" id="login-menu">
-    <button class="close-accounts-button" id="close-login">×</button>
+    <button class="close-accounts-button" id="close-login" data-tooltip="Close login dialog">×</button>
     <h3>User Login</h3>
     <div class="input-group">
         <label for="user-select">User:</label>
-        <select id="user-select">
+        <select id="user-select" data-tooltip="Choose your user account">
             <option value="">Select a user</option>
         </select>
     </div>
     <div class="input-group">
-        <label for="password-input">Password:</label>
-        <input type="password" id="password-input" placeholder="Enter password">
+        <label for="password-input">Password</label>
+        <input type="password" id="password-input" placeholder="Enter password" data-tooltip="Enter your password">
     </div>
     <div class="login-error" id="login-error"></div>
-    <button id="submit-login">Login</button>
+    <button id="submit-login" class="confirm-verification" data-tooltip="Login with selected credentials">Login</button>
   </div>
   
   <!-- Replace the existing sidebar with this well-structured version -->
   <aside class="sidebar">
     <ul>
       <li id="dynamic-links-container"><!-- Dynamic buttons will be added here --></li>
-      <li><button class="create-new" id="create-new">+</button></li>
+      <li><button class="create-new" id="create-new" data-tooltip="Create a new class timetable">+</button></li>
     </ul>
-    <button id="accounts-button">Accounts</button>
-    <button class="admin-button" id="admin-button">Admin</button>
+    <button id="accounts-button" class="admin-button" data-tooltip="Manage user accounts (Admin only)">Accounts</button>
+    <button class="admin-button" id="admin-button" data-tooltip="Enter admin verification code to access admin features">Admin</button>
   </aside>
 
   <!-- Add accounts overlay -->
@@ -49,7 +54,7 @@
   
   <div class="select-screen" id="select-screen">
     <div class="select-window">
-      <button class="close-select" id="close-select">X</button>
+      <button class="close-select" id="close-select" class="close-create-new" data-tooltip="Close this dialog">X</button>
       <div class="input-group">
         <label for="name-input">Name:</label>
         <input type="text" id="name-input" placeholder="Enter name">
@@ -61,76 +66,129 @@
           <option value="class">Class</option>
         </select>
       </div>
-      <button class="submit-button" id="submit-button">Submit</button>
+      <button class="submit-button" id="submit-button" data-tooltip="Create the new class">Create</button>
     </div>
   </div>
   
-  <div class="time-table">
-    <h2>Time Table</h2>
-    <div class="timetable-content">
+  <!-- Update the time-table section -->
+  <div class="time-table" style="display: none;">
+    <h2>Select a Class</h2>
+    <div class="bottom-content">
+      <!-- Hide the default calendar -->
+      </div>
+      <div id="week-view-title" style="text-align: center; margin-bottom: 10px; font-weight: bold;"></div>
       <div class="table-container">
         <table class="week-table">
           <thead>
             <tr>
-              <th>Day</th>
-              <th>1</th>
-              <th>2</th>
-              <th>3</th>
-              <th>4</th>
-              <th>5</th>
-              <th>6</th>
-              <th>7</th>
-              <th>8</th>
-              <th>9</th>
-              <th>10</th>
+              <th></th>
+              <th>8:00</th>
+              <th>9:00</th>
+              <th>10:00</th>
+              <th>11:00</th>
+              <th>12:00</th>
+              <th>13:00</th>
+              <th>14:00</th>
+              <th>15:00</th>
+              <th>16:00</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td>Pondělí</td>
-              <td></td><td></td><td></td><td></td><td></td>
-              <td></td><td></td><td></td><td></td><td></td>
+              <td><strong>Mon</strong></td>
+              <td contenteditable="false"></td>
+              <td contenteditable="false"></td>
+              <td contenteditable="false"></td>
+              <td contenteditable="false"></td>
+              <td contenteditable="false"></td>
+              <td contenteditable="false"></td>
+              <td contenteditable="false"></td>
+              <td contenteditable="false"></td>
+              <td contenteditable="false"></td>
             </tr>
             <tr>
-              <td>Úterý</td>
-              <td></td><td></td><td></td><td></td><td></td>
-              <td></td><td></td><td></td><td></td><td></td>
+              <td><strong>Tue</strong></td>
+              <td contenteditable="false"></td>
+              <td contenteditable="false"></td>
+              <td contenteditable="false"></td>
+              <td contenteditable="false"></td>
+              <td contenteditable="false"></td>
+              <td contenteditable="false"></td>
+              <td contenteditable="false"></td>
+              <td contenteditable="false"></td>
+              <td contenteditable="false"></td>
             </tr>
             <tr>
-              <td>Středa</td>
-              <td></td><td></td><td></td><td></td><td></td>
-              <td></td><td></td><td></td><td></td><td></td>
+              <td><strong>Wed</strong></td>
+              <td contenteditable="false"></td>
+              <td contenteditable="false"></td>
+              <td contenteditable="false"></td>
+              <td contenteditable="false"></td>
+              <td contenteditable="false"></td>
+              <td contenteditable="false"></td>
+              <td contenteditable="false"></td>
+              <td contenteditable="false"></td>
+              <td contenteditable="false"></td>
             </tr>
             <tr>
-              <td>Čtvrtek</td>
-              <td></td><td></td><td></td><td></td><td></td>
-              <td></td><td></td><td></td><td></td><td></td>
+              <td><strong>Thu</strong></td>
+              <td contenteditable="false"></td>
+              <td contenteditable="false"></td>
+              <td contenteditable="false"></td>
+              <td contenteditable="false"></td>
+              <td contenteditable="false"></td>
+              <td contenteditable="false"></td>
+              <td contenteditable="false"></td>
+              <td contenteditable="false"></td>
+              <td contenteditable="false"></td>
             </tr>
             <tr>
-              <td>Pátek</td>
-              <td></td><td></td><td></td><td></td><td></td>
-              <td></td><td></td><td></td><td></td><td></td>
+              <td><strong>Fri</strong></td>
+              <td contenteditable="false"></td>
+              <td contenteditable="false"></td>
+              <td contenteditable="false"></td>
+              <td contenteditable="false"></td>
+              <td contenteditable="false"></td>
+              <td contenteditable="false"></td>
+              <td contenteditable="false"></td>
+              <td contenteditable="false"></td>
+              <td contenteditable="false"></td>
             </tr>
           </tbody>
         </table>
       </div>
-      <div class="bottom-content">
-        <div class="time-table-buttons">
-          <button class="edit-button">Edit</button>
-          <button class="save-button" style="display: none;">Save</button>
-          
-        </div>
-        <div class="timetable-calendar">
-          <div class="calendar-header">
-            <button class="prev-button">&lt;</button>
-            <h3 class="calendar-title" id="timetable-calendar-title"></h3>
-            <button class="next-button">&gt;</button>
-          </div>
-          <div class="calendar" id="timetable-calendar"></div>
-        </div>
+      <div class="time-table-buttons">
+        <button class="edit-button" data-tooltip="Edit timetable entries">Edit</button>
+        <button class="save-button" style="display: none;" data-tooltip="Save changes to timetable">Save</button>
+        <button class="set-week-button" data-tooltip="Set the week for this timetable">Set Week</button>
+        <button class="toggle-permanent-btn" id="toggle-permanent-btn" style="display: none;" data-tooltip="Toggle permanent hours mode">Permanent Hours: OFF</button>
       </div>
     </div>
   </div>
+
+  <!-- Calendar Popup -->
+  <div id="calendarPopupOverlay" class="calendar-popup-overlay">
+      <div id="calendarPopup" class="calendar-popup">
+          <div class="calendar-popup-header">
+              <h3>Select Week</h3>
+              <button id="closeCalendarPopup" class="close-calendar-popup">&times;</button>
+          </div>
+          <div class="calendar-popup-content">
+              <div class="calendar-navigation">
+                  <button id="calendarPrevBtn" class="calendar-nav-btn prev">&laquo;</button>
+                  <div class="popup-calendar-header">
+                      <h4 id="popupCalendarTitle">Calendar</h4>
+                  </div>
+                  <button id="calendarNextBtn" class="calendar-nav-btn next">&raquo;</button>
+                  <button id="calendarTodayBtn" class="calendar-nav-btn today">Today</button>
+              </div>
+              <div id="popupCalendar" class="popup-calendar">
+                  <!-- Calendar will be generated here -->
+              </div>
+          </div>
+      </div>
+  </div>
+
   <div class="pop-up" id="pop-up">
     <div class="calendar-header">
       <h2 class="calendar-title" id="calendar-title"></h2>
@@ -138,21 +196,35 @@
     <button class="close-button" id="close-button">X</button>
     <div class="calendar" id="calendar"></div>
     <div class="calendar-buttons">
-      <button class="prev-button">&lt;</button>
-      <button class="next-button">&gt;</button>
+      <button class="prev-button" data-tooltip="Previous month">&lt;</button>
+      <button class="next-button" data-tooltip="Next month">&gt;</button>
     </div>
   </div>
   <div class="verification-window" id="verification-window">
     <div class="verification-content">
-      <h2>Verification</h2>
-      <button class="close-verification-button" id="close-verification">X</button>
-      <p>Please enter the code:</p>
-      <input type="password" id="verification-code" placeholder="Enter code">
+      <h2>Admin Verification</h2>
+      <input type="password" id="verification-code" placeholder="Enter verification code" data-tooltip="Enter admin verification code">
       <div class="verification-buttons">
-        <button class="confirm-verification" id="confirm-verification">Confirm</button>
+        <button id="confirm-verification" class="confirm-verification" data-tooltip="Verify admin access">Verify</button>
+        <button id="close-verification" class="close-menu" data-tooltip="Cancel verification">&times;</button>
       </div>
     </div>
   </div>
+
+  <!-- Logout Confirmation Dialog -->
+  <div id="logoutOverlay" class="logout-overlay">
+    <div id="logoutConfirmDialog" class="logout-confirm">
+      <div class="logout-confirm-content">
+        <h3>Confirm Logout</h3>
+        <p>Are you sure you want to log out?</p>
+        <div class="logout-buttons">
+          <button id="confirm-logout">Yes, Logout</button>
+          <button id="cancel-logout">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="/js/renderer.js"></script>
   <script>
     // Add event listener to show save button when admin mode is activated
@@ -215,25 +287,26 @@
         <input type="text" id="class-name-input">
       </div>
       <div class="menu-buttons">
-        <button class="save-class-name">Save</button>
-        <button class="delete-class">Delete Class</button>
+        <button class="save-class-name" data-tooltip="Save class name">Save</button>
+        <button class="delete-class" data-tooltip="Delete this class">Delete Class</button>
       </div>
     </div>
   </div>
   <div class="accounts-menu" id="accounts-menu">
-    <button class="close-accounts-button" id="close-accounts">×</button>
-    <button id="modify-accounts">Modify</button>
-    <button id="remove-accounts">Remove</button>
-    <button id="create-accounts">Create</button>
+    <button class="close-accounts-button" id="close-accounts" data-tooltip="Close accounts menu">×</button>
+    <button id="modify-accounts" class="customization-button" data-tooltip="Modify existing user accounts">Modify</button>
+    <button id="remove-accounts" class="customization-button" data-tooltip="Remove user accounts">Remove</button>
+    <button id="create-accounts" class="customization-button" data-tooltip="Create new user accounts">Create</button>
   </div>
   <div id="debug-overlay"></div>
-  <div id="debug-menu">
+  <div id="debug-menu" class="debug-menu">
+    <div class="debug-content">
+      <button id="close-debug" class="close-menu" data-tooltip="Close debug menu">×</button>
       <h2>Debug Menu</h2>
-      <button id="debug-reset-all">Reset All</button>
-      <button id="debug-create-new">Create New Class</button>
-      <button id="debug-accounts">Accounts</button>
-      <button id="debug-set-date">Set current date</button>
-      <button id="close-debug">Close</button>
+      <button id="debug-reset-all" class="clear-data-button" data-tooltip="Delete all timetables permanently">Reset All Data</button>
+      <button id="debug-create-new" class="customization-button" data-tooltip="Create a new class timetable">Create New Class</button>
+      <button id="debug-accounts" class="customization-button" data-tooltip="Open accounts management">Accounts</button>
+    </div>
   </div>
 
   <div class="date-picker-overlay" id="datePickerOverlay">
@@ -343,6 +416,51 @@
           }
         });
       }
+    });
+  </script>
+
+  <!-- Add a script to handle orientation changes -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Handle orientation changes
+      window.addEventListener('orientationchange', function() {
+        // Add a small delay to ensure the orientation has actually changed
+        setTimeout(function() {
+          // Force layout recalculation
+          document.body.style.opacity = '0.99';
+          setTimeout(function() { document.body.style.opacity = '1'; }, 10);
+          
+          // If there is a responsive setup function, call it
+          if (typeof setupResponsiveDesign === 'function') {
+            setupResponsiveDesign();
+          }
+          
+          // If there is an update layout function, call it
+          if (typeof updateResponsiveLayout === 'function') {
+            updateResponsiveLayout();
+          }
+        }, 200);
+      });
+      
+      // Set initial orientation class
+      if (window.innerHeight > window.innerWidth) {
+        document.body.classList.add('portrait');
+        document.body.classList.remove('landscape');
+      } else {
+        document.body.classList.add('landscape');
+        document.body.classList.remove('portrait');
+      }
+      
+      // Update orientation class on change
+      window.addEventListener('resize', function() {
+        if (window.innerHeight > window.innerWidth) {
+          document.body.classList.add('portrait');
+          document.body.classList.remove('landscape');
+        } else {
+          document.body.classList.add('landscape');
+          document.body.classList.remove('portrait');
+        }
+      });
     });
   </script>
 </body>
