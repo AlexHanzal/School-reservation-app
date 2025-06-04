@@ -255,6 +255,37 @@
     <div class="loading-spinner"></div>
     <div class="loading-text">Saving changes...</div>
   </div>
+
+  <!-- Permanent Hour Date Range Selector -->
+  <div class="permanent-date-overlay" id="permanentDateOverlay">
+    <div class="permanent-date-window">
+      <h2>Set Permanent Hour Date Range</h2>
+      <button class="close-permanent-date" id="closePermanentDate">×</button>
+      
+      <div class="date-range-inputs">
+        <div class="input-group">
+          <label for="permanent-from-date">From Date:</label>
+          <input type="date" id="permanent-from-date">
+        </div>
+        <div class="input-group">
+          <label for="permanent-to-date">To Date:</label>
+          <input type="date" id="permanent-to-date">
+        </div>
+      </div>
+      
+      <div class="permanent-options">
+        <label>
+          <input type="checkbox" id="permanent-all-weeks" checked>
+          Apply to all weeks (ignore date range)
+        </label>
+      </div>
+      
+      <div class="permanent-buttons">
+        <button class="save-permanent-button" id="save-permanent-range">Save</button>
+        <button class="cancel-permanent-button" id="cancel-permanent-range">Cancel</button>
+      </div>
+    </div>
+  </div>
   
   <!-- Add direct script to ensure admin button and debug mode are initialized -->
   <script>
