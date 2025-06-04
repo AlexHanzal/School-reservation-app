@@ -325,8 +325,6 @@
     position: relative;
     box-sizing: border-box;
     transition: all 0.2s ease;
-    border-radius: 0 !important;
-    /* Replace outline with inset border */
     border: 2px solid #ff9800 !important;
     margin: -1px !important;
   }
@@ -1897,7 +1895,6 @@ body.debug-mode {
 .toggle-permanent-btn.active {
     background-color: #ff9800;
     color: white;
-    border-color: #e68a00;
 }
 
 .toggle-permanent-btn.active:hover {
@@ -1943,4 +1940,203 @@ body.debug-mode {
   position: relative;
 }
 
-/* Add highlighting for all cells in current day row */
+/* Permanent Hour Date Range Selector */
+.permanent-date-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.permanent-date-window {
+    background: white;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    max-width: 500px;
+    width: 90%;
+    position: relative;
+}
+
+.permanent-date-window h2 {
+    margin: 0 0 20px 0;
+    color: #333;
+    text-align: center;
+}
+
+.close-permanent-date {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+    padding: 5px;
+}
+
+.close-permanent-date:hover {
+    color: #000;
+}
+
+.date-range-inputs {
+    margin-bottom: 20px;
+}
+
+.date-range-inputs .input-group {
+    margin-bottom: 15px;
+}
+
+.date-range-inputs label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #333;
+}
+
+.date-range-inputs input[type="date"] {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+.date-range-inputs input[type="date"]:focus {
+    border-color: #4CAF50;
+    outline: none;
+}
+
+.permanent-options {
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #f9f9f9;
+    border-radius: 4px;
+}
+
+.permanent-options label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.permanent-options input[type="checkbox"] {
+    margin-right: 10px;
+    transform: scale(1.2);
+}
+
+.permanent-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.permanent-buttons .save-permanent-button,
+.permanent-buttons .cancel-permanent-button {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    font-weight: bold;
+}
+
+.permanent-buttons .save-permanent-button {
+    background-color: #4CAF50;
+    color: white;
+    min-width: 100px;
+}
+
+.permanent-buttons .save-permanent-button:hover {
+    background-color: #45a049;
+}
+
+.permanent-buttons .cancel-permanent-button {
+    background-color: #f44336;
+    color: white;
+    min-width: 100px;
+}
+
+.permanent-buttons .cancel-permanent-button:hover {
+    background-color: #da190b;
+}
+
+/* Ensure both buttons are visible and properly spaced */
+.permanent-buttons {
+    margin-top: 20px;
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    align-items: center;
+}
+
+.permanent-buttons button {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
+/* Enhanced permanent hour styling */
+.permanent-hour {
+    background-color: #e8f5e8 !important;
+    border: 2px solid #4CAF50 !important;
+    font-weight: bold !important;
+    position: relative;
+}
+
+.permanent-hour::after {
+    content: "📌";
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    font-size: 10px;
+    opacity: 0.7;
+}
+
+/* Permanent Hour Date Range Selector Button Container */
+.permanent-date-window .permanent-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 20px;
+    align-items: center;
+}
+
+.permanent-date-window .permanent-buttons button {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    font-weight: bold;
+    min-width: 100px;
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
+.permanent-date-window .save-permanent-button {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.permanent-date-window .save-permanent-button:hover {
+    background-color: #45a049;
+}
+
+.permanent-date-window .cancel-permanent-button {
+    background-color: #f44336;
+    color: white;
+}
+
+.permanent-date-window .cancel-permanent-button:hover {
+    background-color: #da190b;
+}
