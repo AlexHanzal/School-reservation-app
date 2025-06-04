@@ -40,6 +40,7 @@ let isAdminMode = false;
 let currentTimetableName = '';
 let isEditMode = false;
 let customDate = null; // New variable for custom date
+let pendingPermanentHour = null; // Store pending permanent hour data
 
 // Update function to generate calendar - now with better timetable integration
 function generateCalendar() {
@@ -484,17 +485,16 @@ function displayTimetableDataForWeek(startOfWeek) {
                     
                     Object.entries(dayData).forEach(([hourIndex, hourObj]) => {
                         if (hourObj && hourObj.isPermanent) {
-                            const rowIndex = dayIndex;
-                            const colIndex = parseInt(hourIndex) - 1;
-                            
-                            if (rowIndex >= 0 && colIndex >= 0 && colIndex < 9) {
-                                const rows = document.querySelectorAll('.week-table tbody tr');
-                                if (rows[rowIndex]) {
-                                    const cells = rows[rowIndex].querySelectorAll('td:not(:first-child)');
-                                    if (cells[colIndex]) {
-                                        cells[colIndex].textContent = hourObj.content;
-                                        cells[colIndex].classList.add('permanent-hour');
-                                        cells[colIndex].dataset.permanent = 'true';
+                            // Check if the permanent hour should apply to this week
+                            if (shouldApplyPermanentHour(hourObj, startOfWeek)) {
+                                const row = document.querySelectorAll('.week-table tbody tr')[dayIndex];
+                                if (row) {
+                                    const colIndex = parseInt(hourIndex) - 1;
+                                    const cell = row.querySelectorAll('td:not(:first-child)')[colIndex];
+                                    if (cell && !cell.textContent) {
+                                        cell.textContent = hourObj.content;
+                                        cell.classList.add('permanent-hour');
+                                        cell.dataset.permanent = 'true';
                                     }
                                 }
                             }
@@ -509,17 +509,16 @@ function displayTimetableDataForWeek(startOfWeek) {
                     
                     Object.entries(dayData).forEach(([hourIndex, hourObj]) => {
                         if (hourObj && hourObj.isPermanent) {
-                            const rowIndex = dayIdx;
-                            const colIndex = parseInt(hourIndex) - 1;
-                            
-                            if (rowIndex >= 0 && colIndex >= 0 && colIndex < 9) {
-                                const rows = document.querySelectorAll('.week-table tbody tr');
-                                if (rows[rowIndex]) {
-                                    const cells = rows[rowIndex].querySelectorAll('td:not(:first-child)');
-                                    if (cells[colIndex]) {
-                                        cells[colIndex].textContent = hourObj.content;
-                                        cells[colIndex].classList.add('permanent-hour');
-                                        cells[colIndex].dataset.permanent = 'true';
+                            // Check if the permanent hour should apply to this week
+                            if (shouldApplyPermanentHour(hourObj, startOfWeek)) {
+                                const row = document.querySelectorAll('.week-table tbody tr')[dayIdx];
+                                if (row) {
+                                    const colIndex = parseInt(hourIndex) - 1;
+                                    const cell = row.querySelectorAll('td:not(:first-child)')[colIndex];
+                                    if (cell && !cell.textContent) {
+                                        cell.textContent = hourObj.content;
+                                        cell.classList.add('permanent-hour');
+                                        cell.dataset.permanent = 'true';
                                     }
                                 }
                             }
@@ -528,7 +527,9 @@ function displayTimetableDataForWeek(startOfWeek) {
                 });
             }
         }
-    }// Then apply data for the specific week if it exists - limit to first 5 days (Mon-Fri)
+    }
+
+    // Then apply data for the specific week if it exists - limit to first 5 days (Mon-Fri)
     if (timetableData.data && timetableData.data[dateString]) {
         const weekData = timetableData.data[dateString];
         
@@ -548,19 +549,16 @@ function displayTimetableDataForWeek(startOfWeek) {
                 
                 // Handle object format with hour indices as keys
                 Object.entries(dayData).forEach(([hourIndex, hourObj]) => {
-                    const colIndex = parseInt(hourIndex) - 1; // Convert to 0-based index
+                    const colIndex = parseInt(hourIndex) - 1;
                     const cell = cells[colIndex];
                     if (!cell) return;
                     
                     if (hourObj && typeof hourObj === 'object' && hourObj.content) {
-                        // Only apply if not a permanent hour (unless this IS a permanent hour)
-                        if (!cell.classList.contains('permanent-hour') || hourObj.isPermanent) {
-                            cell.textContent = hourObj.content;
-                            cell.classList.add('has-data');
-                            if (hourObj.isPermanent) {
-                                cell.classList.add('permanent-hour');
-                                cell.dataset.permanent = 'true';
-                            }
+                        cell.textContent = hourObj.content;
+                        cell.classList.add('has-data');
+                        if (hourObj.isPermanent) {
+                            cell.classList.add('permanent-hour');
+                            cell.dataset.permanent = 'true';
                         }
                     }
                 });
@@ -577,25 +575,137 @@ function displayTimetableDataForWeek(startOfWeek) {
                 const cells = row.querySelectorAll('td:not(:first-child)');
                 
                 Object.entries(dayData).forEach(([hourIndex, hourObj]) => {
-                    const colIndex = parseInt(hourIndex) - 1; // Convert to 0-based index
+                    const colIndex = parseInt(hourIndex) - 1;
                     const cell = cells[colIndex];
                     if (!cell) return;
                     
                     if (hourObj && typeof hourObj === 'object' && hourObj.content) {
-                        // Only apply if not a permanent hour (unless this IS a permanent hour)
-                        if (!cell.classList.contains('permanent-hour') || hourObj.isPermanent) {
-                            cell.textContent = hourObj.content;
-                            cell.classList.add('has-data');
-                            if (hourObj.isPermanent) {
-                                cell.classList.add('permanent-hour');
-                                cell.dataset.permanent = 'true';
-                            }
+                        cell.textContent = hourObj.content;
+                        cell.classList.add('has-data');
+                        if (hourObj.isPermanent) {
+                            cell.classList.add('permanent-hour');
+                            cell.dataset.permanent = 'true';
                         }
                     }
                 });
             });
         }
     }
+}
+
+// New function to check if a permanent hour should apply to a specific week
+function shouldApplyPermanentHour(hourObj, weekDate) {
+    // If no date range is specified or allWeeks is true, apply to all weeks
+    if (!hourObj.dateRange || hourObj.dateRange.allWeeks) {
+        return true;
+    }
+    
+    // Check if the week falls within the specified date range
+    if (hourObj.dateRange.fromDate && hourObj.dateRange.toDate) {
+        const weekStart = new Date(weekDate);
+        const fromDate = new Date(hourObj.dateRange.fromDate);
+        const toDate = new Date(hourObj.dateRange.toDate);
+        
+        return weekStart >= fromDate && weekStart <= toDate;
+    }
+    
+    return true; // Default to applying if no valid range
+}
+
+// New function to show permanent hour date range selector
+function showPermanentDateSelector(dayIndex, hourIndex, content) {
+    pendingPermanentHour = {
+        dayIndex: dayIndex,
+        hourIndex: hourIndex,
+        content: content
+    };
+    
+    const overlay = document.getElementById('permanentDateOverlay');
+    const fromDate = document.getElementById('permanent-from-date');
+    const toDate = document.getElementById('permanent-to-date');
+    const allWeeksCheckbox = document.getElementById('permanent-all-weeks');
+    
+    // Set default dates to current week
+    const today = new Date();
+    const nextMonth = new Date(today);
+    nextMonth.setMonth(today.getMonth() + 1);
+    
+    fromDate.value = today.toISOString().split('T')[0];
+    toDate.value = nextMonth.toISOString().split('T')[0];
+    allWeeksCheckbox.checked = true;
+    
+    overlay.style.display = 'flex';
+}
+
+// Function to save permanent hour with date range
+async function savePermanentHourWithRange() {
+    if (!pendingPermanentHour || !currentTimetableName) return;
+    
+    const fromDate = document.getElementById('permanent-from-date').value;
+    const toDate = document.getElementById('permanent-to-date').value;
+    const allWeeks = document.getElementById('permanent-all-weeks').checked;
+    
+    const { dayIndex, hourIndex, content } = pendingPermanentHour;
+    
+    // Get current week date
+    const startOfWeek = getStartOfWeek(new Date(timetables[currentTimetableName].currentWeek));
+    const dateString = startOfWeek.toISOString().split('T')[0];
+    
+    // Initialize data structure if needed
+    if (!timetables[currentTimetableName].data) {
+        timetables[currentTimetableName].data = {};
+    }
+    if (!timetables[currentTimetableName].data[dateString]) {
+        timetables[currentTimetableName].data[dateString] = [];
+    }
+    
+    // Ensure the day array exists
+    while (timetables[currentTimetableName].data[dateString].length <= dayIndex) {
+        timetables[currentTimetableName].data[dateString].push({});
+    }
+    
+    // Create permanent hour object with date range
+    const permanentHourObj = {
+        content: content,
+        isPermanent: true,
+        dateRange: allWeeks ? { allWeeks: true } : {
+            fromDate: fromDate,
+            toDate: toDate,
+            allWeeks: false
+        }
+    };
+    
+    // Save the permanent hour
+    timetables[currentTimetableName].data[dateString][dayIndex][hourIndex] = permanentHourObj;
+    
+    // Save to server
+    try {
+        const response = await fetch(`${API_URL}/timetables/${currentTimetableName}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                fileId: timetables[currentTimetableName].fileId,
+                data: timetables[currentTimetableName].data
+            })
+        });
+        
+        if (response.ok) {
+            showCustomAlert('Success', 'Permanent hour saved successfully', 'success');
+            // Refresh the display
+            displayTimetableDataForWeek(startOfWeek);
+        } else {
+            showCustomAlert('Error', 'Failed to save permanent hour', 'error');
+        }
+    } catch (error) {
+        console.error('Failed to save permanent hour:', error);
+        showCustomAlert('Error', 'Failed to save permanent hour', 'error');
+    }
+    
+    // Close the overlay
+    document.getElementById('permanentDateOverlay').style.display = 'none';
+    pendingPermanentHour = null;
 }
 
 // submit button handler
@@ -1922,7 +2032,9 @@ function setupCellEditing() {
     cells.forEach(cell => {
         // Remove any existing input event listeners
         const newCell = cell.cloneNode(true);
-        cell.parentNode.replaceChild(newCell, cell);        // Add new event listener - with user abbreviation support
+        cell.parentNode.replaceChild(newCell, cell);
+
+        // Add new event listener - with user abbreviation support
         newCell.addEventListener('input', function() {
             // Mark the cell as edited
             this.classList.add('edited-cell');
@@ -1935,8 +2047,14 @@ function setupCellEditing() {
                     content = content.replace(' - ' + currentUser.abbreviation, '');
                     this.textContent = content;
                 }
-                this.classList.add('permanent-hour');
-                this.dataset.permanent = 'true';
+
+                // Get cell position for permanent hour creation
+                const row = this.parentElement;
+                const rowIndex = Array.from(row.parentElement.children).indexOf(row);
+                const colIndex = Array.from(row.children).indexOf(this);
+
+                // Show the permanent hour date range selector
+                showPermanentDateSelector(rowIndex, colIndex, content);
             }
             // Only add abbreviation if NOT in permanent hour mode and NOT already a permanent hour
             else if (currentUser.isLoggedIn && currentUser.abbreviation && this.textContent.trim() && 
@@ -1951,7 +2069,8 @@ function setupCellEditing() {
                 }
             }
         });
-          // Add click handler for toggling permanent status in admin mode
+
+        // Add click handler for toggling permanent status in admin mode
         if (isAdminMode) {
             newCell.addEventListener('click', function(e) {
                 // If in admin mode with permanent hours toggle on, ctrl+click toggles permanent status
@@ -1961,14 +2080,18 @@ function setupCellEditing() {
                         this.classList.remove('permanent-hour');
                         delete this.dataset.permanent;
                     } else if (this.textContent.trim() !== '') {
-                        // When making a cell permanent, remove any abbreviations
+                        // When making a cell permanent, show the date range selector
+                        const row = this.parentElement;
+                        const rowIndex = Array.from(row.parentElement.children).indexOf(row);
+                        const colIndex = Array.from(row.children).indexOf(this);
+                        
                         let content = this.textContent.trim();
                         if (currentUser.abbreviation && content.includes(' - ' + currentUser.abbreviation)) {
                             content = content.replace(' - ' + currentUser.abbreviation, '');
                             this.textContent = content;
                         }
-                        this.classList.add('permanent-hour');
-                        this.dataset.permanent = 'true';
+
+                        showPermanentDateSelector(rowIndex, colIndex, content);
                     }
                 }
             });
@@ -2161,6 +2284,60 @@ function setupUIHandlers() {
     if (createNewBtn) {
         createNewBtn.addEventListener('click', () => {
             showSelectScreen();
+        });
+    }
+
+    // Add event listeners for permanent hour date range selector
+    const permanentDateOverlay = document.getElementById('permanentDateOverlay');
+    const closePermanentDate = document.getElementById('closePermanentDate');
+    const savePermanentRange = document.getElementById('save-permanent-range');
+    const cancelPermanentRange = document.getElementById('cancel-permanent-range');
+    const allWeeksCheckbox = document.getElementById('permanent-all-weeks');
+
+    if (closePermanentDate) {
+        closePermanentDate.addEventListener('click', () => {
+            permanentDateOverlay.style.display = 'none';
+            pendingPermanentHour = null;
+        });
+    }
+
+    if (cancelPermanentRange) {
+        cancelPermanentRange.addEventListener('click', () => {
+            permanentDateOverlay.style.display = 'none';
+            pendingPermanentHour = null;
+        });
+    }
+
+    if (savePermanentRange) {
+        savePermanentRange.addEventListener('click', savePermanentHourWithRange);
+    }
+
+    if (allWeeksCheckbox) {
+        allWeeksCheckbox.addEventListener('change', (e) => {
+            const fromDate = document.getElementById('permanent-from-date');
+            const toDate = document.getElementById('permanent-to-date');
+            
+            if (e.target.checked) {
+                fromDate.disabled = true;
+                toDate.disabled = true;
+                fromDate.style.opacity = '0.5';
+                toDate.style.opacity = '0.5';
+            } else {
+                fromDate.disabled = false;
+                toDate.disabled = false;
+                fromDate.style.opacity = '1';
+                toDate.style.opacity = '1';
+            }
+        });
+    }
+
+    // Close overlay when clicking outside
+    if (permanentDateOverlay) {
+        permanentDateOverlay.addEventListener('click', (e) => {
+            if (e.target === permanentDateOverlay) {
+                permanentDateOverlay.style.display = 'none';
+                pendingPermanentHour = null;
+            }
         });
     }
     
@@ -2875,4 +3052,15 @@ function renderTimetableForDate(dateString) {
             }
         });
     });
+}
+
+// Helper function to format date for display
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString();
+}
+
+// Helper function to get date string in YYYY-MM-DD format
+function getDateString(date) {
+    return date.toISOString().split('T')[0];
 }
