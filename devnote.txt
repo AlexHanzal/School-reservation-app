@@ -1,11 +1,10 @@
 | CHANGES |
-fixed the account button bug
-fixed made pernament hours work as a pernament hours
+setting a pernament hour from date to date(its cluncky as fuck)
 ------------------------------------------------
 
 | TO DO |
-setting a pernament hour from date to date
-
+we have done it we won the game
+https://www.youtube.com/watch?v=xvFZjo5PgG0
 ------------------------------------------------
 
 | NEEDS FIXING |
