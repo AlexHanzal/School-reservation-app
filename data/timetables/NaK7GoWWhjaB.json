@@ -48,6 +48,10 @@
         "3": {
           "content": "d - Čer",
           "isPermanent": false
+        },
+        "5": {
+          "content": "gfa",
+          "isPermanent": true
         }
       },
       {
@@ -71,6 +75,10 @@
         "4": {
           "content": "please",
           "isPermanent": true
+        },
+        "6": {
+          "content": "q",
+          "isPermanent": false
         }
       },
       "2": {
@@ -87,7 +95,12 @@
           "isPermanent": true
         }
       },
-      "3": {},
+      "3": {
+        "5": {
+          "content": "gfa",
+          "isPermanent": true
+        }
+      },
       "4": {
         "3": {
           "content": "fafwaw - Čer",
@@ -98,10 +111,131 @@
           "isPermanent": true
         }
       }
-    }
+    },
+    "2025-06-01": {
+      "0": {},
+      "1": {
+        "4": {
+          "content": "please",
+          "isPermanent": true
+        }
+      },
+      "2": {
+        "3": {
+          "content": "Hehe",
+          "isPermanent": true
+        },
+        "5": {
+          "content": "wag - Čer",
+          "isPermanent": true
+        },
+        "6": {
+          "content": "dawfwa",
+          "isPermanent": false
+        }
+      },
+      "3": {
+        "5": {
+          "content": "gfa",
+          "isPermanent": true
+        },
+        "6": {
+          "content": "w",
+          "isPermanent": false
+        }
+      },
+      "4": {
+        "3": {
+          "content": "fafwaw - Čer",
+          "isPermanent": true
+        },
+        "4": {
+          "content": "dwafwa",
+          "isPermanent": true
+        },
+        "6": {
+          "content": "wafawf",
+          "isPermanent": false
+        }
+      }
+    },
+    "2025-07-20": {
+      "0": {},
+      "1": {
+        "2": {
+          "content": "d",
+          "isPermanent": true,
+          "dateRange": {
+            "fromDate": "2025-06-04",
+            "toDate": "2025-07-04",
+            "allWeeks": false
+          }
+        },
+        "4": {
+          "content": "please",
+          "isPermanent": true
+        }
+      },
+      "2": {
+        "3": {
+          "content": "Hehe",
+          "isPermanent": true
+        },
+        "5": {
+          "content": "wag - Čer",
+          "isPermanent": true
+        }
+      },
+      "3": {
+        "5": {
+          "content": "gfa",
+          "isPermanent": true
+        },
+        "7": {
+          "content": "agw - Vald",
+          "isPermanent": false
+        }
+      },
+      "4": {
+        "3": {
+          "content": "fafwaw - Čer",
+          "isPermanent": true
+        },
+        "4": {
+          "content": "dwafwa",
+          "isPermanent": true
+        },
+        "7": {
+          "content": "vawgg - Vald",
+          "isPermanent": false
+        }
+      }
+    },
+    "2025-06-02": [
+      {
+        "7": {
+          "content": "vfawfj",
+          "isPermanent": true,
+          "dateRange": {
+            "allWeeks": true
+          }
+        }
+      }
+    ],
+    "2025-07-13": [
+      {
+        "6": {
+          "content": "f",
+          "isPermanent": true,
+          "dateRange": {
+            "allWeeks": true
+          }
+        }
+      }
+    ]
   },
   "calendar": "",
-  "currentWeek": "2025-05-31T20:17:36.900Z",
+  "currentWeek": "2025-06-04T16:30:28.871Z",
   "permanentHours": {
     "0": {},
     "1": {},
