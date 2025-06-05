@@ -1,17 +1,17 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="cs">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Day App</title>
+    <title>Rezervační aplikace</title>
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/buttons.css">
 </head>
 <body>
   <header class="header" id="header">
-    <h1 class="title">Zaber si</h1>
+    <h1 class="title">Rezervační systém školy</h1>
     <div class="window-controls">
-        <button id="login-button">Login</button>
+        <button id="login-button">Přihlášení</button>
     </div>
   </header>
 
@@ -19,19 +19,19 @@
   <div class="login-overlay" id="login-overlay"></div>
   <div class="login-menu" id="login-menu">
     <button class="close-accounts-button" id="close-login">×</button>
-    <h3>User Login</h3>
+    <h3>Přihlášení uživatele</h3>
     <div class="input-group">
-        <label for="user-select">User:</label>
+        <label for="user-select">Uživatel:</label>
         <select id="user-select">
-            <option value="">Select a user</option>
+            <option value="">Vyberte uživatele</option>
         </select>
     </div>
     <div class="input-group">
-        <label for="password-input">Password:</label>
-        <input type="password" id="password-input" placeholder="Enter password">
+        <label for="password-input">Heslo:</label>
+        <input type="password" id="password-input" placeholder="Zadejte heslo">
     </div>
     <div class="login-error" id="login-error"></div>
-    <button id="submit-login">Login</button>
+    <button id="submit-login">Přihlásit se</button>
   </div>
   
   <!-- Replace the existing sidebar with this well-structured version -->
@@ -40,8 +40,7 @@
       <li id="dynamic-links-container"><!-- Dynamic buttons will be added here --></li>
       <li><button class="create-new" id="create-new">+</button></li>
     </ul>
-    <button id="accounts-button">Accounts</button>
-    <button class="admin-button" id="admin-button">Admin</button>
+    <button id="accounts-button">Účty</button>
   </aside>
 
   <!-- Add accounts overlay -->
@@ -51,28 +50,28 @@
     <div class="select-window">
       <button class="close-select" id="close-select">X</button>
       <div class="input-group">
-        <label for="name-input">Name:</label>
-        <input type="text" id="name-input" placeholder="Enter name">
+        <label for="name-input">Název:</label>
+        <input type="text" id="name-input" placeholder="Zadejte název">
       </div>
       <div class="input-group">
-        <label for="type-select">Type:</label>
+        <label for="type-select">Typ:</label>
         <select id="type-select">
-          <option value="thing">Thing</option>
-          <option value="class">Class</option>
+          <option value="thing">Věc</option>
+          <option value="class">Třída</option>
         </select>
       </div>
-      <button class="submit-button" id="submit-button">Submit</button>
+      <button class="submit-button" id="submit-button">Odeslat</button>
     </div>
   </div>
   
   <div class="time-table">
-    <h2>Time Table</h2>
+    <h2>Rozvrh hodin</h2>
     <div class="timetable-content">
       <div class="table-container">
         <table class="week-table">
           <thead>
             <tr>
-              <th>Day</th>
+              <th>Den</th>
               <th>1</th>
               <th>2</th>
               <th>3</th>
@@ -116,8 +115,8 @@
       </div>
       <div class="bottom-content">
         <div class="time-table-buttons">
-          <button class="edit-button">Edit</button>
-          <button class="save-button" style="display: none;">Save</button>
+          <button class="edit-button">Zamluvit hodinu</button>
+          <button class="save-button" style="display: none;">Uložit</button>
           
         </div>
         <div class="timetable-calendar">
@@ -144,22 +143,19 @@
   </div>
   <div class="verification-window" id="verification-window">
     <div class="verification-content">
-      <h2>Verification</h2>
+      <h2>Ověření</h2>
       <button class="close-verification-button" id="close-verification">X</button>
-      <p>Please enter the code:</p>
-      <input type="password" id="verification-code" placeholder="Enter code">
+      <p>Prosím zadejte kód:</p>
+      <input type="password" id="verification-code" placeholder="Zadejte kód">
       <div class="verification-buttons">
-        <button class="confirm-verification" id="confirm-verification">Confirm</button>
+        <button class="confirm-verification" id="confirm-verification">Potvrdit</button>
       </div>
     </div>
   </div>
   <script src="/js/renderer.js"></script>
   <script>
     // Add event listener to show save button when admin mode is activated
-    document.getElementById('admin-button').addEventListener('click', function() {
-      console.log('Admin button clicked');
-      // Admin verification will now be handled in the setupAdminButton function
-    });
+    // Admin button removed - admin functionality now accessible through debug mode only
     
     // Debug helper - logs when verification window appears/disappears
     const verificationWindow = document.getElementById('verification-window');
@@ -202,73 +198,74 @@
   </script>
   <div class="custom-alert-overlay" id="alertOverlay"></div>
   <div class="custom-alert" id="customAlert">
-    <h2>Success!</h2>
-    <p>Admin mode activated</p>
+    <h2>Úspěch!</h2>
+    <p>Režim administrátora aktivován</p>
     <button>OK</button>
   </div>
   <div class="class-edit-menu" id="classEditMenu">
     <div class="menu-content">
-      <h3>Edit Class</h3>
+      <h3>Upravit třídu</h3>
       <button class="close-menu" id="closeClassEdit">✕</button>
       <div class="input-group">
-        <label for="class-name-input">Class Name:</label>
+        <label for="class-name-input">Název třídy:</label>
         <input type="text" id="class-name-input">
       </div>
       <div class="menu-buttons">
-        <button class="save-class-name">Save</button>
-        <button class="delete-class">Delete Class</button>
+        <button class="save-class-name">Uložit</button>
+        <button class="delete-class">Smazat třídu</button>
       </div>
     </div>
   </div>
   <div class="accounts-menu" id="accounts-menu">
     <button class="close-accounts-button" id="close-accounts">×</button>
-    <button id="modify-accounts">Modify</button>
-    <button id="remove-accounts">Remove</button>
-    <button id="create-accounts">Create</button>
+    <button id="modify-accounts">Upravit</button>
+    <button id="remove-accounts">Odebrat</button>
+    <button id="create-accounts">Vytvořit</button>
   </div>
   <div id="debug-overlay"></div>
   <div id="debug-menu">
-      <h2>Debug Menu</h2>
-      <button id="debug-reset-all">Reset All</button>
-      <button id="debug-create-new">Create New Class</button>
-      <button id="debug-accounts">Accounts</button>
-      <button id="debug-set-date">Set current date</button>
-      <button id="close-debug">Close</button>
+      <h2>Ladicí menu</h2>
+      <button id="debug-reset-all">Resetovat vše</button>
+      <button id="debug-create-new">Vytvořit novou třídu</button>
+      <button id="debug-accounts">Účty</button>
+      <button id="debug-set-date">Nastavit aktuální datum</button>
+      <button id="close-debug">Zavřít</button>
   </div>
 
   <div class="date-picker-overlay" id="datePickerOverlay">
     <div class="date-picker-window">
-      <h2>Set Current Date</h2>
+      <h2>Nastavit aktuální datum</h2>
       <div class="calendar" id="date-picker-calendar"></div>
       <div style="text-align: center; margin-top: 15px;">
-        <button class="save-button" id="save-custom-date">Save</button>
-        <button class="cancel-button" id="cancel-custom-date">Cancel</button>
+        <button class="save-button" id="save-custom-date">Uložit</button>
+        <button class="cancel-button" id="cancel-custom-date">Zrušit</button>
       </div>
     </div>
   </div>
 
   <div class="custom-date-notice" id="customDateNotice">
-    <span>Current date set to: <span id="customDateText"></span></span>
-    <button class="reset-date-btn" id="resetDateBtn">Reset date</button>
+    <span>Aktuální datum nastaveno na: <span id="customDateText"></span></span>
+    <button class="reset-date-btn" id="resetDateBtn">Resetovat datum</button>
   </div>
+  
   <div class="loading-overlay" id="loadingOverlay">
     <div class="loading-spinner"></div>
-    <div class="loading-text">Saving changes...</div>
+    <div class="loading-text">Ukládání změn...</div>
   </div>
 
   <!-- Permanent Hour Date Range Selector -->
   <div class="permanent-date-overlay" id="permanentDateOverlay">
     <div class="permanent-date-window">
-      <h2>Set Permanent Hour Date Range</h2>
+      <h2>Nastavit rozsah dat pro trvalou hodinu</h2>
       <button class="close-permanent-date" id="closePermanentDate">×</button>
       
       <div class="date-range-inputs">
         <div class="input-group">
-          <label for="permanent-from-date">From Date:</label>
+          <label for="permanent-from-date">Od data:</label>
           <input type="date" id="permanent-from-date">
         </div>
         <div class="input-group">
-          <label for="permanent-to-date">To Date:</label>
+          <label for="permanent-to-date">Do data:</label>
           <input type="date" id="permanent-to-date">
         </div>
       </div>
@@ -276,56 +273,26 @@
       <div class="permanent-options">
         <label>
           <input type="checkbox" id="permanent-all-weeks" checked>
-          Apply to all weeks (ignore date range)
+          Použít pro všechny týdny (ignorovat rozsah dat)
         </label>
       </div>
       
       <div class="permanent-buttons">
-        <button class="save-permanent-button" id="save-permanent-range">Save</button>
-        <button class="cancel-permanent-button" id="cancel-permanent-range">Cancel</button>
+        <button class="save-permanent-button" id="save-permanent-range">Uložit</button>
+        <button class="cancel-permanent-button" id="cancel-permanent-range">Zrušit</button>
       </div>
     </div>
   </div>
   
-  <!-- Add direct script to ensure admin button and debug mode are initialized -->
+  <!-- Add direct script to ensure debug mode is initialized -->
   <script>
-    // Make sure Admin button is set up properly
-    window.addEventListener('load', function() {
-      if (typeof setupAdminButton === 'function') {
-        setupAdminButton(); 
-        console.log('Admin button setup initialized');
-      } else {
-        console.error('setupAdminButton function not found');
-      }
-      
+    // Make sure Debug mode is set up properly
+    window.addEventListener('load', function() {      
       if (typeof setupDebugKeyHandlers === 'function') {
         setupDebugKeyHandlers();
         console.log('Debug key handlers initialized');
       } else {
         console.error('setupDebugKeyHandlers function not found');
-      }
-      
-      // Make the admin button click event very direct
-      const adminBtn = document.getElementById('admin-button');
-      if (adminBtn) {
-        adminBtn.addEventListener('click', function() {
-          console.log('Admin button clicked directly');
-          
-          // Show verification window directly
-          const verificationWindow = document.getElementById('verification-window');
-          if (verificationWindow) {
-            verificationWindow.style.display = 'flex';
-            verificationWindow.classList.add('active');
-            
-            const verificationCode = document.getElementById('verification-code');
-            if (verificationCode) {
-              verificationCode.value = '';
-              setTimeout(() => verificationCode.focus(), 100);
-            }
-          } else {
-            console.error('Verification window not found');
-          }
-        });
       }
     });
   </script>
