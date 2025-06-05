@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rezervační aplikace</title>
-    <link rel="stylesheet" href="css/styles.css">
-    <link rel="stylesheet" href="css/buttons.css">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/buttons.css">
 </head>
 <body>
   <header class="header" id="header">
@@ -152,13 +152,7 @@
       </div>
     </div>
   </div>
-  <script>
-      // Configuration for API URL - can be set before loading the app
-      // Example: window.API_BASE_URL = 'http://your-server.com:3000';
-      window.API_BASE_URL = window.API_BASE_URL || `http://${window.location.hostname}:3000`;
-    </script>
-  <script src="config.js"></script>
-  <script src="js/renderer.js"></script>
+  <script src="/js/renderer.js"></script>
   <script>
     // Add event listener to show save button when admin mode is activated
     // Admin button removed - admin functionality now accessible through debug mode only

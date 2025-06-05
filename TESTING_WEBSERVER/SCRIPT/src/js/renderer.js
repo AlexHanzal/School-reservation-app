@@ -1,6 +1,5 @@
-// Configure API URL - will be set by config.js
-const API_BASE_URL = window.API_BASE_URL || `http://${window.location.hostname}:3000`;
-const API_URL = `${API_BASE_URL}/api`;
+// Use relative API URL for integration with main webserver
+const API_URL = `${window.location.protocol}//${window.location.host}/script/School-Reservation-App/api`;
 
 const translations = {
     cs: {
@@ -561,7 +560,6 @@ function displayTimetableDataForWeek(startOfWeek) {
                 const dayIdx = parseInt(dayIndex);
                 if (dayIdx >= 5) return; // Skip weekend days
                 
-                const row = document.querySelectorAll('.week-table tbody tr')[dayIdx];
                 if (!row || !dayData) return;
                 
                 const cells = row.querySelectorAll('td:not(:first-child)');
@@ -1484,7 +1482,7 @@ async function loadUserOptions() {
         }
         
         const users = await response.json();
-        console.log('Přijato uživatele:', users);
+        console.log('Přijato uživatelů:', users);
         
         const userSelect = document.getElementById('user-select');
         if (!userSelect) {

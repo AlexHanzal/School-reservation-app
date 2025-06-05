@@ -1,0 +1,29 @@
+{
+  "name": "school-reservation-app",
+  "version": "1.0.0",
+  "description": "School timetable reservation system integrated module",
+  "main": "src/server/server.js",
+  "scripts": {
+    "start": "node src/server/server.js",
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "dependencies": {
+    "corey": "^1.0.0",
+    "cors": "^2.8.5",
+    "electron": "^36.2.1",
+    "express": "^5.1.0",
+    "path": "^0.12.7"
+  },
+  "keywords": [
+    "school",
+    "reservation",
+    "timetable",
+    "express",
+    "webserver-module"
+  ],
+  "author": "School Reservation System",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
