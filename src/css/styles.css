@@ -658,26 +658,23 @@
 }
 
 .timetable-calendar {
-    max-width: 250px;
-    max-height: 250px;
+    max-width: 350px; /* Increased from 250px */
+    max-height: 200px; /* Reduced from 250px */
     font-size: 0.85em;
     margin: 0;
-    padding: 5px 15px; 
+    padding: 3px 15px; /* Reduced top/bottom padding from 5px to 3px */
     height: auto;
     overflow: visible;
     order: 2;
     justify-self: start;
-    border: 1px solid var(--secondary-color);
-    border-radius: 5px;
-    background-color: #fafafa;
-}
-
-.timetable-calendar .calendar-header {
+  }
+  
+  .timetable-calendar .calendar-header {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
-    margin-bottom: 9px;  /* Reduced bottom margin */
+    margin-bottom: 6px;  /* Reduced from 9px */
 }
 
 .timetable-calendar .calendar-header button {
@@ -702,8 +699,8 @@
 
 .timetable-calendar .calendar-table td,
 .timetable-calendar .calendar-table th {
-    padding: 4px; /* Reduced from 8px */
-    height: 28px; /* Reduced from 35px */
+    padding: 3px; /* Reduced from 4px */
+    height: 24px; /* Reduced from 28px */
 }
 
 .timetable-calendar .prev-button,
@@ -1832,7 +1829,7 @@ body.debug-mode {
     padding-right: 60px; /* More room for the logout icon */
     padding-left: 15px; /* More padding on the left */
     margin: 10px; /* Add margin all around */
-    font-size: 1.1em; /* Slightly larger text */
+    font-size: 0.8em; /* Slightly larger text */
     border: 2px solid var(--bakalar-color-basic); /* Black border */
     display: flex;
     align-items: center; /* Vertically center content */
@@ -2086,57 +2083,18 @@ body.debug-mode {
 
 /* Enhanced permanent hour styling */
 .permanent-hour {
-    background-color: #e8f5e8 !important;
-    border: 2px solid #4CAF50 !important;
+    background-color: #ffffff !important;
+    border: 2px solid var(--primary-color) !important;
     font-weight: bold !important;
     position: relative;
+    color: #000000 !important;
 }
 
 .permanent-hour::after {
-    content: "📌";
+    content: "";
     position: absolute;
     top: 2px;
     right: 2px;
     font-size: 10px;
     opacity: 0.7;
-}
-
-/* Permanent Hour Date Range Selector Button Container */
-.permanent-date-window .permanent-buttons {
-    display: flex;
-    gap: 15px;
-    justify-content: center;
-    margin-top: 20px;
-    align-items: center;
-}
-
-.permanent-date-window .permanent-buttons button {
-    padding: 12px 24px;
-    border: none;
-    border-radius: 4px;
-    font-size: 16px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-    font-weight: bold;
-    min-width: 100px;
-    flex: 0 0 auto;
-    white-space: nowrap;
-}
-
-.permanent-date-window .save-permanent-button {
-    background-color: #4CAF50;
-    color: white;
-}
-
-.permanent-date-window .save-permanent-button:hover {
-    background-color: #45a049;
-}
-
-.permanent-date-window .cancel-permanent-button {
-    background-color: #f44336;
-    color: white;
-}
-
-.permanent-date-window .cancel-permanent-button:hover {
-    background-color: #da190b;
 }

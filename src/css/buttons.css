@@ -106,8 +106,7 @@
     color: var(--primary-color);
 }
 
-.edit-button,
-.admin-button {
+.edit-button {
     padding: 10px 20px;
     font-size: 1em;
     background-color: var(--bakalar-color-basic);
@@ -119,8 +118,7 @@
     text-align: center;
 }
 
-.edit-button:hover,
-.admin-button:hover {
+.edit-button:hover {
     background-color: var(--bakalar-color-hover);
     color: var(--primary-color);
 }
@@ -443,9 +441,9 @@ body.debug-mode .reset-all {
     display: none; /* Hide by default */
     width: 90%;
     padding: 15px 25px;
-    font-size: 1.2em;
+    font-size:1.2em;
     position: absolute;
-    bottom: 18%; /* Changed from 15% to move it higher */
+    bottom: 6%; /* Moved up since admin button is removed */
     left: 50%;
     transform: translateX(-50%);
     background-color: var(--bakalar-color-basic);
