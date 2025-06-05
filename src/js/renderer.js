@@ -1181,16 +1181,20 @@ function disableDebugMode() {
     // Disable admin mode first
     isAdminMode = false;
     
-    // Reset admin button
+    // Reset admin button - only if it exists
     const adminBtn = document.getElementById('admin-button');
-    adminBtn.innerHTML = 'Režim administrátora';
-    adminBtn.disabled = false;
-    adminBtn.classList.remove('admin-active');
+    if (adminBtn) {
+        adminBtn.innerHTML = 'Režim administrátora';
+        adminBtn.disabled = false;
+        adminBtn.classList.remove('admin-active');
+    }
     
     // Reset edit button
     const editButton = document.querySelector('.edit-button');
-    editButton.textContent = 'Upravit';
-    editButton.style.backgroundColor = '';
+    if (editButton) {
+        editButton.textContent = 'Upravit';
+        editButton.style.backgroundColor = '';
+    }
     
     // Hide permanent hour toggle button
     const toggleButton = document.getElementById('toggle-permanent-btn');
@@ -1205,8 +1209,18 @@ function disableDebugMode() {
     document.querySelectorAll('.gear-icon').forEach(icon => {
         icon.classList.remove('visible');
     });
-    document.getElementById('create-new').classList.remove('admin-visible');
-    document.getElementById('accounts-button').classList.remove('admin-visible');
+    
+    const createNewBtn = document.getElementById('create-new');
+    if (createNewBtn) {
+        createNewBtn.classList.remove('admin-visible');
+        createNewBtn.style.display = 'none'; // Explicitly hide it
+    }
+    
+    const accountsBtn = document.getElementById('accounts-button');
+    if (accountsBtn) {
+        accountsBtn.classList.remove('admin-visible');
+        accountsBtn.style.display = 'none'; // Explicitly hide it
+    }
     
     // Reset button groups
     document.querySelectorAll('.button-group').forEach(group => {
@@ -1218,15 +1232,22 @@ function disableDebugMode() {
     });
     
     // Close all menus
-    document.getElementById('accounts-menu').classList.remove('active');
-    document.getElementById('accounts-overlay').classList.remove('active');
-    document.getElementById('select-screen').classList.remove('active');
+    const accountsMenu = document.getElementById('accounts-menu');
+    const accountsOverlay = document.getElementById('accounts-overlay');
+    if (accountsMenu) accountsMenu.classList.remove('active');
+    if (accountsOverlay) accountsOverlay.classList.remove('active');
+    
+    const selectScreen = document.getElementById('select-screen');
+    if (selectScreen) selectScreen.classList.remove('active');
     
     // Reset verification window
     const verificationWindow = document.getElementById('verification-window');
-    verificationWindow.classList.remove('active');
-    verificationWindow.style.display = 'none';
-    document.getElementById('verification-code').value = '';
+    if (verificationWindow) {
+        verificationWindow.classList.remove('active');
+        verificationWindow.style.display = 'none';
+    }
+    const verificationCode = document.getElementById('verification-code');
+    if (verificationCode) verificationCode.value = '';
     
     // Reset table cells
     const cells = document.querySelectorAll('.week-table tbody td:not(:first-child)');
@@ -1609,8 +1630,6 @@ function closeAccountsMenu() {
     }
 }
 
-// ...existing code...
-
 async function loadTimetables() {
     try {
         // First, clear existing buttons to prevent duplicates
@@ -1628,10 +1647,10 @@ async function loadTimetables() {
         // Check if user is logged in - if not, don't load any classes
         if (!currentUser.isLoggedIn) {
             console.log('User not logged in, hiding all classes');
-            // Show message in the container indicating login is required
+            // Show message in the container indicating login is required in Czech
             const loginMessage = document.createElement('div');
             loginMessage.className = 'login-required-message';
-            loginMessage.textContent = 'Please log in to view classes';
+            loginMessage.textContent = 'Přihlaste se, abyste zobrazil/a učebny';
             loginMessage.style.textAlign = 'center';
             loginMessage.style.padding = '20px';
             loginMessage.style.color = '#777';
@@ -2187,7 +2206,8 @@ function setupUIHandlers() {
             }
         });
     }
-      // Update accounts button functionality
+    
+    // Update accounts button functionality
     const accountsButton = document.getElementById('accounts-button');
     if (accountsButton) {
         // Remove any existing event listeners
@@ -2795,13 +2815,12 @@ function performLogout() {
     
     // Disable admin mode when logging out
     if (isAdminMode) {
-        isAdminMode = false;
         disableDebugMode(); // Clean up any admin UI
     }
     
     // Update UI
     const loginButton = document.getElementById('login-button');
-    loginButton.textContent = 'Login';
+    loginButton.textContent = 'Přihlášení';
     loginButton.classList.remove('logged-in');
 
     // Hide the timetable view
@@ -2827,10 +2846,10 @@ function performLogout() {
     if (container) {
         container.innerHTML = '';
         
-        // Show login required message
+        // Show login required message in Czech
         const loginMessage = document.createElement('div');
         loginMessage.className = 'login-required-message';
-        loginMessage.textContent = 'Please log in to view classes';
+        loginMessage.textContent = 'Přihlaste se, abyste zobrazil/a učebny';
         loginMessage.style.textAlign = 'center';
         loginMessage.style.padding = '20px';
         loginMessage.style.color = '#777';

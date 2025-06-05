@@ -1,10 +1,17 @@
 | ZMĚNY |
-Š - added server backend config file with the option of manual parameter setting
-  - added option of "npm start" for development purposes
-  - created package.json for npm script support - diky copilote (kys)
-  - now you can run "npm start" to start the server - diky copilote (kys)
-  - separated frontend and backend
-  - I DIDNT FUCKING BREAK IT NO WAY
+Š - V 1.1
+    - added server backend config file with the option of manual parameter setting
+    - added option of "npm start" for development purposes
+    - created package.json for npm script support - diky copilote (kys)
+    - now you can run "npm start" to start the server - diky copilote (kys)
+    - separated frontend and backend
+      - localhost/IP:3000/  ==  "backend"
+      - localhost/IP:3000/app ==  frontend
+    - I DIDNT FUCKING BREAK IT NO WAY
+  - V 1.2
+    - fixed admin accounts' logout error where create-new button stays accessible
+    - fixed some translations
+
 ------------------------------------------------
 
 | CO DĚLAT |
@@ -13,6 +20,7 @@ A - dokončili jsme to, vyhráli jsme hru
 
 Š - TY HAJZLE
   - btw, nefacha accounts edit a remove
+    - ty tlačítka nic nedělaj
   
 ------------------------------------------------
 

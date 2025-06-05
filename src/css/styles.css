@@ -1855,7 +1855,7 @@ body.debug-mode {
 }
 
 #login-button.logged-in:hover::before {
-    content: "Click to logout";
+    content: "Klikněte pro odhlášení";
     position: absolute;
     bottom: -35px; /* More space below */
     left: 50%;

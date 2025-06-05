@@ -10,6 +10,10 @@
           "content": "d",
           "isPermanent": true
         },
+        "4": {
+          "content": "g - Roud",
+          "isPermanent": false
+        },
         "6": {
           "content": "ffews - Vald",
           "isPermanent": false
@@ -21,11 +25,16 @@
           "isPermanent": false
         }
       },
-      "4": {}
+      "4": {
+        "3": {
+          "content": "g - Roud",
+          "isPermanent": false
+        }
+      }
     }
   },
   "calendar": "",
-  "currentWeek": "2025-06-05T21:12:06.137Z",
+  "currentWeek": "2025-06-05T22:17:55.445Z",
   "permanentHours": {
     "0": {},
     "1": {},
