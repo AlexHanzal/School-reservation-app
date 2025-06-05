@@ -2,7 +2,7 @@ const API_URL = `http://${window.location.hostname}:3000/api`;
 
 const translations = {
     cs: {
-        weekdays: ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'],
+        weekdays: ['Pondělí', 'Úterý', 'Středa', 'Čtvrtek', 'Pátek', 'Sobota', 'Neděle'],
         months: ['Leden', 'Únor', 'Březen', 'Duben', 'Květen', 'Červen', 
                 'Červenec', 'Srpen', 'Září', 'Říjen', 'Listopad', 'Prosinec'],
         timetable: {
@@ -11,16 +11,6 @@ const translations = {
             weekView: 'Týdenní zobrazení'
         }
     },
-    en: {
-        weekdays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-        months: ['January', 'February', 'March', 'April', 'May', 'June',
-                'July', 'August', 'September', 'October', 'November', 'December'],
-        timetable: {
-            selectDate: 'Select a date',
-            noDateSelected: 'No date selected',
-            weekView: 'Week view'
-        }
-    }
 };
 
 let currentLanguage = 'cs'; // Default language
@@ -159,7 +149,7 @@ function addCalendarNavigation(calendar) {
     });
     
     const todayBtn = document.createElement('button');
-    todayBtn.textContent = 'Today';
+    todayBtn.textContent = 'Dnes';
     todayBtn.className = 'calendar-nav-btn today';
     todayBtn.addEventListener('click', () => {
         const today = new Date();
@@ -200,7 +190,7 @@ function getCurrentDate() {
 // Updated selectDate function that better integrates with timetables
 function selectDate(day = currentDate.getDate(), event) {
     if (!currentTimetableName) {
-        showCustomAlert('Error', 'No timetable selected', 'error');
+        showCustomAlert('Chyba', 'Není vybrán žádný rozvrh', 'error');
         return;
     }
     
@@ -267,10 +257,10 @@ function getStartOfWeek(date) {
 
 // Update the showTimetable function to properly use the calendar
 function showTimetable(name) {
-    console.log('Showing timetable:', name);
+    console.log('Zobrazuji rozvrh:', name);
     if (!timetables[name]) {
-        console.error('Timetable not found:', name);
-        showCustomAlert('Error', 'Timetable not found', 'error');
+        console.error('Rozvrh nenalezen:', name);
+        showCustomAlert('Chyba', 'Rozvrh nenalezen', 'error');
         return;
     }
 
@@ -692,15 +682,15 @@ async function savePermanentHourWithRange() {
         });
         
         if (response.ok) {
-            showCustomAlert('Success', 'Permanent hour saved successfully', 'success');
+            showCustomAlert('Úspěch', 'Trvalá hodina byla úspěšně uložena', 'success');
             // Refresh the display
             displayTimetableDataForWeek(startOfWeek);
         } else {
-            showCustomAlert('Error', 'Failed to save permanent hour', 'error');
+            showCustomAlert('Chyba', 'Nepodařilo se uložit trvalou hodinu', 'error');
         }
     } catch (error) {
-        console.error('Failed to save permanent hour:', error);
-        showCustomAlert('Error', 'Failed to save permanent hour', 'error');
+        console.error('Nepodařilo se uložit trvalou hodinu:', error);
+        showCustomAlert('Chyba', 'Nepodařilo se uložit trvalou hodinu', 'error');
     }
     
     // Close the overlay
@@ -771,13 +761,13 @@ document.getElementById('submit-button').addEventListener('click', async () => {
                 nameInput.value = '';
                 
                 // Show success message
-                showCustomAlert('Success', 'New class created successfully', 'success');
+                showCustomAlert('Úspěch', 'Nová třída byla úspěšně vytvořena', 'success');
             } else {
-                showCustomAlert('Error', result.error || 'Failed to create class', 'error');
+                showCustomAlert('Chyba', result.error || 'Nepodařilo se vytvořit třídu', 'error');
             }
         } catch (error) {
-            console.error('Failed to create timetable:', error);
-            showCustomAlert('Error', 'Failed to create timetable', 'error');
+            console.error('Nepodařilo se vytvořit rozvrh:', error);
+            showCustomAlert('Chyba', 'Nepodařilo se vytvořit rozvrh', 'error');
             
             // Hide loading overlay on error
             const loadingOverlay = document.getElementById('loadingOverlay');
@@ -786,7 +776,7 @@ document.getElementById('submit-button').addEventListener('click', async () => {
             }
         }
     } else {
-        showCustomAlert('Error', 'Please enter a class name', 'error');
+        showCustomAlert('Chyba', 'Prosím zadejte název třídy', 'error');
     }
 });
 
@@ -800,8 +790,8 @@ document.addEventListener('DOMContentLoaded', () => {
             showTimetable(savedTimetable);
         }
     }).catch(error => {
-        console.error('Error during initialization:', error);
-        showCustomAlert('Error', 'Failed to initialize application', 'error');
+        console.error('Chyba během inicializace:', error);
+        showCustomAlert('Chyba', 'Nepodařilo se inicializovat aplikaci', 'error');
     });
     
     // Add event listener for the create-new button to show select screen
@@ -810,54 +800,7 @@ document.addEventListener('DOMContentLoaded', () => {
         createNewBtn.addEventListener('click', () => {
             showSelectScreen();
         });
-    }// Update debug menu button handlers
-document.addEventListener('DOMContentLoaded', () => {
-    const debugButton = document.getElementById('debug-button');
-    const debugMenu = document.getElementById('debug-menu');
-    const debugOverlay = document.getElementById('debug-overlay');
-    const closeDebug = document.getElementById('close-debug');
-    
-    // Only set these up if the elements exist
-    if (debugButton && debugMenu && debugOverlay && closeDebug) {        // Debug menu button handlers
-        document.getElementById('debug-reset-all').addEventListener('click', async () => {
-            await resetAllTimetables();
-            // Close debug menu after reset operation is done
-            document.getElementById('debug-menu').classList.remove('active');
-            document.getElementById('debug-overlay').classList.remove('active');
-        });
-        
-        document.getElementById('debug-create-new').addEventListener('click', () => {
-            showSelectScreen();
-            debugMenu.classList.remove('active');
-            debugOverlay.classList.remove('active');
-        });
-        
-        document.getElementById('debug-accounts').addEventListener('click', () => {
-            const accountsMenu = document.getElementById('accounts-menu');
-            const accountsOverlay = document.getElementById('accounts-overlay');
-            accountsMenu.classList.add('active');
-            accountsOverlay.classList.add('active');
-            debugMenu.classList.remove('active');
-            debugOverlay.classList.remove('active');
-        });
-        
-        debugButton.addEventListener('click', () => {
-            debugMenu.classList.add('active');
-            debugOverlay.classList.add('active');
-            debugMenu.style.display = 'block';
-            debugOverlay.style.display = 'block';
-        });
-        
-        closeDebug.addEventListener('click', () => {
-            debugMenu.classList.remove('active');
-            debugOverlay.classList.remove('active');
-            setTimeout(() => {
-                debugMenu.style.display = 'none';
-                debugOverlay.style.display = 'none';
-            }, 300);
-        });
     }
-});
 
     // Fix accounts menu close button
     document.getElementById('close-accounts').addEventListener('click', () => {
@@ -869,8 +812,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Update accounts button functionality
     document.getElementById('accounts-button').addEventListener('click', () => {
-        // Allow if in admin mode OR debug mode
-        if (isAdminMode || document.body.classList.contains('debug-mode')) {
+        // Allow if in admin mode
+        if (isAdminMode) {
             const accountsMenu = document.getElementById('accounts-menu');
             const accountsOverlay = document.getElementById('accounts-overlay');
 
@@ -930,21 +873,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (modifyAccountsBtn) {
         modifyAccountsBtn.addEventListener('click', () => {
-            console.log('Modify Accounts button clicked');
+            console.log('Tlačítko Upravit účty kliknuto');
             closeAccountsMenu(); // Close the menu after clicking
         });
     }
 
     if (removeAccountsBtn) {
         removeAccountsBtn.addEventListener('click', () => {
-            console.log('Remove Accounts button clicked');
+            console.log('Tlačítko Odebrat účty kliknuto');
             closeAccountsMenu(); // Close the menu after clicking
         });
     }
 
     if (createAccountsBtn) {
         createAccountsBtn.addEventListener('click', () => {
-            console.log('Create Accounts button clicked');
+            console.log('Tlačítko Vytvořit účty kliknuto');
             showAccountCreatePopup();
             closeAccountsMenu(); // Close the menu after clicking
         });
@@ -960,7 +903,7 @@ async function handleLogin() {
     loginError.style.display = 'none';
     
     if (!userSelect.value || !passwordInput.value) {
-        loginError.textContent = 'Please fill in all fields';
+        loginError.textContent = 'Prosím vyplňte všechna pole';
         loginError.style.display = 'block';
         return;
     }
@@ -981,8 +924,8 @@ async function handleLogin() {
         if (response.ok) {
             const loginButton = document.getElementById('login-button');
             loginButton.textContent = data.name; // Show user name
-            loginButton.title = "Click to logout"; // Add tooltip text
-            loginButton.setAttribute('aria-label', `${data.name} (Click to logout)`); // Accessibility
+            loginButton.title = "Klikněte pro odhlášení"; // Add tooltip text
+            loginButton.setAttribute('aria-label', `${data.name} (Klikněte pro odhlášení)`); // Accessibility
             loginButton.classList.add('logged-in');
             
             // Store user information in our global object including admin status
@@ -996,14 +939,14 @@ async function handleLogin() {
             
             // Check if user is an admin and enable admin mode if true
             if (data.isAdmin === true) {
-                console.log("Admin user detected - enabling admin mode");
+                console.log("Zjištěn administrátorský uživatel - povoluje se režim administrátora");
                 isAdminMode = true;
                 enableDebugMode(); // This function activates all admin UI elements
                 
                 // Ensure admin button is updated
                 const adminButton = document.getElementById('admin-button');
                 if (adminButton) {
-                    adminButton.innerHTML = 'Admin Mode <span class="admin-check">✓</span>';
+                    adminButton.innerHTML = 'Režim administrátora <span class="admin-check">✓</span>';
                     adminButton.disabled = true;
                     adminButton.classList.add('admin-active');
                 }
@@ -1033,7 +976,7 @@ async function handleLogin() {
                 }
                 toggleButton.style.display = 'block';
                 
-                showCustomAlert('Admin Mode', 'Administrator privileges activated', 'success');
+                showCustomAlert('Režim administrátora', 'Administrátorská oprávnění aktivována', 'success');
             }
             
             // Close login menu immediately after successful login
@@ -1057,20 +1000,20 @@ async function handleLogin() {
                     
                     // Fix the edit functionality after login and timetable is loaded
                     setTimeout(() => {
-                        console.log('Setting up edit functionality with delay after login');
+                        console.log('Nastavení funkce úprav s prodlevou po přihlášení');
                         enableCellEditingAfterLogin();
                     }, 500); // Small delay to ensure DOM is ready
                 }
             });
             
-            showCustomAlert('Success', 'Logged in successfully', 'success');
+            showCustomAlert('Úspěch', 'Úspěšně přihlášen', 'success');
         } else {
-            loginError.textContent = data.error || 'Invalid password';
+            loginError.textContent = data.error || 'Neplatné heslo';
             loginError.style.display = 'block';
         }
     } catch (error) {
-        console.error('Login failed:', error);
-        loginError.textContent = 'Connection error. Please try again.';
+        console.error('Přihlášení selhalo:', error);
+        loginError.textContent = 'Chyba připojení. Prosím zkuste to znovu.';
         loginError.style.display = 'block';
     }
 }
@@ -1136,18 +1079,18 @@ function setupLoginHandlers() {
 
 document.addEventListener('DOMContentLoaded', () => {
     // We need to make sure this only runs once
-    console.log('Document loaded, initializing...');
+    console.log('Dokument načten, inicializuji...');
     
     // Load timetables first - single source of truth for initialization
     loadTimetables().then(() => {
-        console.log('Timetables loaded, restoring previous state...');
+        console.log('Rozvrhy načteny, obnovuji předchozí stav...');
         const savedTimetable = localStorage.getItem('currentTimetable');
         if (savedTimetable && timetables[savedTimetable]) {
             showTimetable(savedTimetable);
         }
     }).catch(error => {
-        console.error('Error during initialization:', error);
-        showCustomAlert('Error', 'Failed to initialize application', 'error');
+        console.error('Chyba během inicializace:', error);
+        showCustomAlert('Chyba', 'Nepodařilo se inicializovat aplikaci', 'error');
     });
 
     // Then load users and set up other handlers
@@ -1158,32 +1101,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // ...existing code...
 });
 
-
-// Fix the enableDebugMode function
+// Fix the enableDebugMode function - remove debug button creation
 function enableDebugMode() {
-    // Create debug button if it doesn't exist
-    let debugButton = document.getElementById('debug-button');
-    if (!debugButton) {
-        debugButton = document.createElement('button');
-        debugButton.id = 'debug-button';
-        debugButton.textContent = 'Debug Menu';
-        debugButton.style.padding = '30px 55px';
-        debugButton.style.fontSize = '1.6em';
-        debugButton.style.display = 'block'; // Make sure it's visible
-        document.body.appendChild(debugButton);
-        
-        debugButton.addEventListener('click', () => {
-            const debugMenu = document.getElementById('debug-menu');
-            const debugOverlay = document.getElementById('debug-overlay');
-            debugMenu.classList.add('active');
-            debugMenu.style.display = 'block';
-            debugOverlay.classList.add('active');
-            debugOverlay.style.display = 'block';
-        });
-    } else {
-        debugButton.style.display = 'block';
-    }
-    
     // Set admin mode and update UI
     isAdminMode = true;
     toggleAdminEditMode();
@@ -1191,7 +1110,7 @@ function enableDebugMode() {
     // Update admin button
     const adminBtn = document.getElementById('admin-button');
     if (adminBtn) {
-        adminBtn.innerHTML = 'Admin Mode <span class="admin-check">✓</span>';
+        adminBtn.innerHTML = 'Režim administrátora <span class="admin-check">✓</span>';
         adminBtn.disabled = true;
         adminBtn.classList.add('admin-active');
     }
@@ -1253,7 +1172,7 @@ function toggleAdminEditMode() {
         setupCellEditing();
     }
     
-    console.log('Admin edit mode toggled:', isAdminMode);
+    console.log('Režim administrátora přepnut:', isAdminMode);
 }
 
 function disableDebugMode() {
@@ -1262,13 +1181,13 @@ function disableDebugMode() {
     
     // Reset admin button
     const adminBtn = document.getElementById('admin-button');
-    adminBtn.innerHTML = 'Admin Mode';
+    adminBtn.innerHTML = 'Režim administrátora';
     adminBtn.disabled = false;
     adminBtn.classList.remove('admin-active');
     
     // Reset edit button
     const editButton = document.querySelector('.edit-button');
-    editButton.textContent = 'Edit';
+    editButton.textContent = 'Upravit';
     editButton.style.backgroundColor = '';
     
     // Hide permanent hour toggle button
@@ -1297,8 +1216,6 @@ function disableDebugMode() {
     });
     
     // Close all menus
-    document.getElementById('debug-menu').classList.remove('active');
-    document.getElementById('debug-overlay').classList.remove('active');
     document.getElementById('accounts-menu').classList.remove('active');
     document.getElementById('accounts-overlay').classList.remove('active');
     document.getElementById('select-screen').classList.remove('active');
@@ -1341,25 +1258,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     accountsButton.addEventListener('click', () => {
-        if (isAdminMode || document.body.classList.contains('debug-mode')) {
+        if (isAdminMode) {
             toggleAccountsMenu();
         }
     });
 
     modifyAccountsBtn.addEventListener('click', () => {
-        console.log('Modify Accounts button clicked');
+        console.log('Tlačítko Upravit účty kliknuto');
         //toggleAccountsMenu();
     });
 
     removeAccountsBtn.addEventListener('click', () => {
-        console.log('Remove Accounts button clicked');
+        console.log('Tlačítko Odebrat účty kliknuto');
         //toggleAccountsMenu();
     });
 
     createAccountsBtn.addEventListener('click', () => {
-        console.log('Create Accounts button clicked');
+        console.log('Tlačítko Vytvořit účty kliknuto');
         showAccountCreatePopup();
-        closeAccountsMenu(); // Close the menu after clicking
+        closeAccountsMenu();
     });
 
 	closeAccountsBtn.addEventListener('click', () => {
@@ -1380,30 +1297,30 @@ function showAccountCreatePopup() {
         popup = document.createElement('div');
         popup.id = 'account-create-popup';
         popup.className = 'account-create-popup';        popup.innerHTML = `
-            <h2>Create New Account</h2>
+            <h2>Vytvořit nový účet</h2>
             <div class="input-group">
-                <label for="account-name">Full Name</label>
-                <input type="text" id="account-name" placeholder="Enter full name">
+                <label for="account-name">Celé jméno</label>
+                <input type="text" id="account-name" placeholder="Zadejte celé jméno">
             </div>
             <div class="input-group">
-                <label for="account-abbreviation">Abbreviation</label>
-                <input type="text" id="account-abbreviation" placeholder="Enter abbreviation">
+                <label for="account-abbreviation">Zkratka</label>
+                <input type="text" id="account-abbreviation" placeholder="Zadejte zkratku">
             </div>
             <div class="input-group">
-                <label for="account-password">Password</label>
-                <input type="password" id="account-password" placeholder="Enter password">
+                <label for="account-password">Heslo</label>
+                <input type="password" id="account-password" placeholder="Zadejte heslo">
             </div>
             <div class="input-group">
                 <label class="checkbox-label">
                     <input type="checkbox" id="account-is-admin">
                     <span class="checkmark"></span>
-                    Admin Account
+                    Administrátorský účet
                 </label>
             </div>
-            <div class="account-create-error" id="account-create-error">Error message will appear here</div>
+            <div class="account-create-error" id="account-create-error">Zde se zobrazí chybová zpráva</div>
             <div class="account-create-actions">
-                <button id="create-account-btn">Create Account</button>
-                <button id="cancel-account-btn">Cancel</button>
+                <button id="create-account-btn">Vytvořit účet</button>
+                <button id="cancel-account-btn">Zrušit</button>
             </div>
         `;
 
@@ -1473,7 +1390,7 @@ function createNewAccount() {
     const password = passwordInput.value.trim();
     const isAdmin = isAdminCheckbox.checked;
     
-    console.log('Creating account with isAdmin:', isAdmin); // Debug log
+    console.log('Vytváření účtu s isAdmin:', isAdmin);
     
     // Clear previous error
     errorElement.style.display = 'none';
@@ -1481,7 +1398,7 @@ function createNewAccount() {
     
     // Validate inputs
     if (!name || !abbreviation || !password) {
-        errorElement.textContent = 'All fields are required';
+        errorElement.textContent = 'Všechna pole jsou povinná';
         errorElement.style.display = 'block';
         return;
     }
@@ -1491,7 +1408,7 @@ function createNewAccount() {
     if (loadingOverlay) {
         loadingOverlay.classList.add('active');
         const loadingText = loadingOverlay.querySelector('.loading-text');
-        if (loadingText) loadingText.textContent = 'Creating account...';
+        if (loadingText) loadingText.textContent = 'Vytváření účtu...';
     }
     
     // Create fetch request with retry logic
@@ -1518,7 +1435,7 @@ function createNewAccount() {
         })
         .then(data => {
             if (loadingOverlay) loadingOverlay.classList.remove('active');
-            showCustomAlert('Success', 'Account created successfully', 'success');
+            showCustomAlert('Úspěch', 'Účet byl úspěšně vytvořen', 'success');
             hideAccountCreatePopup();
         })
         .catch(error => {
@@ -1540,14 +1457,14 @@ function createNewAccount() {
     }
 
     attemptRequest().catch(error => {
-        console.error('Error creating account:', error);
+        console.error('Chyba při vytváření účtu:', error);
         if (loadingOverlay) loadingOverlay.classList.remove('active');
         
-        let errorMessage = 'Connection error. Please try again.';
+        let errorMessage = 'Chyba připojení. Prosím zkuste to znovu.';
         if (error.message.includes('already exists')) {
-            errorMessage = 'This abbreviation is already in use';
+            errorMessage = 'Tato zkratka je již používána';
         } else if (error.message === 'Request timed out') {
-            errorMessage = 'Connection timed out. Please try again.';
+            errorMessage = 'Časový limit připojení vypršel. Prosím zkuste to znovu.';
         }
         
             errorElement.textContent = errorMessage;
@@ -1557,7 +1474,7 @@ function createNewAccount() {
 
 async function loadUserOptions() {
     try {
-        console.log('Fetching users...');
+        console.log('Načítání uživatelů...');
         const response = await fetch(`${API_URL}/users`);
         
         if (!response.ok) {
@@ -1565,16 +1482,16 @@ async function loadUserOptions() {
         }
         
         const users = await response.json();
-        console.log('Received users:', users);
+        console.log('Přijato uživatelů:', users);
         
         const userSelect = document.getElementById('user-select');
         if (!userSelect) {
-            console.error('User select element not found');
+            console.error('Element pro výběr uživatele nenalezen');
             return;
         }
         
         // Clear existing options
-        userSelect.innerHTML = '<option value="">Select a user</option>';
+        userSelect.innerHTML = '<option value="">Vyberte uživatele</option>';
         
         // Add user options
         users.forEach(user => {
@@ -1582,31 +1499,12 @@ async function loadUserOptions() {
             option.value = user.abbreviation;
             option.textContent = user.name;
             userSelect.appendChild(option);
-            console.log('Added user:', user.name);
+            console.log('Přidán uživatel:', user.name);
         });
     } catch (error) {
-        console.error('Failed to load users:', error);
+        console.error('Nepodařilo se načíst uživatele:', error);
     }
 }
-
-// Fix debug mode key combination
-document.addEventListener('keydown', (e) => {
-    if (e.shiftKey && e.code === 'KeyA') {
-        const handler = (e2) => {
-            if (e2.code === 'KeyS') {
-                document.body.classList.toggle('debug-mode');
-                const isDebugMode = document.body.classList.contains('debug-mode');
-                if (isDebugMode) {
-                    enableDebugMode();
-                } else {
-                    disableDebugMode();
-                }
-            }
-            document.removeEventListener('keydown', handler);
-        };
-        document.addEventListener('keydown', handler);
-    }
-});
 
 // Fix verification window functionality
 function setupVerificationWindow() {
@@ -1629,12 +1527,12 @@ function setupVerificationWindow() {
             closeVerificationWindow();
             const adminButton = document.getElementById('admin-button');
             if (adminButton) {
-                adminButton.innerHTML = 'Admin Mode <span class="admin-check">✓</span>';
+                adminButton.innerHTML = 'Režim administrátora <span class="admin-check">✓</span>';
                 adminButton.classList.add('admin-active');
             }
-            showCustomAlert('Success', 'Admin mode activated', 'success');
+            showCustomAlert('Úspěch', 'Režim administrátora aktivován', 'success');
         } else {
-            showCustomAlert('Error', 'Invalid verification code', 'error');
+            showCustomAlert('Chyba', 'Neplatný ověřovací kód', 'error');
         }
         verificationCode.value = '';
     }
@@ -1814,7 +1712,7 @@ async function loadTimetables() {
         console.log('Finished loading all timetables');
     } catch (error) {
         console.error('Failed to load timetables:', error);
-        showCustomAlert('Error', 'Failed to load timetables', 'error');
+        showCustomAlert('Chyba', 'Nepodařilo se načíst rozvrhy', 'error');
     }
 }
 
@@ -1830,7 +1728,7 @@ function createDynamicButton(name) {
     const editButton = document.createElement('button');
     editButton.className = 'gear-icon';
     editButton.innerHTML = '✎';
-    editButton.title = 'Edit class';
+    editButton.title = 'Upravit třídu';
     editButton.addEventListener('click', (e) => {
         e.stopPropagation(); // Prevent triggering the timetable show
         console.log('Edit button clicked for class:', name, 'Admin mode:', isAdminMode);
@@ -1867,17 +1765,17 @@ async function saveTimetable(name, data) {
         }
 
         await response.json();
-        showCustomAlert('Success', 'Changes saved successfully', 'success');
+        showCustomAlert('Úspěch', 'Změny byly úspěšně uloženy', 'success');
     } catch (error) {
-        console.error('Failed to save timetable:', error);
-        showCustomAlert('Error', 'Failed to save changes', 'error');
+        console.error('Nepodařilo se uložit rozvrh:', error);
+        showCustomAlert('Chyba', 'Nepodařilo se uložit změny', 'error');
     }
 }
 
 // Function to save the timetable, including permanent hours as objects in the data field
 async function saveTimeTable() {
     if (!currentTimetableName || !timetables[currentTimetableName]) {
-        showCustomAlert('Error', 'No timetable selected', 'error');
+        showCustomAlert('Chyba', 'Není vybrán žádný rozvrh', 'error');
         return;
     }
 
@@ -2109,7 +2007,7 @@ function setupCellEditing() {
 // Function to handle the reset all button
 async function resetAllTimetables() {
     console.log("Reset all timetables function called");
-    const confirmReset = confirm('Are you sure you want to delete all timetables? This cannot be undone.');
+    const confirmReset = confirm('Opravdu chcete smazat všechny rozvrhy? Tato akce je nevratná.');
     if (!confirmReset) return;
     
     try {
@@ -2164,7 +2062,7 @@ async function resetAllTimetables() {
         }
         
         console.log("Reset completed successfully");
-        showCustomAlert('Success', 'All timetables have been deleted', 'success');
+        showCustomAlert('Úspěch', 'Všechny rozvrhy byly smazány', 'success');
     } catch (error) {
         console.error('Failed to reset timetables:', error);
         
@@ -2175,7 +2073,7 @@ async function resetAllTimetables() {
             loadingOverlay.style.display = 'none';
         }
         
-        showCustomAlert('Error', `Failed to reset timetables: ${error.message}`, 'error');
+        showCustomAlert('Chyba', `Nepodařilo se resetovat rozvrhy: ${error.message}`, 'error');
     }
 }
 
@@ -2201,81 +2099,15 @@ document.addEventListener('DOMContentLoaded', () => {
             showTimetable(savedTimetable);
         }
     }).catch(error => {
-        console.error('Error during initialization:', error);
-        showCustomAlert('Error', 'Failed to initialize application', 'error');
+        console.error('Chyba během inicializace:', error);
+        showCustomAlert('Chyba', 'Nepodařilo se inicializovat aplikaci', 'error');
     });
     
     // Set up all other handlers
     setupLoginHandlers();
     setupVerificationWindow();
-    setupDebugMenuHandlers();
     setupUIHandlers();
 });
-
-// Setup debug menu handlers
-function setupDebugMenuHandlers() {
-    const debugButton = document.getElementById('debug-button');
-    const debugMenu = document.getElementById('debug-menu');
-    const debugOverlay = document.getElementById('debug-overlay');
-    const closeDebug = document.getElementById('close-debug');
-      // Only set these up if the elements exist
-    if (debugButton && debugMenu && debugOverlay && closeDebug) {
-        // Debug menu button handlers
-        const resetAllBtn = document.getElementById('debug-reset-all');
-        if (resetAllBtn) {
-            // Remove any existing event listeners to avoid duplicates
-            const newResetAllBtn = resetAllBtn.cloneNode(true);
-            resetAllBtn.parentNode.replaceChild(newResetAllBtn, resetAllBtn);
-            
-            newResetAllBtn.addEventListener('click', async () => {
-                console.log('Reset All button clicked');
-                try {
-                    await resetAllTimetables();
-                    // Close debug menu after reset operation is done
-                    debugMenu.classList.remove('active');
-                    debugOverlay.classList.remove('active');
-                } catch (error) {
-                    console.error('Error in resetAllTimetables:', error);
-                    showCustomAlert('Error', 'Failed to reset timetables: ' + error.message, 'error');
-                }
-            });
-        }
-        
-        document.getElementById('debug-create-new').addEventListener('click', () => {
-            showSelectScreen();
-            debugMenu.classList.remove('active');
-            debugOverlay.classList.remove('active');
-        });
-        
-        document.getElementById('debug-accounts').addEventListener('click', () => {
-            const accountsMenu = document.getElementById('accounts-menu');
-            const accountsOverlay = document.getElementById('accounts-overlay');
-            if (accountsMenu && accountsOverlay) {
-                accountsMenu.classList.add('active');
-                accountsOverlay.classList.add('active');
-                debugMenu.classList.remove('active');
-                debugOverlay.classList.remove('active');
-            }
-        });
-        
-        debugButton.addEventListener('click', () => {
-            debugMenu.classList.add('active');
-            debugOverlay.classList.add('active');
-            debugMenu.style.display = 'block';
-            debugOverlay.style.display = 'block';
-        });
-        
-        closeDebug.addEventListener('click', () => {
-            debugMenu.classList.remove('active');
-            debugOverlay.classList.remove('active');
-            setTimeout(() => {
-                debugMenu.style.display = 'none';
-                debugOverlay.style.display = 'none';
-            }, 300);
-        });
-    }
-    
-}
 
 // Setup general UI handlers
 function setupUIHandlers() {
@@ -2361,8 +2193,8 @@ function setupUIHandlers() {
         accountsButton.parentNode.replaceChild(newAccountsButton, accountsButton);
         
         newAccountsButton.addEventListener('click', () => {
-            // Allow if in admin mode OR debug mode
-            if (isAdminMode || document.body.classList.contains('debug-mode')) {
+            // Allow if in admin mode
+            if (isAdminMode) {
                 const accountsMenu = document.getElementById('accounts-menu');
                 const accountsOverlay = document.getElementById('accounts-overlay');
                 
@@ -2414,7 +2246,7 @@ function setupUIHandlers() {
             if (!isAdminMode) {
                 isEditMode = !isEditMode;
                 console.log('Edit mode toggled:', isEditMode);
-                this.textContent = isEditMode ? 'Cancel' : 'Edit';
+                this.textContent = isEditMode ? 'Zrušit' : 'Upravit';
                 
                 const cells = document.querySelectorAll('.week-table tbody td:not(:first-child)');
                 cells.forEach(cell => {                
@@ -2448,7 +2280,7 @@ function setupUIHandlers() {
             isEditMode = false;
             const editButton = document.querySelector('.edit-button');
             if (editButton) {
-                editButton.textContent = 'Edit';
+                editButton.textContent = 'Upravit';
             }
             saveButton.style.display = 'none';
             
@@ -2490,7 +2322,7 @@ function enableCellEditingAfterLogin() {
             console.log('Edit mode toggled to:', isEditMode);
             
             // Update button text
-            this.textContent = isEditMode ? 'Cancel' : 'Edit';
+            this.textContent = isEditMode ? 'Zrušit' : 'Upravit';
             
             // Make cells editable or non-editable
             const cells = document.querySelectorAll('.week-table tbody td:not(:first-child)');
@@ -2528,16 +2360,16 @@ function showClassEditMenu(name) {
         popup.className = 'class-edit-popup';
         
         popup.innerHTML = `
-            <h2>Edit Class</h2>
+            <h2>Upravit třídu</h2>
             <div class="input-group">
-                <label for="class-name-edit">Class Name</label>
-                <input type="text" id="class-name-edit" placeholder="Enter new class name">
+                <label for="class-name-edit">Název třídy</label>
+                <input type="text" id="class-name-edit" placeholder="Zadejte nový název třídy">
             </div>
             <div class="class-edit-error" id="class-edit-error"></div>
             <div class="class-edit-actions">
-                <button id="rename-class-btn" class="primary-btn">Rename Class</button>
-                <button id="delete-class-btn" class="danger-btn">Delete Class</button>
-                <button id="cancel-class-edit-btn">Cancel</button>
+                <button id="rename-class-btn" class="primary-btn">Přejmenovat třídu</button>
+                <button id="delete-class-btn" class="danger-btn">Smazat třídu</button>
+                <button id="cancel-class-edit-btn">Zrušit</button>
             </div>
         `;
         
@@ -2602,7 +2434,7 @@ async function renameClass(oldName) {
     
     // Validate new name
     if (!newName) {
-        errorElement.textContent = 'Please enter a class name';
+        errorElement.textContent = 'Prosím zadejte název třídy';
         errorElement.style.display = 'block';
         return;
     }
@@ -2614,7 +2446,7 @@ async function renameClass(oldName) {
     
     // Check if the new name already exists
     if (timetables[newName]) {
-        errorElement.textContent = 'A class with this name already exists';
+        errorElement.textContent = 'Třída s tímto názvem již existuje';
         errorElement.style.display = 'block';
         return;
     }
@@ -2640,7 +2472,7 @@ async function renameClass(oldName) {
         });
         
         if (!response.ok) {
-            throw new Error('Failed to create new class');
+            throw new Error('Nepodařilo se vytvořit novou třídu');
         }
         
         const result = await response.json();
@@ -2659,7 +2491,7 @@ async function renameClass(oldName) {
         });
         
         if (!updateResponse.ok) {
-            throw new Error('Failed to update class data');
+            throw new Error('Nepodařilo se aktualizovat data třídy');
         }
           // Delete the old class - using the correct API format
         const deleteResponse = await fetch(`${API_URL}/timetables`, {
@@ -2671,7 +2503,7 @@ async function renameClass(oldName) {
         });
         
         if (!deleteResponse.ok) {
-            throw new Error(`Failed to delete old class: ${deleteResponse.status}`);
+            throw new Error(`Nepodařilo se smazat starou třídu: ${deleteResponse.status}`);
         }
         
         // Update local data
@@ -2722,9 +2554,9 @@ async function renameClass(oldName) {
         }
         
         hideClassEditMenu();
-        showCustomAlert('Success', 'Class renamed successfully', 'success');
+        showCustomAlert('Úspěch', 'Třída byla úspěšně přejmenována', 'success');
           } catch (error) {
-        console.error('Failed to rename class:', error);
+        console.error('Nepodařilo se přejmenovat třídu:', error);
         
         // Hide loading overlay
         if (loadingOverlay) {
@@ -2733,18 +2565,18 @@ async function renameClass(oldName) {
         }
         
         // Show detailed error in UI
-        errorElement.textContent = `Failed to rename class: ${error.message}`;
+        errorElement.textContent = `Nepodařilo se přejmenovat třídu: ${error.message}`;
         errorElement.style.display = 'block';
         
         // Show alert with error details
-        showCustomAlert('Error', `Unable to rename the class. Please try again. (${error.message})`, 'error');
+        showCustomAlert('Chyba', `Nepodařilo se přejmenovat třídu. Prosím zkuste to znovu. (${error.message})`, 'error');
     }
 }
 
 // Function to delete a class
 async function deleteClass(name) {
     // Ask for confirmation
-    const confirmDelete = confirm(`Are you sure you want to delete the class "${name}"? This cannot be undone.`);
+    const confirmDelete = confirm(`Opravdu chcete smazat třídu "${name}"? Tato akce je nevratná.`);
     if (!confirmDelete) return;
     
     // Show loading overlay
@@ -2816,9 +2648,9 @@ async function deleteClass(name) {
         }
         
         hideClassEditMenu();
-        showCustomAlert('Success', 'Class deleted successfully', 'success');
+        showCustomAlert('Úspěch', 'Třída byla úspěšně smazána', 'success');
     } catch (error) {
-        console.error('Failed to delete class:', error);
+        console.error('Nepodařilo se smazat třídu:', error);
         
         // Hide loading overlay
         if (loadingOverlay) {
@@ -2828,11 +2660,11 @@ async function deleteClass(name) {
         
         // Show detailed error in UI
         const errorElement = document.getElementById('class-edit-error');
-        errorElement.textContent = `Failed to delete class: ${error.message}`;
+        errorElement.textContent = `Nepodařilo se smazat třídu: ${error.message}`;
         errorElement.style.display = 'block';
         
         // Show alert with error details
-        showCustomAlert('Error', `Unable to delete the class. Please try again. (${error.message})`, 'error');
+        showCustomAlert('Chyba', `Nepodařilo se smazat třídu. Prosím zkuste to znovu. (${error.message})`, 'error');
     }
 }
 
@@ -2907,11 +2739,11 @@ function showLogoutConfirmation() {
         
         confirmPopup.innerHTML = `
             <div class="logout-confirm-content">
-                <h3>Confirm Logout</h3>
-                <p>Are you sure you want to log out?</p>
+                <h3>Potvrďte odhlášení</h3>
+                <p>Opravdu chcete odhlásit?</p>
                 <div class="logout-buttons">
-                    <button id="confirm-logout">Yes, Log Out</button>
-                    <button id="cancel-logout">Cancel</button>
+                    <button id="confirm-logout">Ano, odhlásit</button>
+                    <button id="cancel-logout">Zrušit</button>
                 </div>
             </div>
         `;
@@ -3004,7 +2836,7 @@ function performLogout() {
     }
     
     // Show success message
-    showCustomAlert('Success', 'You have been logged out', 'success');
+    showCustomAlert('Úspěch', 'Byli jste úspěšně odhlášeni', 'success');
 }
 
 // Function to toggle permanent hour mode
@@ -3017,18 +2849,18 @@ function togglePermanentHourMode() {
     if (toggleButton) {
         if (permanentHourModeEnabled) {
             toggleButton.classList.add('active');
-            toggleButton.textContent = 'Permanent Hours: ON';
+            toggleButton.textContent = 'Trvalé hodiny: ON';
         } else {
             toggleButton.classList.remove('active');
-            toggleButton.textContent = 'Permanent Hours: OFF';
+            toggleButton.textContent = 'Trvalé hodiny: OFF';
         }
     }
     
     // Show feedback to user
-    showCustomAlert('Admin Mode', 
+    showCustomAlert('Režim administrátora', 
         permanentHourModeEnabled ? 
-        'Permanent hours mode is now ON. Edited cells will become permanent.' : 
-        'Permanent hours mode is now OFF. Edited cells will be regular entries.', 
+        'Režim trvalých hodin je nyní ZAPNUT. Upravené buňky se stanou trvalými.' : 
+        'Režim trvalých hodin je nyní VYPNUT. Upravené buňky budou běžné položky.', 
         'info');
 }
 
