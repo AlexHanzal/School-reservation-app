@@ -1,12 +1,12 @@
-| CHANGES |
-setting a pernament hour from date to date(its cluncky as fuck)
+| ZMĚNY |
+nastavení trvalé hodiny od data do data (je to poměrně neohrabané)
 ------------------------------------------------
 
-| TO DO |
-we have done it we won the game
+| CO DĚLAT |
+dokončili jsme to, vyhráli jsme hru
 https://www.youtube.com/watch?v=xvFZjo5PgG0
 ------------------------------------------------
 
-| NEEDS FIXING |
-when you click on a timetable it opens a different timetable
- than when you then click on any date in the timetable
+| POTŘEBUJE OPRAVU |
+když kliknete na rozvrh, otevře se jiný rozvrh
+ než když pak kliknete na jakékoli datum v rozvrhu

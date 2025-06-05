@@ -1,4 +1,4 @@
-Make it so that when a user successfully logs in their name is displayed in the header as "Welcome, <user's name>!"
+Zajistit, aby se po úspěšném přihlášení uživatele zobrazilo jeho jméno v hlavičce jako "Vítejte, <jméno uživatele>!"
 
-As soon as the Login button inside the login menu is pressed and valid credentials are inputted, close the window
+Jakmile je stisknuto tlačítko Přihlásit se v přihlašovacím menu a jsou zadány platné přihlašovací údaje, zavřít okno
 
