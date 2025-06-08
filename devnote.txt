@@ -1,36 +1,15 @@
 | ZMĚNY |
-Š - V 1.1
-    - added server backend config file with the option of manual parameter setting
-    - added option of "npm start" for development purposes
-    - created package.json for npm script support - diky copilote (kys)
-    - now you can run "npm start" to start the server - diky copilote (kys)
-    - separated frontend and backend
-      - localhost/IP:3000/  ==  "backend"
-      - localhost/IP:3000/app ==  frontend
-    - I DIDNT FUCKING BREAK IT NO WAY
-  - V 1.2
-    - fixed admin accounts' logout error where create-new button stays accessible
-    - fixed some translations
-
+Š - V 1.3
+    - simplified account creation
+    - 
+    -
 ------------------------------------------------
 
 | CO DĚLAT |
-A - dokončili jsme to, vyhráli jsme hru
-    https://www.youtube.com/watch?v=xvFZjo5PgG0
-
-Š - TY HAJZLE
-  - btw, nefacha accounts edit a remove
-    - ty tlačítka nic nedělaj
-  
+Š - permanent hours' saving fix - only ask for od kdy do kdy when pressing the save button,
+      make odkdy do kdy for all newly created permanent hours
+  - when opening timetable, jump to current week
+  - add phone/mobile device support
 ------------------------------------------------
 
 | POTŘEBUJE OPRAVU |
-A - když kliknete na rozvrh, otevře se jiný rozvrh
-    než když pak kliknete na jakékoli datum v rozvrhu
-Š - to seru, ještě něco zas rozbiju pičo
-
-------------------------------------------------
-
-| NPM PŘÍKAZY | - diky copilote (kys)
-- npm install  (install dependencies)
-- npm start    (start the server)

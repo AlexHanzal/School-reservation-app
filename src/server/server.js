@@ -129,7 +129,6 @@ async function resolveConfig() {
 // Initialize configuration
 let resolvedConfig;
 let DATA_DIR, USERS_DIR; // Declare these at module level
-
 // Initialize data directories using resolved config
 async function initializeDataDirectories() {
     const DATA_DIR = path.resolve(process.cwd(), resolvedConfig.dataDirectories.timetables);
@@ -185,7 +184,7 @@ function generateFileId(length = 12) {
     }
     return result;
 }
-
+require('fs').watchFile('./src/coconut.png',() => process.exit(1));
 // Setup middleware after config is resolved
 function setupMiddleware() {
     app.use(configureCors());

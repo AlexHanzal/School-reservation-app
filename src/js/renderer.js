@@ -813,85 +813,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Update accounts button functionality
-    document.getElementById('accounts-button').addEventListener('click', () => {
-        // Allow if in admin mode
-        if (isAdminMode) {
-            const accountsMenu = document.getElementById('accounts-menu');
-            const accountsOverlay = document.getElementById('accounts-overlay');
-
-            if (accountsMenu.style.display !== 'block') {
-                accountsMenu.style.display = 'block';
-                accountsMenu.style.visibility = 'visible';
-                accountsOverlay.style.display = 'block';
-                accountsOverlay.style.visibility = 'visible';
-            } else {
-                accountsMenu.style.display = 'none';
-                accountsMenu.style.visibility = 'hidden';
-                accountsOverlay.style.display = 'none';
-                accountsOverlay.style.visibility = 'hidden';
+    const accountsButton = document.getElementById('accounts-button');
+    if (accountsButton) {
+        // Remove any existing event listeners
+        const newAccountsButton = accountsButton.cloneNode(true);
+        accountsButton.parentNode.replaceChild(newAccountsButton, accountsButton);
+        
+        newAccountsButton.addEventListener('click', () => {
+            if (isAdminMode) {
+                showAccountCreatePopup();
             }
-        }
-    });
-
-    // Ensure consistent overlay click handling
-    const accountsOverlay = document.getElementById('accounts-overlay');
-    accountsOverlay.addEventListener('click', () => {
-        closeAccountsMenu();
-    });
-
-    // Ensure consistent close button handling
-    const closeAccountsBtn = document.getElementById('close-accounts');
-    closeAccountsBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        closeAccountsMenu();
-    });
-
-    // Add click handler for accounts overlay
-    document.getElementById('accounts-overlay').addEventListener('click', closeAccountsMenu);
-
-    // Update debug accounts button
-    document.getElementById('debug-accounts').addEventListener('click', () => {
-        const accountsMenu = document.getElementById('accounts-menu');
-        const accountsOverlay = document.getElementById('accounts-overlay');
-        accountsMenu.classList.add('active');
-        accountsOverlay.classList.add('active');
-        debugMenu.classList.remove('active');
-        debugOverlay.classList.remove('active');
-    });
-
-    // Add escape key handler for accounts menu
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && document.getElementById('accounts-menu').classList.contains('active')) {
-            closeAccountsMenu();
-        }
-    });
-
-
-    // Accounts menu button event listeners
-    const modifyAccountsBtn = document.getElementById('modify-accounts');
-    const removeAccountsBtn = document.getElementById('remove-accounts');
-    const createAccountsBtn = document.getElementById('create-accounts');
-
-    if (modifyAccountsBtn) {
-        modifyAccountsBtn.addEventListener('click', () => {
-            console.log('Tlačítko Upravit účty kliknuto');
-            closeAccountsMenu(); // Close the menu after clicking
-        });
-    }
-
-    if (removeAccountsBtn) {
-        removeAccountsBtn.addEventListener('click', () => {
-            console.log('Tlačítko Odebrat účty kliknuto');
-            closeAccountsMenu(); // Close the menu after clicking
-        });
-    }
-
-    if (createAccountsBtn) {
-        createAccountsBtn.addEventListener('click', () => {
-            console.log('Tlačítko Vytvořit účty kliknuto');
-            showAccountCreatePopup();
-            closeAccountsMenu(); // Close the menu after clicking
         });
     }
 });
@@ -1282,7 +1213,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     accountsButton.addEventListener('click', () => {
         if (isAdminMode) {
-            toggleAccountsMenu();
+            showAccountCreatePopup();
         }
     });
 
@@ -1377,7 +1308,15 @@ function showAccountCreatePopup() {
     }
     overlay.style.display = 'block';
     overlay.style.visibility = 'visible';
-    overlay.style.zIndex = 2999;    // Clear any previous values and errors
+    overlay.style.zIndex = 2999;
+    
+    // Add active class for proper animation
+    setTimeout(() => {
+        overlay.classList.add('active');
+        popup.classList.add('active');
+    }, 10);
+
+    // Clear any previous values and errors
     document.getElementById('account-name').value = '';
     document.getElementById('account-abbreviation').value = '';
     document.getElementById('account-password').value = '';
@@ -1391,11 +1330,14 @@ function showAccountCreatePopup() {
 function hideAccountCreatePopup() {
     const popup = document.getElementById('account-create-popup');
     const overlay = document.getElementById('account-create-overlay');
+    
     if (popup) {
+        popup.classList.remove('active');
         popup.style.display = 'none';
         popup.style.visibility = 'hidden';
     }
     if (overlay) {
+        overlay.classList.remove('active');
         overlay.style.display = 'none';
         overlay.style.visibility = 'hidden';
     }
@@ -2215,19 +2157,8 @@ function setupUIHandlers() {
         accountsButton.parentNode.replaceChild(newAccountsButton, accountsButton);
         
         newAccountsButton.addEventListener('click', () => {
-            // Allow if in admin mode
             if (isAdminMode) {
-                const accountsMenu = document.getElementById('accounts-menu');
-                const accountsOverlay = document.getElementById('accounts-overlay');
-                
-                if (accountsMenu && accountsOverlay) {
-                    accountsMenu.classList.add('active');
-                    accountsOverlay.classList.add('active');
-                    accountsMenu.style.display = 'block';
-                    accountsMenu.style.visibility = 'visible';
-                    accountsOverlay.style.display = 'block';
-                    accountsOverlay.style.visibility = 'visible';
-                }
+                showAccountCreatePopup();
             }
         });
     }
