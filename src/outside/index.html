@@ -7,6 +7,32 @@
     <link rel="icon" href="data:,">
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/buttons.css">
+    <style>
+        /* Ensure proper scrolling behavior */
+        html, body {
+            overflow-x: hidden;
+            overflow-y: auto;
+            height: auto;
+            min-height: 100vh;
+        }
+        
+        /* Make sure main content can scroll */
+        .time-table {
+            max-height: none;
+            overflow: visible;
+        }
+        
+        .table-container {
+            overflow-x: auto;
+            overflow-y: visible;
+        }
+        
+        /* Ensure timetable content doesn't get cut off */
+        .timetable-content {
+            min-height: auto;
+            overflow: visible;
+        }
+    </style>
 </head>
 <body>
   <header class="header" id="header">
