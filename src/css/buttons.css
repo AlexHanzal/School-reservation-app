@@ -338,7 +338,8 @@ body.debug-mode .reset-all {
     width: 200px;
     margin: 10px auto;
     position: relative;
-    transition: all 0.3s ease; /* Added transition for smooth size changes */
+    transition: all 0.3s ease;
+    overflow: visible;
 }
 
 .button-group.admin-active {

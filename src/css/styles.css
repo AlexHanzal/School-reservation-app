@@ -36,10 +36,13 @@
   }
   
   html, body {
-    height: 100%;
+    height: auto;
+    min-height: 100vh;
     margin: 0;
     padding: 0;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
+    
   }
   
   .sidebar {
@@ -71,6 +74,7 @@
     background-color: #fefefe;
     margin: 0;
     padding: 0;
+    padding-bottom: 100px;
   }
   
   .title {
@@ -239,16 +243,18 @@
     padding: 18px;
     border-radius: 10px;
     box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3);
-    position: fixed;
-    top: var(--header-height); /* Start below the header */
-    left: var(--sidebar-width); /* Start next to the left sidebar */
-    width: calc(99% - var(--sidebar-width)); /* Adjust for wider sidebar */
-    height: calc(100% - var(--header-height)); /* Fill the remaining height below the header */
-    overflow: hidden; /* Change from auto to hidden */
+    position: absolute;
+    top: var(--header-height);
+    left: var(--sidebar-width);
+    width: calc(99% - var(--sidebar-width));
+    height: auto;
+    min-height: calc(90vh - var(--header-height));
+    overflow: visible;
     text-align: center;
-    font-size: 0.9em; /* Make all text 10% smaller */
+    font-size: 0.9em;
     box-sizing: border-box;
-    margin-left: 0; /* Remove left margin */
+    margin-left: 0;
+    padding-bottom: 50px;
   }
   
   .week-table {
@@ -344,16 +350,19 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
-    height: calc(100% - 20px);
+    height: auto;
+    min-height: auto;
     padding: 10px;
     align-items: center;
+    overflow: visible;
   }
   
   .table-container {
     width: 95%;
     height: auto;
     min-height: 0;
-    margin-bottom: 5px;  /* Reduced from 10px */
+    margin-bottom: 5px;
+    overflow: visible;
   }
   
   .bottom-content {
