@@ -488,3 +488,71 @@ body.debug-mode .reset-all {
     background-color: var(--bakalar-color-hover);
     color: var(--secondary-color);
 }
+
+/* --- MOBILE BUTTONS --- */
+@media (max-width: 900px) {
+  #create-new, #create-new.admin-visible {
+    width: 36px;
+    height: 36px;
+    font-size: 1.5em;
+    margin: 10px auto 0;
+  }
+  .dynamic-button, .button-group {
+    width: 100%;
+    min-width: 40px;
+    max-width: 100%;
+    font-size: 1em;
+    padding: 8px 4px;
+  }
+  .gear-icon {
+    right: -30px;
+    min-width: 10px;
+    font-size: 1em;
+    padding: 8px;
+  }
+}
+
+@media (max-width: 700px) {
+  #create-new, #create-new.admin-visible {
+    width: 32px;
+    height: 32px;
+    font-size: 1.2em;
+    margin: 5px auto 0;
+  }
+  .dynamic-button, .button-group {
+    width: auto;
+    min-width: 40px;
+    max-width: 120px;
+    font-size: 0.9em;
+    padding: 6px 2px;
+    margin: 0 2px;
+  }
+  .gear-icon {
+    right: -20px;
+    min-width: 10px;
+    font-size: 0.9em;
+    padding: 6px;
+  }
+}
+
+@media (max-width: 500px) {
+  #create-new, #create-new.admin-visible {
+    width: 24px;
+    height: 24px;
+    font-size: 1em;
+    margin: 2px auto 0;
+  }
+  .dynamic-button, .button-group {
+    min-width: 30px;
+    max-width: 70px;
+    font-size: 0.8em;
+    padding: 3px 1px;
+    margin: 0 1px;
+  }
+  .gear-icon {
+    right: -10px;
+    min-width: 8px;
+    font-size: 0.8em;
+    padding: 3px;
+  }
+}
