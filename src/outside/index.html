@@ -2,7 +2,8 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Add viewport for mobile scaling -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Rezervační aplikace</title>
     <link rel="icon" href="data:,">
     <link rel="stylesheet" href="css/styles.css">
@@ -31,6 +32,29 @@
         .timetable-content {
             min-height: auto;
             overflow: visible;
+        }
+        /* Mobile: make popups and overlays scrollable and full width */
+        @media (max-width: 700px) {
+            .select-window, .menu-content, .account-create-popup, .date-picker-window, .custom-alert, .class-edit-popup, .logout-confirm-content, .permanent-date-window {
+                min-width: 90vw !important;
+                width: 90vw !important;
+                left: 5vw !important;
+                padding: 10px !important;
+                font-size: 1em;
+                max-height: 90vh;
+                overflow-y: auto;
+            }
+        }
+        @media (max-width: 500px) {
+            .select-window, .menu-content, .account-create-popup, .date-picker-window, .custom-alert, .class-edit-popup, .logout-confirm-content, .permanent-date-window {
+                min-width: 98vw !important;
+                width: 98vw !important;
+                left: 1vw !important;
+                padding: 2px !important;
+                font-size: 0.9em;
+                max-height: 98vh;
+                overflow-y: auto;
+            }
         }
     </style>
 </head>
