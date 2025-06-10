@@ -1031,8 +1031,51 @@ document.addEventListener('DOMContentLoaded', () => {
     setupLoginHandlers();
     setupVerificationWindow();
     
-    // ...existing code...
+    // Add mobile touch support
+    addMobileTouchSupport();
 });
+
+// Add touch support for permanent hour toggle and popups
+function addMobileTouchSupport() {
+    // Touch for permanent hour toggle
+    const toggleBtn = document.getElementById('toggle-permanent-btn');
+    if (toggleBtn) {
+        toggleBtn.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            togglePermanentHourMode();
+        });
+    }
+    // Touch for closing popups
+    document.querySelectorAll('.close-menu, #close-login, .close-select, .close-verification-button, .close-permanent-date').forEach(btn => {
+        btn.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            btn.click();
+        });
+    });
+    // Touch for overlays to close
+    document.querySelectorAll('.accounts-overlay, .login-overlay, .custom-alert-overlay, #logout-overlay, #class-edit-overlay').forEach(overlay => {
+        overlay.addEventListener('touchstart', function(e) {
+            if (e.target === overlay) overlay.click();
+        });
+    });
+    // Prevent zoom on double-tap for main buttons
+    document.querySelectorAll('button').forEach(btn => {
+        let lastTouch = 0;
+        btn.addEventListener('touchend', function(e) {
+            const now = Date.now();
+            if (now - lastTouch < 350) {
+                e.preventDefault();
+            }
+            lastTouch = now;
+        });
+    });
+    // Ensure popups are scrolled into view on mobile
+    document.querySelectorAll('.select-window, .menu-content, .account-create-popup, .date-picker-window, .custom-alert, .class-edit-popup, .logout-confirm-content, .permanent-date-window').forEach(popup => {
+        popup.addEventListener('touchstart', function() {
+            popup.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+    });
+}
 
 // Fix the enableDebugMode function - remove debug button creation
 function enableDebugMode() {
