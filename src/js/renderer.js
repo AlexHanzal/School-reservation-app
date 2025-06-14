@@ -270,8 +270,10 @@ function showTimetable(name) {
     const timeTableTitle = timeTable.querySelector('h2');
     timeTableTitle.textContent = timetables[name].className;
     timeTable.style.display = 'block';
+      currentTimetableName = name;
     
-    currentTimetableName = name;
+    // Update class info display - ensure it shows immediately
+    updateClassInfo(timetables[name]);
     
     // Display the calendar for this timetable
     generateCalendar();
@@ -333,6 +335,28 @@ function showTimetable(name) {
     }
     
     localStorage.setItem('currentTimetable', name);
+}
+
+// New function to update the class info display
+function updateClassInfo(timetableData) {
+    const classInfoContent = document.getElementById('class-info-content');
+    const classInfoBox = document.getElementById('class-info-box');
+    if (!classInfoContent || !classInfoBox) return;
+
+    // Set the info box title to 'Info'
+    classInfoBox.querySelector('h4').textContent = 'Info';
+
+    let infoHtml = `<div class="class-name"><strong>${timetableData.className}</strong></div>`;
+    if (timetableData.info && timetableData.info.trim()) {
+        infoHtml += `<div class="class-description"><p>${timetableData.info}</p></div>`;
+    } else {
+        infoHtml += `<div class="class-description"><p><em>Popis není k dispozici</em></p></div>`;
+    }
+    if (timetableData.fileId) {
+        infoHtml += `<div class="class-file-id"><small>ID: ${timetableData.fileId}</small></div>`;
+    }
+    classInfoContent.innerHTML = infoHtml;
+    console.log('Updated class info for:', timetableData.className, 'with info:', timetableData.info);
 }
 
 // Update the updateTimetableForWeek function to better handle the calendar integration
@@ -671,15 +695,14 @@ async function savePermanentHourWithRange() {
     timetables[currentTimetableName].data[dateString][dayIndex][hourIndex] = permanentHourObj;
     
     // Save to server
-    try {
-        const response = await fetch(`${API_URL}/timetables/${currentTimetableName}`, {
+    try {        const response = await fetch(`${API_URL}/timetables/${currentTimetableName}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
+            },            body: JSON.stringify({
                 fileId: timetables[currentTimetableName].fileId,
-                data: timetables[currentTimetableName].data
+                data: timetables[currentTimetableName].data,
+                info: timetables[currentTimetableName].info || ''
             })
         });
         
@@ -703,7 +726,12 @@ async function savePermanentHourWithRange() {
 // submit button handler
 document.getElementById('submit-button').addEventListener('click', async () => {
     const nameInput = document.getElementById('name-input');
+    const typeSelect = document.getElementById('type-select');
+    const descriptionInput = document.getElementById('description-input');
+    
     const name = nameInput.value.trim();
+    const type = typeSelect.value;
+    const info = descriptionInput.value.trim();
     
     if (name) {
         try {
@@ -719,7 +747,10 @@ document.getElementById('submit-button').addEventListener('click', async () => {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ name })
+                body: JSON.stringify({ 
+                    name: name,
+                    info: info 
+                })
             });
             
             const result = await response.json();
@@ -750,17 +781,34 @@ document.getElementById('submit-button').addEventListener('click', async () => {
                 }
                 
                 container.appendChild(dynamicButton);
-                
                 timetables[name] = {
                     className: name,
                     fileId: result.fileId,
                     data: {},
+                    info: info,
                     calendar: document.getElementById('timetable-calendar').innerHTML
                 };
                 
+                // Also save the info to the server
+                const updateResponse = await fetch(`${API_URL}/timetables/${encodeURIComponent(name)}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        fileId: result.fileId,
+                        data: {},
+                        info: info
+                    })
+                });
+                
+                if (!updateResponse.ok) {
+                    console.error('Failed to save info to server');
+                }
                 showTimetable(name);
                 document.getElementById('select-screen').style.display = 'none';
                 nameInput.value = '';
+                descriptionInput.value = '';
                 
                 // Show success message
                 showCustomAlert('Úspěch', 'Nová třída byla úspěšně vytvořena', 'success');
@@ -1673,13 +1721,12 @@ async function loadTimetables() {
                     continue;
                 }
 
-                const timetableData = await timetableResponse.json();
-                
-                // Store in memory
+                const timetableData = await timetableResponse.json();                // Store in memory
                 timetables[name] = {
                     className: name,
                     fileId: timetableData.fileId,
                     data: timetableData.data || {},
+                    info: timetableData.info || '',
                     permanentHours: timetableData.permanentHours || {},
                     currentWeek: timetableData.currentWeek || new Date().toISOString(),
                     createdAt: timetableData.createdAt || new Date().toISOString()
@@ -1688,7 +1735,7 @@ async function loadTimetables() {
                 // Store this timetable in our map (will overwrite older versions with same name)
                 newestTimetables.set(name, timetableData);
                 
-                console.log(`Loaded timetable: ${name}`);
+                console.log(`Loaded timetable: ${name} with info: ${timetableData.info || 'No info'}`);
             } catch (error) {
                 console.error(`Error loading timetable ${name}:`, error);
             }
@@ -1759,10 +1806,10 @@ async function saveTimetable(name, data) {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
+            },            body: JSON.stringify({
                 fileId: data.fileId,
-                data: data.data
+                data: data.data,
+                info: data.info || ''
             })
         });
 
@@ -2079,7 +2126,7 @@ async function resetAllTimetables() {
             loadingOverlay.style.display = 'none';
         }
         
-        showCustomAlert('Chyba', `Nepodařilo se resetovat rozvrhy: ${error.message}`, 'error');
+        showCustomAlert('Chyba', 'Nepodařilo se resetovat rozvrhy', 'error');
     }
 }
 
@@ -2354,12 +2401,15 @@ function showClassEditMenu(name) {
         popup = document.createElement('div');
         popup.id = 'class-edit-popup';
         popup.className = 'class-edit-popup';
-        
-        popup.innerHTML = `
+          popup.innerHTML = `
             <h2>Upravit třídu</h2>
             <div class="input-group">
                 <label for="class-name-edit">Název třídy</label>
                 <input type="text" id="class-name-edit" placeholder="Zadejte nový název třídy">
+            </div>
+            <div class="input-group">
+                <label for="class-description-edit">Popis třídy</label>
+                <textarea id="class-description-edit" placeholder="Zadejte popis třídy" rows="3"></textarea>
             </div>
             <div class="class-edit-error" id="class-edit-error"></div>
             <div class="class-edit-actions">
@@ -2383,11 +2433,11 @@ function showClassEditMenu(name) {
             overlay.addEventListener('click', hideClassEditMenu);
             document.body.appendChild(overlay);
         }
-    }
-    
-    // Set current class name
+    }    // Set current class name and description
     const nameInput = document.getElementById('class-name-edit');
+    const descriptionInput = document.getElementById('class-description-edit');
     nameInput.value = name;
+    descriptionInput.value = timetables[name]?.info || '';
     
     // Clear any previous errors
     const errorElement = document.getElementById('class-edit-error');
@@ -2421,8 +2471,10 @@ function hideClassEditMenu() {
 // Function to rename a class
 async function renameClass(oldName) {
     const nameInput = document.getElementById('class-name-edit');
+    const descriptionInput = document.getElementById('class-description-edit');
     const errorElement = document.getElementById('class-edit-error');
     const newName = nameInput.value.trim();
+    const newDescription = descriptionInput.value.trim();
     
     // Clear previous error
     errorElement.style.display = 'none';
@@ -2471,8 +2523,7 @@ async function renameClass(oldName) {
             throw new Error('Nepodařilo se vytvořit novou třídu');
         }
         
-        const result = await response.json();
-          // Update the data for the new class
+        const result = await response.json();        // Update the data for the new class
         const updateResponse = await fetch(`${API_URL}/timetables/${encodeURIComponent(newName)}`, {
             method: 'PUT',
             headers: {
@@ -2481,6 +2532,7 @@ async function renameClass(oldName) {
             body: JSON.stringify({
                 fileId: result.fileId,
                 data: timetableData.data || {}, // Ensure we have at least an empty object
+                info: newDescription, // Include the new description as "info"
                 permanentHours: timetableData.permanentHours || {},
                 currentWeek: timetableData.currentWeek || new Date().toISOString()
             })
@@ -2500,13 +2552,12 @@ async function renameClass(oldName) {
         
         if (!deleteResponse.ok) {
             throw new Error(`Nepodařilo se smazat starou třídu: ${deleteResponse.status}`);
-        }
-        
-        // Update local data
+        }        // Update local data
         timetables[newName] = {
             ...timetableData,
             className: newName,
-            fileId: result.fileId
+            fileId: result.fileId,
+            info: newDescription
         };
         delete timetables[oldName];
         
