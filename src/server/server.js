@@ -372,7 +372,7 @@ function setupAPIRoutes() {
     });
 
     app.post('/api/timetables', async (req, res) => {
-        const { name } = req.body;
+        const { name, description, info } = req.body;
         if (!name) {
             res.status(400).json({ success: false, error: 'Name is required' });
             return;
@@ -385,9 +385,16 @@ function setupAPIRoutes() {
             className: name,
             fileId: fileId,
             data: {},
-            calendar: null,
+            calendar: '',
             currentWeek: new Date().toISOString(),
-            permanentHours: {}
+            info: info || description || '',
+            permanentHours: {
+                "0": {},
+                "1": {},
+                "2": {},
+                "3": {},
+                "4": {}
+            }
         };
         
         try {
@@ -405,7 +412,7 @@ function setupAPIRoutes() {
     app.put('/api/timetables/:name', async (req, res) => {
         try {
             const { name } = req.params;
-            const { fileId, data } = req.body;
+            const { fileId, data, info, calendar, currentWeek, permanentHours } = req.body;
 
             if (!fileId) {
                 return res.status(400).json({ success: false, error: 'FileId is required' });
@@ -417,43 +424,58 @@ function setupAPIRoutes() {
             // Ensure the directory exists
             await fs.mkdir(DATA_DIR, { recursive: true });
 
-            try {
-                // First write to temporary file
-                const currentData = {
-                    className: name,
-                    fileId: fileId,
-                    data: data || {},
-                    calendar: "",
-                    currentWeek: new Date().toISOString(),
-                    permanentHours: {
-                        "0": {},
-                        "1": {},
-                        "2": {},
-                        "3": {},
-                        "4": {}
-                    }
-                };
-
-                // Write the temp file first
-                await fs.writeFile(
-                    tempPath,
-                    JSON.stringify(currentData, null, 2)
-                );
-
-                // Then try to rename it
-                await fs.rename(tempPath, filePath);
-
-                res.json({ success: true, fileId });
-            } catch (error) {
-                // Clean up temp file if it exists
-                try {
-                    await fs.unlink(tempPath);
-                } catch (unlinkError) {
-                    // Ignore unlink errors
+            // Read existing data to preserve fields
+            let existingData = {
+                className: name,
+                fileId: fileId,
+                data: {},
+                calendar: '',
+                currentWeek: new Date().toISOString(),
+                info: '',
+                permanentHours: {
+                    "0": {},
+                    "1": {},
+                    "2": {},
+                    "3": {},
+                    "4": {}
                 }
-                throw error;
+            };
+
+            try {
+                const currentFileData = await fs.readFile(filePath, 'utf8');
+                existingData = { ...existingData, ...JSON.parse(currentFileData) };
+            } catch (readError) {
+                // File doesn't exist yet, use defaults
             }
+
+            // Always build the updated data in the required format
+            const updatedData = {
+                className: name,
+                fileId: fileId,
+                data: data !== undefined ? data : existingData.data,
+                calendar: calendar !== undefined ? calendar : existingData.calendar,
+                currentWeek: currentWeek !== undefined ? currentWeek : existingData.currentWeek,
+                info: info !== undefined ? info : existingData.info,
+                permanentHours: permanentHours !== undefined ? permanentHours : (existingData.permanentHours || {"0":{},"1":{},"2":{},"3":{},"4":{}})
+            };
+
+            // Write the temp file first
+            await fs.writeFile(
+                tempPath,
+                JSON.stringify(updatedData, null, 2)
+            );
+
+            // Then try to rename it
+            await fs.rename(tempPath, filePath);
+
+            res.json({ success: true, fileId });
         } catch (error) {
+            // Clean up temp file if it exists
+            try {
+                await fs.unlink(tempPath);
+            } catch (unlinkError) {
+                // Ignore unlink errors
+            }
             console.error('Failed to update className:', error);
             return res.status(500).json({ success: false, error: 'Failed to update className' });
         }
