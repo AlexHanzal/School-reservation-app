@@ -111,6 +111,10 @@
           <option value="class">Třída</option>
         </select>
       </div>
+      <div class="input-group">
+        <label for="description-input">Popis třídy:</label>
+        <textarea id="description-input" placeholder="Zadejte popis třídy (volitelné)" rows="3"></textarea>
+      </div>
       <button class="submit-button" id="submit-button">Odeslat</button>
     </div>
   </div>
@@ -170,13 +174,21 @@
           <button class="save-button" style="display: none;">Uložit</button>
           
         </div>
-        <div class="timetable-calendar">
-          <div class="calendar-header">
-            <button class="prev-button">&lt;</button>
-            <h3 class="calendar-title" id="timetable-calendar-title"></h3>
-            <button class="next-button">&gt;</button>
+        <div class="timetable-info-section">
+          <div class="class-info-box" id="class-info-box">
+            <h4>Informace o třídě</h4>
+            <div class="class-info-content" id="class-info-content">
+              <p>Vyberte třídu pro zobrazení informací</p>
+            </div>
           </div>
-          <div class="calendar" id="timetable-calendar"></div>
+          <div class="timetable-calendar">
+            <div class="calendar-header">
+              <button class="prev-button">&lt;</button>
+              <h3 class="calendar-title" id="timetable-calendar-title"></h3>
+              <button class="next-button">&gt;</button>
+            </div>
+            <div class="calendar" id="timetable-calendar"></div>
+          </div>
         </div>
       </div>
     </div>
