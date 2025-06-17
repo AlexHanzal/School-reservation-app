@@ -343,11 +343,8 @@ function updateClassInfo(timetableData) {
     const classInfoBox = document.getElementById('class-info-box');
     if (!classInfoContent || !classInfoBox) return;
 
-    // Remove the info box title completely
-    const titleElement = classInfoBox.querySelector('h4');
-    if (titleElement) {
-        titleElement.style.display = 'none';
-    }
+    // Set the info box title to 'Info'
+    classInfoBox.querySelector('h4').textContent = 'Info';
 
     let infoHtml = `<div class="class-name"><strong>${timetableData.className}</strong></div>`;
     if (timetableData.info && timetableData.info.trim()) {
@@ -355,7 +352,9 @@ function updateClassInfo(timetableData) {
     } else {
         infoHtml += `<div class="class-description"><p><em>Popis není k dispozici</em></p></div>`;
     }
-    // Removed the fileId display line completely
+    if (timetableData.fileId) {
+        infoHtml += `<div class="class-file-id"><small>ID: ${timetableData.fileId}</small></div>`;
+    }
     classInfoContent.innerHTML = infoHtml;
     console.log('Updated class info for:', timetableData.className, 'with info:', timetableData.info);
 }
@@ -384,9 +383,9 @@ function updateWeekdayHeaders(startOfWeek) {
     const headerCells = document.querySelectorAll('.week-table thead th:not(:first-child)');
     if (!headerCells.length) return;
     
-    // Define the hours for the day (8:00 to 15:00) - removed 16:00
+    // Define the hours for the day (8:00 to 16:00)
     const hours = [
-        '8:00', '8:55', '10:00', '10:55', '11:50', '12:45', '13:40', '14:35'
+        '8:00', '9:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00'
     ];
     
     // First cell shows empty cell or a label
@@ -956,7 +955,7 @@ async function handleLogin() {
                         timeTableButtons.appendChild(toggleButton);
                     }
                 }
-                toggleButton.style.display
+                toggleButton.style.display = 'block';
                 
                 showCustomAlert('Režim administrátora', 'Administrátorská oprávnění aktivována', 'success');
             }

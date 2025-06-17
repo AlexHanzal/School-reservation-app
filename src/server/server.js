@@ -3,19 +3,28 @@
 // ============================================================================
 
 // Development Mode - Set to true to force localhost for development
-const isLocal = true; // Set to true for local development, false for production
+const isLocal = false; // Set to true for local development, false for production (PUBLIC ACCESS)
 
 // Server Configuration
 const SERVER_CONFIG = {
     // Port Configuration
     // Use "automatic" to find an available port starting from 3000
     // Or specify a number like 3000, 8080, etc.
-    port: "automatic", // Options: "automatic", 3000, 8080, etc.
+    port: "3000", // Options: "automatic", 3000, 8080, etc.
     
     // Domain/Host Configuration  
     // Use "automatic" to detect the server's IP address
-    // Or specify a domain like "myserver.com", "192.168.1.100", etc.
-    domain: "automatic", // Options: "automatic", "myserver.com", "192.168.1.100", etc.
+    // Or specify a domain like "myserver.com", "your-public-ip", "your-ddns-domain.com", etc.
+    // For global access, set this to your public domain or public IP
+    domain: "78.111.120.120", // Options: "automatic", "yourdomain.com", "123.45.67.89", "yourname.ddns.net", etc.
+    
+    // GLOBAL ACCESS SETTINGS
+    // Set these if you want global internet access
+    publicDomain: "78.111.120.120", // Set to your public domain/IP for global access (e.g., "yourdomain.com" or "123.45.67.89")
+    usePublicDomain: true, // Set to true to use publicDomain instead of local IP detection
+    
+    // Base path for the application (useful for subdirectory hosting)
+    basePath: "/reservation", // Set to "" for root hosting, or "/reservation" for subdirectory
     
     // Application Name (used in API responses and logs)
     appName: "School Reservation System",
@@ -51,14 +60,18 @@ const app = express();
 
 // Function to find an available port starting from a given port
 async function findAvailablePort(startPort = 3000) {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
         const server = net.createServer();
-        server.listen(startPort, () => {
+        server.listen(startPort, '0.0.0.0', () => {
             const port = server.address().port;
             server.close(() => resolve(port));
         });
-        server.on('error', () => {
-            resolve(findAvailablePort(startPort + 1));
+        server.on('error', (err) => {
+            if (err.code === 'EADDRINUSE') {
+                resolve(findAvailablePort(startPort + 1));
+            } else {
+                reject(err);
+            }
         });
     });
 }
@@ -70,12 +83,21 @@ function getLocalIpAddress() {
     // Priority order for Windows: Ethernet, Wi-Fi, then others
     const priorityInterfaces = ['Ethernet', 'Wi-Fi', 'Local Area Connection'];
     
+    console.log('🔍 Available network interfaces:');
+    for (const [name, addrs] of Object.entries(interfaces)) {
+        const ipv4Addrs = addrs.filter(addr => !addr.internal && addr.family === 'IPv4');
+        if (ipv4Addrs.length > 0) {
+            console.log(`   - ${name}: ${ipv4Addrs.map(a => a.address).join(', ')}`);
+        }
+    }
+    
     // First try priority interfaces
     for (const priorityName of priorityInterfaces) {
         for (const interfaceName of Object.keys(interfaces)) {
             if (interfaceName.includes(priorityName)) {
                 for (const interface of interfaces[interfaceName]) {
                     if (!interface.internal && interface.family === 'IPv4') {
+                        console.log(`🌐 Selected network interface: ${interfaceName} (${interface.address})`);
                         return interface.address;
                     }
                 }
@@ -87,11 +109,13 @@ function getLocalIpAddress() {
     for (const interfaceName of Object.keys(interfaces)) {
         for (const interface of interfaces[interfaceName]) {
             if (!interface.internal && interface.family === 'IPv4') {
+                console.log(`🌐 Using fallback network interface: ${interfaceName} (${interface.address})`);
                 return interface.address;
             }
         }
     }
     
+    console.warn('⚠️  No network IP found, falling back to localhost');
     return 'localhost'; // Final fallback
 }
 
@@ -115,10 +139,20 @@ async function resolveConfig() {
         config.resolvedPort = config.port;
     }
     
-    // Resolve host/domain
-    if (config.domain === "automatic") {
+    // Resolve host/domain - prioritize global settings
+    if (config.usePublicDomain && config.publicDomain) {
+        config.resolvedHost = config.publicDomain;
+        console.log(`🌍 Using public domain for global access: ${config.resolvedHost}`);
+        console.log('⚠️  Make sure your router port forwarding is configured!');
+        console.log(`   Forward external port ${config.resolvedPort} to ${getLocalIpAddress()}:${config.resolvedPort}`);
+    } else if (config.domain === "automatic") {
         config.resolvedHost = getLocalIpAddress();
-        console.log(`🔍 Automatic domain detection: Using IP ${config.resolvedHost}`);
+        console.log(`🔍 Automatic domain detection: Using local IP ${config.resolvedHost}`);
+        console.log('📍 This server is accessible on your local network only');
+        console.log('💡 To enable global access:');
+        console.log('   1. Set usePublicDomain: true');
+        console.log('   2. Set publicDomain to your public IP or domain');
+        console.log('   3. Configure port forwarding on your router');
     } else {
         config.resolvedHost = config.domain;
     }
@@ -193,13 +227,30 @@ function setupMiddleware() {
     // Serve frontend files if enabled (for development)
     if (resolvedConfig.serveFrontend) {
         const frontendPath = path.join(process.cwd(), resolvedConfig.frontendPath);
-        app.use(express.static(frontendPath));
-        console.log('📡 Frontend serving enabled from:', frontendPath);
         
-        // Serve index.html at root for convenience
-        app.get('/app', (req, res) => {
-            res.sendFile(path.join(frontendPath, 'outside', 'index.html'));
-        });
+        // If basePath is set, serve static files under that path
+        if (resolvedConfig.basePath) {
+            app.use(resolvedConfig.basePath, express.static(frontendPath));
+            console.log(`📡 Frontend serving enabled from: ${frontendPath} at path: ${resolvedConfig.basePath}`);
+            
+            // Serve index.html at basePath/app
+            app.get(resolvedConfig.basePath + '/app', (req, res) => {
+                res.sendFile(path.join(frontendPath, 'outside', 'index.html'));
+            });
+            
+            // Redirect basePath to basePath/app
+            app.get(resolvedConfig.basePath, (req, res) => {
+                res.redirect(resolvedConfig.basePath + '/app');
+            });
+        } else {
+            app.use(express.static(frontendPath));
+            console.log('📡 Frontend serving enabled from:', frontendPath);
+            
+            // Serve index.html at root for convenience
+            app.get('/app', (req, res) => {
+                res.sendFile(path.join(frontendPath, 'outside', 'index.html'));
+            });
+        }
     } else {
         console.log('📡 Static file serving disabled - frontend should be served separately');
     }
@@ -207,25 +258,30 @@ function setupMiddleware() {
 
 // Update root route to return configuration info or redirect to app
 app.get('/', (req, res) => {
+    const baseUrl = resolvedConfig.basePath ? 
+        `http://${resolvedConfig.resolvedHost}:${resolvedConfig.resolvedPort}${resolvedConfig.basePath}` :
+        `http://${resolvedConfig.resolvedHost}:${resolvedConfig.resolvedPort}`;
+    
     const response = {
         message: resolvedConfig.appName + ' API',
         version: resolvedConfig.apiVersion,
         server: {
             host: resolvedConfig.resolvedHost,
             port: resolvedConfig.resolvedPort,
+            basePath: resolvedConfig.basePath || "/",
             isLocal: isLocal
         },
         endpoints: {
-            timetables: '/api/timetables',
-            users: '/api/users'
+            timetables: (resolvedConfig.basePath || '') + '/api/timetables',
+            users: (resolvedConfig.basePath || '') + '/api/users'
         },
         status: 'running'
     };
     
     if (resolvedConfig.serveFrontend) {
         response.frontend = {
-            url: `http://${resolvedConfig.resolvedHost}:${resolvedConfig.resolvedPort}/app`,
-            message: "Frontend is available at /app"
+            url: baseUrl + '/app',
+            message: "Frontend is available at " + (resolvedConfig.basePath || '') + "/app"
         };
     }
     
@@ -299,28 +355,71 @@ async function initialize() {
         setupAPIRoutes();
         
         // Start server
-        app.listen(resolvedConfig.resolvedPort, '0.0.0.0', () => {
+        app.listen(resolvedConfig.resolvedPort, '0.0.0.0', (err) => {
+            if (err) {
+                console.error('❌ Failed to start server:', err);
+                if (err.code === 'EADDRINUSE') {
+                    console.error(`❌ Port ${resolvedConfig.resolvedPort} is already in use`);
+                    console.log('💡 Try setting port: "automatic" in SERVER_CONFIG');
+                } else if (err.code === 'EACCES') {
+                    console.error(`❌ Permission denied for port ${resolvedConfig.resolvedPort}`);
+                    console.log('💡 Try using a port number above 1024');
+                }
+                process.exit(1);
+                return;
+            }
+            
             console.log('✅ Server successfully started!');
             console.log('📊 Configuration Summary:');
             console.log(`   - Application: ${resolvedConfig.appName} v${resolvedConfig.apiVersion}`);
             console.log(`   - Local Mode: ${isLocal ? 'ENABLED' : 'DISABLED'}`);
             console.log(`   - Host: ${resolvedConfig.resolvedHost}`);
             console.log(`   - Port: ${resolvedConfig.resolvedPort}`);
+            console.log(`   - Binding: 0.0.0.0 (all interfaces)`);
+            console.log(`   - Local IP: ${getLocalIpAddress()}`);
             console.log(`   - URL: http://${resolvedConfig.resolvedHost}:${resolvedConfig.resolvedPort}/`);
             console.log(`   - API Endpoint: http://${resolvedConfig.resolvedHost}:${resolvedConfig.resolvedPort}/api`);
             console.log(`   - CORS: ${resolvedConfig.corsOrigins === "all" ? "Allow All Origins" : "Restricted Origins"}`);
             
+            if (resolvedConfig.usePublicDomain) {
+                console.log('');
+                console.log('🌍 GLOBAL ACCESS ENABLED:');
+                console.log(`   - Public URL: http://${resolvedConfig.resolvedHost}:${resolvedConfig.resolvedPort}/`);
+                console.log('   - Server is configured for internet access');
+                console.log('   - Ensure your firewall allows connections');
+                console.log('   - Ensure router port forwarding is configured');
+                console.log(`   - Forward external port ${resolvedConfig.resolvedPort} to ${getLocalIpAddress()}:${resolvedConfig.resolvedPort}`);
+            } else {
+                console.log('');
+                console.log('🏠 LOCAL NETWORK ACCESS:');
+                console.log(`   - Local URL: http://${resolvedConfig.resolvedHost}:${resolvedConfig.resolvedPort}/`);
+                console.log('   - Server is accessible on local network only');
+            }
+            
             if (resolvedConfig.serveFrontend) {
                 console.log('');
                 console.log('🌐 Frontend Access:');
-                console.log(`   - Frontend URL: http://${resolvedConfig.resolvedHost}:${resolvedConfig.resolvedPort}/app`);
+                const frontendUrl = resolvedConfig.basePath ? 
+                    `http://${resolvedConfig.resolvedHost}:${resolvedConfig.resolvedPort}${resolvedConfig.basePath}/app` :
+                    `http://${resolvedConfig.resolvedHost}:${resolvedConfig.resolvedPort}/app`;
+                console.log(`   - Frontend URL: ${frontendUrl}`);
                 console.log(`   - Open this URL in your browser to access the application`);
             } else {
                 console.log('');
                 console.log('🌐 Frontend Configuration:');
-                console.log(`   Set window.API_BASE_URL = "http://${resolvedConfig.resolvedHost}:${resolvedConfig.resolvedPort}"`);
+                const baseUrl = resolvedConfig.basePath ? 
+                    `http://${resolvedConfig.resolvedHost}:${resolvedConfig.resolvedPort}${resolvedConfig.basePath}` :
+                    `http://${resolvedConfig.resolvedHost}:${resolvedConfig.resolvedPort}`;
+                console.log(`   Set window.API_BASE_URL = "${baseUrl}"`);
             }
             console.log('');
+            console.log('🔧 Troubleshooting:');
+            const testUrls = [
+                `http://localhost:${resolvedConfig.resolvedPort}${resolvedConfig.basePath || ''}/`,
+                `http://${getLocalIpAddress()}:${resolvedConfig.resolvedPort}${resolvedConfig.basePath || ''}/`,
+                `http://${resolvedConfig.resolvedHost}:${resolvedConfig.resolvedPort}${resolvedConfig.basePath || ''}/`
+            ];
+            testUrls.forEach(url => console.log(`   - Test: ${url}`));
         });
     } catch (error) {
         console.error('❌ Server initialization failed:', error);
@@ -330,8 +429,10 @@ async function initialize() {
 
 // Move all API routes into a separate function
 function setupAPIRoutes() {
+    const apiPath = resolvedConfig.basePath ? resolvedConfig.basePath + '/api' : '/api';
+    
     // API routes
-    app.get('/api/timetables', async (req, res) => {
+    app.get(apiPath + '/timetables', async (req, res) => {
         try {
             const files = await fs.readdir(DATA_DIR);
             const uniqueTimetables = new Map();
@@ -371,7 +472,7 @@ function setupAPIRoutes() {
         }
     });
 
-    app.post('/api/timetables', async (req, res) => {
+    app.post(apiPath + '/timetables', async (req, res) => {
         const { name, description, info } = req.body;
         if (!name) {
             res.status(400).json({ success: false, error: 'Name is required' });
@@ -409,7 +510,7 @@ function setupAPIRoutes() {
         }
     });
 
-    app.put('/api/timetables/:name', async (req, res) => {
+    app.put(apiPath + '/timetables/:name', async (req, res) => {
         try {
             const { name } = req.params;
             const { fileId, data, info, calendar, currentWeek, permanentHours } = req.body;
@@ -481,7 +582,7 @@ function setupAPIRoutes() {
         }
     });
 
-    app.get('/api/timetables/:name', async (req, res) => {
+    app.get(apiPath + '/timetables/:name', async (req, res) => {
         try {
             const { name } = req.params;
             const files = await fs.readdir(DATA_DIR);
@@ -503,7 +604,7 @@ function setupAPIRoutes() {
         }
     });
 
-    app.delete('/api/timetables', async (req, res) => {
+    app.delete(apiPath + '/timetables', async (req, res) => {
         try {
             const files = await fs.readdir(DATA_DIR);
             for (const file of files) {
@@ -518,7 +619,7 @@ function setupAPIRoutes() {
         }
     });
 
-    app.post('/api/users', async (req, res) => {
+    app.post(apiPath + '/users', async (req, res) => {
         try {
             const { name, abbreviation, password, isAdmin } = req.body;
             
@@ -585,7 +686,7 @@ function setupAPIRoutes() {
         }
     });
 
-    app.get('/api/users', async (req, res) => {
+    app.get(apiPath + '/users', async (req, res) => {
         try {
             // Ensure Users directory exists
             await fs.mkdir(USERS_DIR, { recursive: true });
@@ -619,7 +720,7 @@ function setupAPIRoutes() {
         }
     });
 
-    app.post('/api/users/login', async (req, res) => {
+    app.post(apiPath + '/users/login', async (req, res) => {
         try {
             const { abbreviation, password } = req.body;
             

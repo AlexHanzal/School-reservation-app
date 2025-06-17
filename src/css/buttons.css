@@ -48,15 +48,12 @@
 }
 
 .dynamic-button {
-    max-width: 150px;
-    min-width: 75px;
-    
+    width: 200px;
     padding: 12px 24px;
     font-size: 1.2em;
     background-color: var(--bakalar-color-basic);
     color: black;
     border: 2px solid var(--primary-color);
-    border-right: 4px solid var(--primary-color);
     border-radius: 5px;
     cursor: pointer;
     font-weight: bold;
