@@ -2083,6 +2083,10 @@ body.debug-mode {
 
 /* --- MOBILE RESPONSIVE STYLES --- */
 @media (max-width: 900px) {
+  .title {
+    font-size: 1em; /* Half of 2em */
+    text-shadow: 1px 1px 2px #000000; /* Reduced shadow */
+  }
   .sidebar {
     width: 60px;
     min-width: 60px;
@@ -2129,6 +2133,25 @@ body.debug-mode {
     transform: unset;
     bottom: unset;
   }
+  
+  /* Make login button smaller for mobile */
+  #login-button {
+    padding: 4px 8px;
+    font-size: 0.5em;
+    border-width: 1px;
+  }
+  
+  #login-button.logged-in {
+    padding-right: 30px;
+    padding-left: 8px;
+    margin: 5px;
+    font-size: 0.4em;
+  }
+  
+  #login-button.logged-in::after {
+    right: 8px;
+    font-size: 0.55em;
+  }
 }
 
 @media (max-width: 700px) {
@@ -2139,7 +2162,7 @@ body.debug-mode {
     padding: 0 5px;
   }
   .title {
-    font-size: 1.2em;
+    font-size: 0.6em; /* Half of 1.2em */
     text-shadow: none;
   }
   .window-controls {
@@ -2266,6 +2289,25 @@ body.debug-mode {
     padding: 10px !important;
     font-size: 1em;
   }
+  
+  /* Further reduce login button size */
+  #login-button {
+    padding: 3px 6px;
+    font-size: 0.45em;
+    border-width: 1px;
+  }
+  
+  #login-button.logged-in {
+    padding-right: 25px;
+    padding-left: 6px;
+    margin: 3px;
+    font-size: 0.35em;
+  }
+  
+  #login-button.logged-in::after {
+    right: 6px;
+    font-size: 0.5em;
+  }
 }
 
 @media (max-width: 500px) {
@@ -2276,7 +2318,7 @@ body.debug-mode {
     padding: 0 2px;
   }
   .title {
-    font-size: 1em;
+    font-size: 0.5em; /* Half of 1em */
   }
   .sidebar {
     top: 44px;
@@ -2368,6 +2410,8 @@ body.debug-mode {
     font-size: 0.9em;
   }
 }
+
+/* --- END MOBILE RESPONSIVE STYLES --- */
 
 .timetable-info-section {
     display: flex;
