@@ -3,6 +3,7 @@
     - simplified account creation
 A   - mužeš scrolovat👍
     - info box
+    - css update
 ------------------------------------------------
 
 | CO DĚLAT |
