@@ -1,6 +1,6 @@
 // Configure API URL - will be set by config.js
 const API_BASE_URL = window.API_BASE_URL || `http://${window.location.hostname}:3000`;
-const API_URL = `${API_BASE_URL}/api`;
+const API_URL = `${API_BASE_URL}/reservation/api`;
 
 const translations = {
     cs: {
@@ -1973,7 +1973,7 @@ function showSelectScreen() {
     }
     
     // Focus on the name input field
-    if (nameInput) {
+    if ( nameInput) {
         nameInput.focus();
     }
 }
@@ -2280,9 +2280,7 @@ function setupUIHandlers() {
     if (editButton) {
         // First remove any existing event listeners to avoid duplicates
         const newEditButton = editButton.cloneNode(true);
-        if (editButton.parentNode) {
-            editButton.parentNode.replaceChild(newEditButton, editButton);
-        }
+        editButton.parentNode.replaceChild(newEditButton, editButton);
         
         newEditButton.addEventListener('click', function() {
             console.log('Edit button clicked');
