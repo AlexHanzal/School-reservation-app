@@ -1,20 +1,12 @@
-// CHANGES \\
+| ZMĚNY |
+Š - V 3.0
+    - updated abbreviations
+    - made users unable to edit other users' cells
+    - updated permanent hours system
+------------------------------------------------
 
-- added ip address option for connecting, eg.: "http://192.168.0.171:3000"
-- fixed Atomové Tlačítko™
-- fixed permanent hours' duplication
-- classes now get saved into individual .json data files
-- made timetable data more compact
-- fixed admin mode "x" close button
-- fixed class centering outside of admin mode
-- added class edit option into admin mode
-   - rename - NOT WORKING
-   - delete - NOT WORKING
-- moved class creation button into admin mode
-- added animations to menus
-- added Enter key admin password sumbitting
-- added Esc and Enter key menu exiting
+| CO DĚLAT |
 
-// NEEDS FIXING \\
-- calendar, "edit" and "save" buttons positioning
-- editing buttons
+------------------------------------------------
+
+| POTŘEBUJE OPRAVU |

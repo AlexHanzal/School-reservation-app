@@ -1,0 +1,64 @@
+{
+  "className": "Učebna IFZ",
+  "fileId": "Cf2Zxjn85IOj",
+  "data": {
+    "2025-06-01": {
+      "0": {},
+      "1": {},
+      "2": {
+        "3": {
+          "content": "d",
+          "isPermanent": true
+        },
+        "4": {
+          "content": "g - Roud",
+          "isPermanent": false
+        },
+        "6": {
+          "content": "ffews - Vald",
+          "isPermanent": false
+        }
+      },
+      "3": {
+        "2": {
+          "content": "ss - Roud",
+          "isPermanent": false
+        }
+      },
+      "4": {
+        "3": {
+          "content": "g - Roud",
+          "isPermanent": false
+        }
+      }
+    },
+    "2025-06-15": {
+      "0": {},
+      "1": {},
+      "2": {
+        "3": {
+          "content": "d",
+          "isPermanent": true
+        }
+      },
+      "3": {},
+      "4": {
+        "2": {
+          "content": "v",
+          "isPermanent": false,
+          "abbreviation": "Roud"
+        }
+      }
+    }
+  },
+  "calendar": "",
+  "currentWeek": "2025-06-05T22:17:55.445Z",
+  "info": "",
+  "permanentHours": {
+    "0": {},
+    "1": {},
+    "2": {},
+    "3": {},
+    "4": {}
+  }
+}

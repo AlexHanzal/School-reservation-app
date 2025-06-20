@@ -1,12 +1,12 @@
 /* Button Styles */
 #create-new {
-    display: none; /* Hide by default */
+    display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: center; 
     font-size: 2em;
     width: 40px;
     height: 40px;
-    margin: 20px auto 0;
+    margin: 20px auto 0;  /* Changed margin to auto for horizontal centering */
     border-radius: 50%;
     background-color: transparent;
     color: var(--primary-color);
@@ -32,7 +32,7 @@
 }
 
 .submit-button {
-    margin-top: 15px;
+    margin: 15px 0 0 auto; /* Changed margin to push to right */
     padding: 10px 20px;
     background-color: var(--bakalar-color-basic);
     color: black;
@@ -48,12 +48,15 @@
 }
 
 .dynamic-button {
-    width: 200px;
+    max-width: 150px;
+    min-width: 75px;
+    
     padding: 12px 24px;
     font-size: 1.2em;
     background-color: var(--bakalar-color-basic);
     color: black;
     border: 2px solid var(--primary-color);
+    border-right: 4px solid var(--primary-color);
     border-radius: 5px;
     cursor: pointer;
     font-weight: bold;
@@ -62,7 +65,7 @@
     word-wrap: break-word;
     white-space: normal;
     transition: all 0.3s ease;
-    margin: 0 auto;
+    margin: 0 0 0 auto; /* Changed margin to push to right */
     transition: width 0.3s ease, margin 0.3s ease;
 }
 
@@ -106,8 +109,7 @@
     color: var(--primary-color);
 }
 
-.edit-button,
-.admin-button {
+.edit-button {
     padding: 10px 20px;
     font-size: 1em;
     background-color: var(--bakalar-color-basic);
@@ -119,8 +121,7 @@
     text-align: center;
 }
 
-.edit-button:hover,
-.admin-button:hover {
+.edit-button:hover {
     background-color: var(--bakalar-color-hover);
     color: var(--primary-color);
 }
@@ -260,10 +261,23 @@
     padding: 15px 25px;
     font-size: 1.2em;
     position: absolute;
-    bottom: 20px;
+    bottom: 6%;
     left: 50%;
     transform: translateX(-50%);
-    bottom: 6%;
+}
+
+#admin-button.admin-active {
+    background-color: var(--bakalar-color-basic);
+    border-color: var(--primary-color);
+    color: black;
+    cursor: pointer;
+    opacity: 1;
+    pointer-events: auto;
+}
+
+#admin-button:hover {
+    background-color: var(--bakalar-color-hover);
+    color: var(--primary-color);
 }
 
 .reset-all {
@@ -271,19 +285,37 @@
     padding: 15px 25px;
     font-size: 1.2em;
     position: absolute;
-    bottom: 15%;
+    bottom: 35%;
     left: 50%;
     transform: translateX(-50%);
     background-color: #ff4444;
     color: white;
-    border: 2px solid #ff4444;
     border-radius: 5px;
     cursor: pointer;
+    display: none; /* Changed back to none by default */
+    border: 4px solid;
+    border-image: repeating-linear-gradient(
+        45deg,
+        #000,
+        #000 10px,
+        #ff0 10px,
+        #ff0 20px
+    ) 4;
 }
 
-.reset-all:hover {
-    background-color: #cc0000;
-    border-color: #cc0000;
+.reset-all::before {
+    content: '☢️';
+    margin-right: 8px;
+}
+
+.reset-all::after {
+    content: '☢️';
+    margin-left: 8px;
+}
+
+/* Only show reset button in debug mode */
+body.debug-mode .reset-all {
+    display: block;
 }
 
 .confirm-verification {
@@ -309,7 +341,8 @@
     width: 200px;
     margin: 10px auto;
     position: relative;
-    transition: width 0.3s ease;
+    transition: all 0.3s ease;
+    overflow: visible;
 }
 
 .button-group.admin-active {
@@ -321,6 +354,8 @@
 .button-group:not(.admin-active) .dynamic-button {
     max-width: 200px;
     margin: 0 auto;
+    width: 200px; /* Fixed width when not in admin mode */
+    transition: all 0.3s ease;
 }
 
 .button-group.admin-active .dynamic-button {
@@ -397,4 +432,130 @@
 .delete-class:hover {
     background-color: #cc0000;
     border-color: #cc0000;
+}
+
+.admin-check {
+    font-size: 1.4em;
+    font-weight: bold;
+    vertical-align: middle;
+    margin-left: 5px;
+}
+
+#accounts-button {
+    display: none; /* Hide by default */
+    width: 90%;
+    padding: 15px 25px;
+    font-size:1.2em;
+    position: absolute;
+    bottom: 6%; /* Moved up since admin button is removed */
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--bakalar-color-basic);
+    color: black;
+    border: 2px solid var(--primary-color);
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+#accounts-button.admin-visible {
+    display: block;
+}
+
+#accounts-button.admin-active {
+    background-color: var(--bakalar-color-basic);
+    border-color: var(--primary-color);
+    color: black;
+    cursor: pointer;
+    opacity: 1;
+    pointer-events: auto;
+}
+
+#accounts-button:hover {
+    background-color: var(--bakalar-color-hover);
+    color: var(--primary-color);
+}
+
+.close-create-new {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    color: var(--primary-color);
+    font-size: 1.2em;
+    cursor: pointer;
+}
+
+.close-create-new:hover {
+    background-color: var(--bakalar-color-hover);
+    color: var(--secondary-color);
+}
+
+/* --- MOBILE BUTTONS --- */
+@media (max-width: 900px) {
+  #create-new, #create-new.admin-visible {
+    width: 36px;
+    height: 36px;
+    font-size: 1.5em;
+    margin: 10px auto 0;
+  }
+  .dynamic-button, .button-group {
+    width: 100%;
+    min-width: 40px;
+    max-width: 100%;
+    font-size: 1em;
+    padding: 8px 4px;
+  }
+  .gear-icon {
+    right: -30px;
+    min-width: 10px;
+    font-size: 1em;
+    padding: 8px;
+  }
+}
+
+@media (max-width: 700px) {
+  #create-new, #create-new.admin-visible {
+    width: 32px;
+    height: 32px;
+    font-size: 1.2em;
+    margin: 5px auto 0;
+  }
+  .dynamic-button, .button-group {
+    width: auto;
+    min-width: 40px;
+    max-width: 120px;
+    font-size: 0.9em;
+    padding: 6px 2px;
+    margin: 0 2px;
+  }
+  .gear-icon {
+    right: -20px;
+    min-width: 10px;
+    font-size: 0.9em;
+    padding: 6px;
+  }
+}
+
+@media (max-width: 500px) {
+  #create-new, #create-new.admin-visible {
+    width: 24px;
+    height: 24px;
+    font-size: 1em;
+    margin: 2px auto 0;
+  }
+  .dynamic-button, .button-group {
+    min-width: 30px;
+    max-width: 70px;
+    font-size: 0.8em;
+    padding: 3px 1px;
+    margin: 0 1px;
+  }
+  .gear-icon {
+    right: -10px;
+    min-width: 8px;
+    font-size: 0.8em;
+    padding: 3px;
+  }
 }
