@@ -9,8 +9,8 @@
     --font-family: Arial, Helvetica, sans-serif;
     --sidebar-width: 15%; /* Increased from 12% */
     --header-height: 10%;
-    --highlight-color: #afafaf;
-    --highlight-cell-color: #a7a7a7;
+    --highlight-color: #cdcdcd;
+    --highlight-cell-color: #cfcfcf;
     --bakalar-color-basic: #ffffff;
     --bakalar-color-hover: #ffffff;
   }
@@ -326,7 +326,7 @@
   }
   
   .permanent-hour {
-    background-color: #ffebcc !important;
+    background-color: #9c835e !important;
     font-weight: bold;
     color: #ff0000 !important;
     position: relative;
@@ -345,6 +345,7 @@
     bottom: 0;
     border: none;
     border-radius: 0;
+    color: red
   }
   
   .timetable-content {

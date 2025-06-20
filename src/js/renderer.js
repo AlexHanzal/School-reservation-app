@@ -1225,7 +1225,7 @@ function disableDebugMode() {
     // Reset edit button
     const editButton = document.querySelector('.edit-button');
     if (editButton) {
-        editButton.textContent = 'Upravit';
+        editButton.textContent = 'Zamluvit hodinu';
         editButton.style.backgroundColor = '';
     }
     
@@ -2318,7 +2318,7 @@ function setupUIHandlers() {
             isEditMode = false;
             const editButton = document.querySelector('.edit-button');
             if (editButton) {
-                editButton.textContent = 'Upravit';
+                editButton.textContent = 'Zamluvit hodinu';
             }
             saveButton.style.display = 'none';
             
@@ -2360,7 +2360,7 @@ function enableCellEditingAfterLogin() {
             console.log('Edit mode toggled to:', isEditMode);
             
             // Update button text
-            this.textContent = isEditMode ? 'Zrušit' : 'Upravit';
+            this.textContent = isEditMode ? 'Zrušit' : 'Zamluvit hodinu';
             
             // Make cells editable or non-editable
             const cells = document.querySelectorAll('.week-table tbody td:not(:first-child)');
