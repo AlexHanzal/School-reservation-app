@@ -1893,10 +1893,13 @@ async function saveTimeTable() {
         });
     });
 
-    // Propagate permanent hours to ALL existing weeks
+    // Propagate permanent hours to ALL future weeks (including current)
     if (Object.keys(permanentHours).length > 0) {
+        const currentWeekDate = new Date(dateString);
         for (const weekDate in timetables[currentTimetableName].data) {
-            if (weekDate === dateString) continue; // Skip current week as it's already saved above
+            // Only propagate to weeks in the future (including current)
+            const weekDateObj = new Date(weekDate);
+            if (weekDateObj < currentWeekDate) continue;
 
             // Ensure the week data structure exists
             if (!timetables[currentTimetableName].data[weekDate]) {
@@ -1919,6 +1922,9 @@ async function saveTimeTable() {
     // Also remove permanent hours from other weeks if they were removed from current week
     // Check all weeks for permanent hours that no longer exist in current week
     for (const weekDate in timetables[currentTimetableName].data) {
+        const weekDateObj = new Date(weekDate);
+        if (weekDateObj < new Date(dateString)) continue; // Only check future/current weeks
+
         if (weekDate === dateString) continue;
 
         const weekData = timetables[currentTimetableName].data[weekDate];
@@ -1931,7 +1937,7 @@ async function saveTimeTable() {
                     // Check if this permanent hour still exists in current week
                     const currentWeekCell = timetables[currentTimetableName].data[dateString][dayIndex]?.[hourIndex];
                     if (!currentWeekCell || !currentWeekCell.isPermanent) {
-                        // This permanent hour was removed, delete it from all weeks
+                        // This permanent hour was removed, delete it from all future weeks
                         delete weekData[dayIndex][hourIndex];
                     }
                 }
@@ -1959,12 +1965,9 @@ function showSelectScreen() {
     const selectScreen = document.getElementById('select-screen');
     if (!selectScreen) return;
     
-       
-
-    
     // Reset and prepare the select screen
     const nameInput = document.getElementById('name-input');
-    const typeSelect = document.getElementById('type-select');
+       const typeSelect = document.getElementById('type-select');
     
     // Clear previous input
     if (nameInput) nameInput.value = '';
@@ -2025,7 +2028,7 @@ function setupCellEditing() {
                 const span = document.createElement('span');
                 span.className = 'user-abbreviation';
                 span.textContent = abbrev;
-                span.setAttribute('contenteditable', 'false'); // Make abbreviation non-editable
+                span.setAttribute('contenteditable', 'false');
 
                 // Prevent editing or interaction with abbreviation span
                 span.addEventListener('keydown', e => e.stopPropagation());
@@ -2037,7 +2040,6 @@ function setupCellEditing() {
                 span.addEventListener('mousedown', e => e.stopPropagation());
                 span.addEventListener('mouseup', e => e.stopPropagation());
                 span.addEventListener('focus', e => { e.target.blur(); e.stopPropagation(); });
-
                 cell.appendChild(document.createElement('br'));
                 cell.appendChild(span);
             }
@@ -2086,21 +2088,38 @@ function setupCellEditing() {
             abbrevSpanElem.addEventListener('focus', e => { e.target.blur(); e.stopPropagation(); });
         }
 
+        // Only mark as edited on input, don't reset content
         newCell.addEventListener('input', function() {
             this.classList.add('edited-cell');
-            if (isAdminMode && permanentHourModeEnabled && getCellContent(this) !== '') {
+            // Do NOT set permanent hour or reset content here!
+        });
+
+        // On blur, add abbreviation if needed (for normal users)
+        // and handle permanent hour for admin+permanent mode
+        newCell.addEventListener('blur', function() {
+            // Admin + permanent hour mode: set as permanent hour on blur if content exists
+            if (
+                isAdminMode &&
+                permanentHourModeEnabled &&
+                getCellContent(this) !== ''
+            ) {
                 let content = getCellContent(this);
                 setCellContentWithAbbreviation(this, content, null);
-                // Immediately mark as permanent hour (no popup)
                 this.classList.add('permanent-hour');
                 this.dataset.permanent = 'true';
+                return;
             }
-            else if (currentUser.isLoggedIn && currentUser.abbreviation && getCellContent(this) && 
-                !this.classList.contains('permanent-hour') && 
-                !(isAdminMode && permanentHourModeEnabled)) {
-                let content = getCellContent(this);
+            // For normal users, add abbreviation if needed
+            if (
+                currentUser.isLoggedIn &&
+                currentUser.abbreviation &&
+                getCellContent(this) &&
+                !this.classList.contains('permanent-hour') &&
+                !(isAdminMode && permanentHourModeEnabled)
+            ) {
                 // Only add abbreviation if not already present
                 if (!this.querySelector('.user-abbreviation')) {
+                    let content = getCellContent(this);
                     setCellContentWithAbbreviation(this, content, currentUser.abbreviation);
                 }
             }
