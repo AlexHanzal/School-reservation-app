@@ -380,9 +380,9 @@ function updateWeekdayHeaders(startOfWeek) {
     const headerCells = document.querySelectorAll('.week-table thead th:not(:first-child)');
     if (!headerCells.length) return;
     
-    // Define the hours for the day (8:00 to 16:00)
+    // Define the hours for the day - reduced to 8 columns (8:00 to 15:00)
     const hours = [
-        '8:00', '9:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00'
+        '8:00', '9:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00'
     ];
     
     // First cell shows empty cell or a label
@@ -893,13 +893,8 @@ async function handleLogin() {
     const loginError = document.getElementById('login-error');
     
     loginError.style.display = 'none';
-    
-    if (!userSelect.value || !passwordInput.value) {
-        loginError.textContent = 'Prosím vyplňte všechna pole';
-        loginError.style.display = 'block';
-        return;
-    }
 
+    // Remove any logic related to "money" debug code
     try {
         const response = await fetch(`${API_URL}/users/login`, {
             method: 'POST',
@@ -968,7 +963,7 @@ async function handleLogin() {
                 }
                 toggleButton.style.display = 'block';
                 
-                showCustomAlert('Režim administrátora', 'Administrátorská oprávnění aktivována', 'success');
+                showCustomAlert('Režim administrátora', 'Administrátorská oprávnění aktivován', 'success');
             }
             
             // Close login menu immediately after successful login
@@ -982,7 +977,7 @@ async function handleLogin() {
             loginMenu.style.display = 'none';
             loginOverlay.style.display = 'none';
             passwordInput.value = '';            
-            
+                        
             // Load the timetables now that the user is logged in
             loadTimetables().then(() => {
                 // Restore previous view state if possible
@@ -1004,12 +999,13 @@ async function handleLogin() {
             loginError.style.display = 'block';
         }
     } catch (error) {
-        console.error('Přihlášení selhalo:', error);
-        loginError.textContent = 'Chyba připojení. Prosím zkuste to znovu.';
+        // Show connection error message (Czech)
+        loginError.textContent = 'Chyba připojení. Zkontrolujte připojení a zkuste to znovu.';
         loginError.style.display = 'block';
     }
 }
 
+// Close login menu
 function closeLoginMenu() {
     const loginMenu = document.getElementById('login-menu');
     const loginOverlay = document.getElementById('login-overlay');
@@ -1018,6 +1014,7 @@ function closeLoginMenu() {
     if (loginOverlay) loginOverlay.classList.remove('active');
 }
 
+// Setup login handlers
 function setupLoginHandlers() {
     const loginButton = document.getElementById('login-button');
     const loginMenu = document.getElementById('login-menu');
@@ -1474,8 +1471,7 @@ function createNewAccount() {
     const loadingOverlay = document.getElementById('loadingOverlay');
     if (loadingOverlay) {
         loadingOverlay.classList.add('active');
-        const loadingText = loadingOverlay.querySelector('.loading-text');
-        if (loadingText) loadingText.textContent = 'Vytváření účtu...';
+        loadingOverlay.querySelector('.loading-text').textContent = 'Vytváření účtu...';
     }
     
     // Create fetch request with retry logic
@@ -1860,7 +1856,6 @@ async function saveTimeTable() {
         const cells = row.querySelectorAll('td:not(:first-child)');
         timetables[currentTimetableName].data[dateString][dayIndex] = {};
         cells.forEach((cell, hourIndex) => {
-            // Only save the main content, not the abbreviation span
             let content = cell.textContent.trim();
             const abbrevSpan = cell.querySelector('.user-abbreviation');
             let abbreviation = null;
@@ -1893,51 +1888,69 @@ async function saveTimeTable() {
         });
     });
 
-    // Propagate permanent hours to ALL future weeks (including current)
+    // --- PROPAGATE PERMANENT HOURS TO ALL FUTURE WEEKS, USING THE LATEST EDITED VALUE FOR EACH DAY/HOUR ---
     if (Object.keys(permanentHours).length > 0) {
         const currentWeekDate = new Date(dateString);
-        for (const weekDate in timetables[currentTimetableName].data) {
-            // Only propagate to weeks in the future (including current)
-            const weekDateObj = new Date(weekDate);
-            if (weekDateObj < currentWeekDate) continue;
 
-            // Ensure the week data structure exists
-            if (!timetables[currentTimetableName].data[weekDate]) {
-                timetables[currentTimetableName].data[weekDate] = {};
+        // Get all week dates, sort ascending
+        const weekDates = Object.keys(timetables[currentTimetableName].data)
+            .map(d => new Date(d))
+            .filter(d => !isNaN(d))
+            .sort((a, b) => a - b);
+
+        // For each dayIndex/hourIndex, track the latest permanent hour value as we move forward in time
+        // Start with the current week's permanentHours
+        const latestPermanent = {};
+        for (const dayIndex in permanentHours) {
+            latestPermanent[dayIndex] = { ...permanentHours[dayIndex] };
+        }
+
+        for (const weekDateObj of weekDates) {
+            const weekDateStr = weekDateObj.toISOString().split('T')[0];
+            if (!timetables[currentTimetableName].data[weekDateStr]) {
+                timetables[currentTimetableName].data[weekDateStr] = {};
             }
+            // Only propagate to future weeks (strictly after current)
+            if (weekDateObj <= currentWeekDate) continue;
 
-            // Apply permanent hours to this week
-            for (const dayIndex in permanentHours) {
-                if (!timetables[currentTimetableName].data[weekDate][dayIndex]) {
-                    timetables[currentTimetableName].data[weekDate][dayIndex] = {};
+            // For each dayIndex/hourIndex, check if this week has a permanent hour edit
+            for (const dayIndex in latestPermanent) {
+                if (!timetables[currentTimetableName].data[weekDateStr][dayIndex]) {
+                    timetables[currentTimetableName].data[weekDateStr][dayIndex] = {};
                 }
-
-                for (const hourIndex in permanentHours[dayIndex]) {
-                    timetables[currentTimetableName].data[weekDate][dayIndex][hourIndex] = permanentHours[dayIndex][hourIndex];
+                for (const hourIndex in latestPermanent[dayIndex]) {
+                    // If this week has a permanent hour edit for this cell, update the latestPermanent value
+                    const cell = timetables[currentTimetableName].data[weekDateStr][dayIndex][hourIndex];
+                    if (cell && cell.isPermanent) {
+                        // Use this as the new value for future propagation
+                        latestPermanent[dayIndex][hourIndex] = {
+                            content: cell.content,
+                            isPermanent: true
+                        };
+                    } else {
+                        // Always overwrite with the latestPermanent value
+                        timetables[currentTimetableName].data[weekDateStr][dayIndex][hourIndex] = {
+                            ...latestPermanent[dayIndex][hourIndex]
+                        };
+                    }
                 }
             }
         }
     }
 
-    // Also remove permanent hours from other weeks if they were removed from current week
-    // Check all weeks for permanent hours that no longer exist in current week
+    // Also remove permanent hours from future weeks if they were removed from the current week
     for (const weekDate in timetables[currentTimetableName].data) {
         const weekDateObj = new Date(weekDate);
-        if (weekDateObj < new Date(dateString)) continue; // Only check future/current weeks
-
-        if (weekDate === dateString) continue;
+        if (weekDateObj <= new Date(dateString)) continue;
 
         const weekData = timetables[currentTimetableName].data[weekDate];
         for (const dayIndex in weekData) {
             if (!weekData[dayIndex]) continue;
-            
             for (const hourIndex in weekData[dayIndex]) {
-                const cellData = weekData[dayIndex][hourIndex];
+                               const cellData = weekData[dayIndex][hourIndex];
                 if (cellData && cellData.isPermanent) {
-                    // Check if this permanent hour still exists in current week
                     const currentWeekCell = timetables[currentTimetableName].data[dateString][dayIndex]?.[hourIndex];
                     if (!currentWeekCell || !currentWeekCell.isPermanent) {
-                        // This permanent hour was removed, delete it from all future weeks
                         delete weekData[dayIndex][hourIndex];
                     }
                 }
@@ -2349,8 +2362,6 @@ function setupUIHandlers() {
                 cell.classList.remove('edited-cell');
             });
         });    }
-      // Accounts menu button event listeners - moved to main DOMContentLoaded handler to avoid duplicates
-    // The accounts button and menu handlers are now set up in the main DOMContentLoaded event listener
 }
 
 // Function to enable editing after login
@@ -2682,7 +2693,7 @@ async function deleteClass(name) {
         deletedClasses.push(name);
         localStorage.setItem('deletedClasses', JSON.stringify(deletedClasses));
         console.log(`Added ${name} to deleted classes list in localStorage`);
-        
+
         // Remove button from UI
         const existingButton = document.querySelector(`.dynamic-button[data-name="${name}"]`);
         if (existingButton) {

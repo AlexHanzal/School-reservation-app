@@ -4,7 +4,7 @@
   "description": "School Reservation System - A web application for managing school resource reservations",
   "main": "src/server/server.js",
   "scripts": {
-    "start": "node src/server/server.js",
+    "start": "node src/server/server.js & python3 ./development/browser.py",
     "dev": "node src/server/server.js",
     "server": "node src/server/server.js"
   },
@@ -16,13 +16,14 @@
     "web-app"
   ],
   "author": "Alex Hanzal, Štěpán Kádár",
-  "license": "Ligma Balls s.r.o.",
+  "license": "Ligma Balls ltd",
   "dependencies": {
     "corey": "^1.0.0",
     "cors": "^2.8.5",
     "corss": "^2.8.5",
     "express": "^5.1.0",
-    "path": "^0.12.7"
+    "path": "^0.12.7",
+    "rimraf": "^6.0.1"
   },
   "engines": {
     "node": ">=14.0.0"
