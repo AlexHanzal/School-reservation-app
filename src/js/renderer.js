@@ -12,7 +12,7 @@ const translations = {
             noDateSelected: 'Žádné datum není vybráno',
             weekView: 'Týdenní zobrazení'
         }
-    },
+    }
 };
 
 let currentLanguage = 'cs'; // Default language
@@ -382,7 +382,7 @@ function updateWeekdayHeaders(startOfWeek) {
     
     // Define the hours for the day (8:00 to 16:00)
     const hours = [
-        '8:00', '9:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00'
+        '8:00-8:45', '8:55-9:40', '10:00-10:45', '10:55-11:40', '11:50-12:35', '12:45-13:30', '13:40-14:25', '14:35-15:20'
     ];
     
     // First cell shows empty cell or a label
@@ -489,7 +489,10 @@ function displayTimetableDataForWeek(startOfWeek) {
     if (timetableData.data) {
         for (const weekDate in timetableData.data) {
             const weekData = timetableData.data[weekDate];
-            
+            // Only apply permanent hours if the weekDate is <= startOfWeek (i.e., permanent hour applies to this and future weeks)
+            const permanentOriginWeek = new Date(weekDate);
+            // Only apply if the permanentOriginWeek is less than or equal to the current startOfWeek (i.e., permanent hour is from this week or earlier)
+            if (permanentOriginWeek > startOfWeek) continue;
             // Handle both array and object formats for finding permanent hours
             if (Array.isArray(weekData)) {
                 for (let dayIndex = 0; dayIndex < Math.min(weekData.length, 5); dayIndex++) {
@@ -1854,13 +1857,11 @@ async function saveTimeTable() {
         timetables[currentTimetableName].data[dateString] = {};
     }
 
-    const permanentHours = {};
-
+    // Save all hours for the current week
     rows.forEach((row, dayIndex) => {
         const cells = row.querySelectorAll('td:not(:first-child)');
         timetables[currentTimetableName].data[dateString][dayIndex] = {};
         cells.forEach((cell, hourIndex) => {
-            // Only save the main content, not the abbreviation span
             let content = cell.textContent.trim();
             const abbrevSpan = cell.querySelector('.user-abbreviation');
             let abbreviation = null;
@@ -1879,71 +1880,46 @@ async function saveTimeTable() {
                 }
                 timetables[currentTimetableName].data[dateString][dayIndex][hourIndex + 1] = hourObj;
 
-                // If this is a permanent hour, collect it for propagation
+                // --- Overwrite permanent hour in all future weeks (including current and missing weeks) ---
                 if (isPermanent) {
-                    if (!permanentHours[dayIndex]) {
-                        permanentHours[dayIndex] = {};
+                    // Find all week start dates (ISO strings) in the data
+                    const allWeekDates = Object.keys(timetables[currentTimetableName].data)
+                        .map(d => new Date(d))
+                        .sort((a, b) => a - b);
+
+                    // Find the latest week in the data
+                    let lastWeekDate = allWeekDates.length > 0 ? allWeekDates[allWeekDates.length - 1] : new Date(currentDate);
+
+                    // If there are less than 52 weeks, extend up to 52 weeks from currentDate
+                    const maxWeeks = 52;
+                    let weeksToFill = [];
+                    let weekCursor = new Date(currentDate);
+                    weekCursor.setHours(0, 0, 0, 0);
+
+                    for (let i = 0; i < maxWeeks; i++) {
+                        const iso = weekCursor.toISOString().split('T')[0];
+                        weeksToFill.push(iso);
+                        // Move to next week (Monday)
+                        weekCursor.setDate(weekCursor.getDate() + 7);
                     }
-                    permanentHours[dayIndex][hourIndex + 1] = {
-                        content: content,
-                        isPermanent: true
-                    };
+
+                    weeksToFill.forEach(iso => {
+                        if (!timetables[currentTimetableName].data[iso]) {
+                            timetables[currentTimetableName].data[iso] = [];
+                        }
+                        if (!timetables[currentTimetableName].data[iso][dayIndex]) {
+                            timetables[currentTimetableName].data[iso][dayIndex] = {};
+                        }
+                        timetables[currentTimetableName].data[iso][dayIndex][hourIndex + 1] = {
+                            content: content,
+                            isPermanent: true
+                        };
+                    });
                 }
+                // --- End overwrite ---
             }
         });
     });
-
-    // Propagate permanent hours to ALL future weeks (including current)
-    if (Object.keys(permanentHours).length > 0) {
-        const currentWeekDate = new Date(dateString);
-        for (const weekDate in timetables[currentTimetableName].data) {
-            // Only propagate to weeks in the future (including current)
-            const weekDateObj = new Date(weekDate);
-            if (weekDateObj < currentWeekDate) continue;
-
-            // Ensure the week data structure exists
-            if (!timetables[currentTimetableName].data[weekDate]) {
-                timetables[currentTimetableName].data[weekDate] = {};
-            }
-
-            // Apply permanent hours to this week
-            for (const dayIndex in permanentHours) {
-                if (!timetables[currentTimetableName].data[weekDate][dayIndex]) {
-                    timetables[currentTimetableName].data[weekDate][dayIndex] = {};
-                }
-
-                for (const hourIndex in permanentHours[dayIndex]) {
-                    timetables[currentTimetableName].data[weekDate][dayIndex][hourIndex] = permanentHours[dayIndex][hourIndex];
-                }
-            }
-        }
-    }
-
-    // Also remove permanent hours from other weeks if they were removed from current week
-    // Check all weeks for permanent hours that no longer exist in current week
-    for (const weekDate in timetables[currentTimetableName].data) {
-        const weekDateObj = new Date(weekDate);
-        if (weekDateObj < new Date(dateString)) continue; // Only check future/current weeks
-
-        if (weekDate === dateString) continue;
-
-        const weekData = timetables[currentTimetableName].data[weekDate];
-        for (const dayIndex in weekData) {
-            if (!weekData[dayIndex]) continue;
-            
-            for (const hourIndex in weekData[dayIndex]) {
-                const cellData = weekData[dayIndex][hourIndex];
-                if (cellData && cellData.isPermanent) {
-                    // Check if this permanent hour still exists in current week
-                    const currentWeekCell = timetables[currentTimetableName].data[dateString][dayIndex]?.[hourIndex];
-                    if (!currentWeekCell || !currentWeekCell.isPermanent) {
-                        // This permanent hour was removed, delete it from all future weeks
-                        delete weekData[dayIndex][hourIndex];
-                    }
-                }
-            }
-        }
-    }
 
     // Update permanentHours for backward compatibility
     timetables[currentTimetableName].permanentHours = {};
@@ -2149,6 +2125,19 @@ function setupCellEditing() {
         newCell.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
+            }
+            // Remove permanent-hour status on backspace/delete if cell is empty
+            if (
+                (e.key === 'Backspace' || e.key === 'Delete') &&
+                this.classList.contains('permanent-hour')
+            ) {
+                // Use setTimeout to wait for the input event to clear the content
+                setTimeout(() => {
+                    if (getCellContent(this) === '') {
+                        this.classList.remove('permanent-hour');
+                        delete this.dataset.permanent;
+                    }
+                }, 0);
             }
         });
     });
@@ -2954,5 +2943,7 @@ function formatDate(dateString) {
 
 // Helper function to get date string in YYYY-MM-DD format
 function getDateString(date) {
+return date.toISOString().split('T')[0];
     return date.toISOString().split('T')[0];
 }
+
